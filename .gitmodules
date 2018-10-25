@@ -1,3 +1,3 @@
 [submodule "lib/async_comm"]
 	path = lib/async_comm
-	url = git@github.com:dpkoch/async_comm.git
+	url = git@github.com:superjax/async_comm.git
