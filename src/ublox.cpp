@@ -21,7 +21,6 @@ void UBLOX::init()
   length_ = 0;
   ck_a_ = 0;
   ck_b_ = 0;
-  memset(debug_buffer_, 0, sizeof(debug_buffer_));
   
   // Find the right baudrate
   looking_for_nmea_ = true;
@@ -53,7 +52,7 @@ bool UBLOX::detect_baudrate()
   {
     DBG("Trying %d baudrate\n", baudrates[i]);
     serial_.set_baud_rate(baudrates[i]);
-    milliseconds timeout_ms(10000);
+    milliseconds timeout_ms(1000);
     milliseconds start = duration_cast<milliseconds>(system_clock::now().time_since_epoch()); //millis();
     milliseconds now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()); //millis();
     while (now < start + timeout_ms)
@@ -140,7 +139,6 @@ void UBLOX::enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate)
 
 void UBLOX::read_cb(uint8_t byte)
 {
-  debug_buffer_[(debug_buffer_head_++) % sizeof(debug_buffer_)] = byte;
   // Look for a valid NMEA packet (do this at the beginning in case
   // UBX was disabled for some reason) and during autobaud
   // detection
@@ -262,7 +260,7 @@ bool UBLOX::decode_message()
   num_messages_received_++;
   DBG("recieved message %d: ", num_messages_received_);
 
-  // Parse the payloaddouble
+  // Parse the payload
   switch (message_class_)
   {
   case CLASS_ACK:
@@ -301,7 +299,6 @@ bool UBLOX::decode_message()
       new_data_ = true;
       nav_message_ = in_message_.NAV_PVT;
       DBG("PVT\n");
-//      std::cout <<  "Got NAV_PVT: lla = " << nav_message_.lat << ", " << nav_message_.lon << ", " << nav_message_.height << "\n";
       break;
     case NAV_POSECEF:
       new_data_ = true;

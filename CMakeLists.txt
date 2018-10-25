@@ -9,9 +9,12 @@ include_directories(include
   lib/async_comm/include
 )
 
+add_library(UBLOX
+    include/ublox.h
+    src/ublox.cpp
+)
+
 add_executable(ublox
-  include/ublox.h
-  src/ublox.cpp
   src/main.cpp
 )
-target_link_libraries(ublox async_comm)
+target_link_libraries(ublox UBLOX async_comm)

@@ -383,10 +383,7 @@ private:
   
   UBX_message_t out_message_;
   UBX_message_t in_message_;
-  
-  uint8_t debug_buffer_[15];
-  uint16_t debug_buffer_head_ = 0;
-  
+    
   uint16_t buffer_head_ = 0;
   bool got_message_ = false;
   bool got_ack_ = false;
