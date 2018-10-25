@@ -12,7 +12,7 @@
 
 class UBLOX {
 public:
-    UBLOX();
+    UBLOX(std::string port);
   enum {
     FIX_TYPE_NO_FIX = 0x00,
     FIX_TYPE_DEAD_RECKONING = 0x01,
@@ -321,6 +321,24 @@ public:
     int16_t magDec; // 1e-2 deg Magnetic declination
     uint16_t magAcc; // 1e-2 deg Magnetic declination accuracy
   }__attribute__((packed)) NAV_PVT_t;
+
+  typedef struct
+  {
+    uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
+    int32_t ecefX; // cm ECEF X coordinate
+    int32_t ecefY; // cm ECEF Y coordinate
+    int32_t ecefZ; // cm ECEF Z coordinate
+    uint32_t pAcc; // cm Position Accuracy Estimate
+  }__attribute__((packed)) NAV_POSECEF_t;
+
+  typedef struct
+  {
+    uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
+    int32_t ecefVX; // cm ECEF X velocity
+    int32_t ecefVY; // cm ECEF Y velocity
+    int32_t ecefVZ; // cm ECEF Z velocity
+    uint32_t sAcc; // cm Speed Accuracy Estimate
+  }__attribute__((packed)) NAV_VELECEF_t;
   
   typedef union {
     uint8_t buffer[UBLOX_BUFFER_SIZE];
@@ -331,16 +349,26 @@ public:
     CFG_RATE_t CFG_RATE;
     CFG_NAV5_t CFG_NAV5;
     NAV_PVT_t NAV_PVT;
+    NAV_POSECEF_t NAV_POSECEF;
+    NAV_VELECEF_t NAV_VELECEF;
   } UBX_message_t;
   
   void init();
   
-  void read(double* lla, float* vel, uint8_t &fix_type);
+  void read(double* lla, float* vel, uint8_t &fix_type, uint32_t& t_ms);
   void read_cb(uint8_t byte);
-  inline bool new_data() {return new_data_;}
-  uint32_t num_messages_received() {return num_messages_received_;}
+  inline volatile bool new_data() { return new_data_; }
+  uint32_t volatile num_messages_received() { return num_messages_received_; }
+
+  void lla(double* lla) const;
+  void ned(float* vel) const;
+  uint8_t fix_type() const;
+  void posECEF(double* pos) const;
+  void velECEF(double* vel) const;
+
   
 private:
+  bool detect_baudrate();
   void convert_data();
   void enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate);
   void set_baudrate(const uint32_t baudrate);
@@ -351,7 +379,7 @@ private:
   bool send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& message, uint16_t len);
   
   uint32_t current_baudrate_ = 115200;
-  const uint32_t baudrates[5] = {115200, 57600, 9600, 19200, 38400};
+  const uint32_t baudrates[5] = {115200, 19200, 57600, 9600, 38400};
   
   UBX_message_t out_message_;
   UBX_message_t in_message_;
@@ -380,8 +408,10 @@ private:
   
   async_comm::Serial serial_;
   
-  bool new_data_;
+  volatile bool new_data_;
   NAV_PVT_t nav_message_;
+  NAV_POSECEF_t pos_ecef_;
+  NAV_VELECEF_t vel_ecef_;
 };
 
 #endif // UBLOX_H
