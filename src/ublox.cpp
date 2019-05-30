@@ -4,8 +4,8 @@
 using namespace std::chrono;
 
 #define DEG2RAD (3.14159 / 180.0)
-//#define DBG(...) fprintf(stderr, __VA_ARGS__)
-#define DBG(...)
+#define DBG(...) fprintf(stderr, __VA_ARGS__)
+//#define DBG(...)
 
 UBLOX::UBLOX(std::string port) :
   serial_(port, 115200)
@@ -65,8 +65,6 @@ bool UBLOX::detect_baudrate()
         break;
       }
     }
-    if (current_baudrate_ != 0)
-      break;
   }
   return got_message_;
 }
