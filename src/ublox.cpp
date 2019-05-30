@@ -39,9 +39,9 @@ void UBLOX::init()
   set_baudrate(115200);
   set_dynamic_mode();
   set_nav_rate(100);
-  enable_message(CLASS_NAV, NAV_PVT, 1);
-  enable_message(CLASS_NAV, NAV_POSECEF, 1);
-  enable_message(CLASS_NAV, NAV_VELECEF, 1);
+  enable_message(CLASS_NAV, NAV_PVT, 10);
+  enable_message(CLASS_NAV, NAV_POSECEF, 10);
+  enable_message(CLASS_NAV, NAV_VELECEF, 10);
 }
 
 bool UBLOX::detect_baudrate()
@@ -327,7 +327,7 @@ void UBLOX::convert_data()
   static const double scaling = 1e-7 * M_PI/180.0;
   lla_[0] = (double)(nav_message_.lat) * scaling;
   lla_[1] = (double)(nav_message_.lon) * scaling;
-  lla_[2] = nav_message_.height * 1-3;
+  lla_[2] = nav_message_.height * 1e-3;
 
   vel_[0] = nav_message_.velN * 1e-3;
   vel_[1] = nav_message_.velE * 1e-3;

@@ -5,7 +5,7 @@
 
 int main()
 {
-  UBLOX ubx("/dev/ttyUSB0");
+  UBLOX ubx("/dev/ttyACM0");
   ubx.init();
 
   double lla[3];
