@@ -10,4 +10,3 @@ cd build
 cmake ..
 make -j4 -l4
 
-this is a test to see if I can push from the laptop
