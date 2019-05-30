@@ -9,3 +9,5 @@ mkdir build
 cd build
 cmake ..
 make -j4 -l4
+
+This is a test from desktop
