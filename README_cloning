@@ -1,0 +1,3 @@
+If you are cloning this repository you will need to get the submodules seperately.  This can be done with the following command.
+
+git submodule update --init --recursive
