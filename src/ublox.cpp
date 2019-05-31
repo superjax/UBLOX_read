@@ -65,6 +65,8 @@ bool UBLOX::detect_baudrate()
         break;
       }
     }
+    if (current_baudrate_ != 0)
+      break;
   }
   return got_message_;
 }
