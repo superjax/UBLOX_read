@@ -308,7 +308,7 @@ bool UBLOX::decode_message()
     case NAV_VELECEF:
       new_data_ = true;
       vel_ecef_ = in_message_.NAV_VELECEF;
-      DBG("NAVELECEF\n");
+      DBG("VELECEF\n");
       break;
     default:
       DBG("%d\n", message_type_);
