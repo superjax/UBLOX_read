@@ -113,7 +113,7 @@ void UBLOX::set_dynamic_mode()
   out_message_.CFG_NAV5.mask = CFG_NAV5_t::MASK_DYN;
   out_message_.CFG_NAV5.dynModel = CFG_NAV5_t::DYNMODE_AIRBORNE_4G;
   DBG("Setting dynamic mode\n");
-  send_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_NAV5_t));
+  send_message(CLASS_CFG, CFG_NAV5, out_message_, sizeof(CFG_NAV5_t));
 }
 
 void UBLOX::set_nav_rate(uint8_t period_ms)
