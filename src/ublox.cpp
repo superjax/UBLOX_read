@@ -97,8 +97,8 @@ void UBLOX::set_baudrate(const uint32_t baudrate)
   memset(&out_message_, 0, sizeof(CFG_PRT_t));
   out_message_.CFG_PRT.portID = CFG_PRT_t::PORT_UART1;
   out_message_.CFG_PRT.baudrate = baudrate;
-  out_message_.CFG_PRT.inProtoMask = CFG_PRT_t::IN_UBX | CFG_PRT_t::IN_NMEA | CFG_PRT_t::IN_RTCM;
-  out_message_.CFG_PRT.outProtoMask = CFG_PRT_t::OUT_UBX | CFG_PRT_t::OUT_NMEA;
+  out_message_.CFG_PRT.inProtoMask = CFG_PRT_t::IN_UBX | CFG_PRT_t::IN_NMEA | CFG_PRT_t::IN_RTCM | CFG_PRT_t::IN_RTCM3;
+  out_message_.CFG_PRT.outProtoMask = CFG_PRT_t::OUT_UBX | CFG_PRT_t::OUT_NMEA | CFG_PRT_t::OUT_RTCM3;
   out_message_.CFG_PRT.mode = CFG_PRT_t::CHARLEN_8BIT | CFG_PRT_t::PARITY_NONE | CFG_PRT_t::STOP_BITS_1;
   out_message_.CFG_PRT.flags = 0;
   send_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_PRT_t));
