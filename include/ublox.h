@@ -96,6 +96,9 @@ public:
     CFG_TP5 = 0x31, 	// Poll Request Poll Time Pulse Parameters for Time Pulse 0
     CFG_TXSLOT = 0x53, 	// Set TX buffer time slots configuration
     CFG_USB = 0x1B, 	// Get/Set USB Configuration
+    CFG_VALDEL = 0x8C, //Deletes values corresponding to...
+    CFG_VALGET = 0x8B, //Get configuration items
+    CFG_VALSET = 0x8A, //Set values correpsonding to provided...
   };
   
   enum {
