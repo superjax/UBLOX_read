@@ -21,6 +21,9 @@ void UBLOX::init()
   length_ = 0;
   ck_a_ = 0;
   ck_b_ = 0;
+
+  //configure f9p
+  config();
   
   // Find the right baudrate
   looking_for_nmea_ = true;
@@ -95,10 +98,12 @@ void UBLOX::set_baudrate(const uint32_t baudrate)
   DBG("Setting baudrate to %d\n", baudrate);
   // Now that we have the right baudrate, let's configure the thing
   memset(&out_message_, 0, sizeof(CFG_PRT_t));
-  out_message_.CFG_PRT.portID = CFG_PRT_t::PORT_UART1;
+  out_message_.CFG_PRT.portID = CFG_PRT_t::PORT_USB;
   out_message_.CFG_PRT.baudrate = baudrate;
+  //out_message_.CFG_PRT.inProtoMask = CFG_PRT_t::IN_RTCM3;
   out_message_.CFG_PRT.inProtoMask = CFG_PRT_t::IN_UBX | CFG_PRT_t::IN_NMEA | CFG_PRT_t::IN_RTCM | CFG_PRT_t::IN_RTCM3;
   out_message_.CFG_PRT.outProtoMask = CFG_PRT_t::OUT_UBX | CFG_PRT_t::OUT_NMEA | CFG_PRT_t::OUT_RTCM3;
+  //out_message_.CFG_PRT.outProtoMask = CFG_PRT_t::OUT_RTCM3;
   out_message_.CFG_PRT.mode = CFG_PRT_t::CHARLEN_8BIT | CFG_PRT_t::PARITY_NONE | CFG_PRT_t::STOP_BITS_1;
   out_message_.CFG_PRT.flags = 0;
   send_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_PRT_t));
@@ -360,5 +365,17 @@ void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, cons
     ck_a += payload.buffer[i];
     ck_b += ck_a;
   }
+}
+
+void UBLOX::config()
+{
+  
+  std::cout << "I am here!!!!!!!!!!!!!!!!!!!!!!";
+  out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
+
+  send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET));
+
+
+
 }
 
