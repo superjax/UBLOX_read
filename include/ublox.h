@@ -264,20 +264,43 @@ public:
       VALGET_DEFAULT = 7
     };
     enum {
-      CHARLEN_8BIT = 0b11000000,
-      PARITY_NONE  = 0b100000000000,
-      STOP_BITS_1  = 0x0000          
+      VALGET_REQUEST = 0,
+      VALGET_POLL  = 1,     
     };
+
+    enum {
+      VALGET_MSG_NAV_STATUS = 0x2091001d, //CFG-MSGOUT-UBX_NAV_STATUS_USB, tells the output rate of ubx-nav-status on usb    
+    };
+
+    uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
     uint8_t layer;
-    uint8_t reserved1;
-    uint16_t txReady;
-    uint32_t mode; // What the mode the serial data is on (See charlen, parity and stop bits)
-    uint32_t baudrate;
-    uint16_t inProtoMask; // Which input protocols are enabled
-    uint16_t outProtoMask; // Which output protocols are enabled
-    uint16_t flags;
-    uint8_t reserved2[2];
+    uint8_t reserved1[2];
+    uint32_t keys; 
+    uint32_t cfgData;
   }__attribute__((packed)) CFG_VALGET_t;
+
+    typedef struct {
+    enum {
+      VALGET_RAM = 0,
+      VALGET_BBR = 1,
+      VALGET_FLASH = 2,
+      VALGET_DEFAULT = 7
+    };
+    enum {
+      VALGET_REQUEST = 0,
+      VALGET_POLL  = 1,     
+    };
+
+    enum {
+      VALGET_MSG_NAV_STATUS = 0x2091001d, //CFG-MSGOUT-UBX_NAV_STATUS_USB, tells the output rate of ubx-nav-status on usb    
+    };
+
+    uint16_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
+    uint8_t layer;
+    uint8_t reserved1[2];
+    uint32_t keys;
+    uint32_t cfgData;
+  }__attribute__((packed)) CFG_VALSET_t;
   
   typedef struct {
     enum {
@@ -437,6 +460,7 @@ private:
   NAV_PVT_t nav_message_;
   NAV_POSECEF_t pos_ecef_;
   NAV_VELECEF_t vel_ecef_;
+  CFG_VALGET_t cfg_get_message_;
 };
 
 #endif // UBLOX_H
