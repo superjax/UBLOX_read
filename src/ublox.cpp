@@ -13,6 +13,7 @@ UBLOX::UBLOX(std::string port) :
 
 void UBLOX::init()
 {
+  //std::cout << "Here!!!!!!!!!!!!!!!!!!! init 2" << "\n";
   // Reset message parser
   buffer_head_ = 0;
   parse_state_ = START;
@@ -21,9 +22,6 @@ void UBLOX::init()
   length_ = 0;
   ck_a_ = 0;
   ck_b_ = 0;
-
-  //configure f9p
-  config();
   
   // Find the right baudrate
   looking_for_nmea_ = true;
@@ -38,6 +36,7 @@ void UBLOX::init()
   if (!detect_baudrate())
     return;
   
+
   // Otherwise, Configure the GPS
   set_baudrate(115200);
   set_dynamic_mode();
@@ -45,6 +44,9 @@ void UBLOX::init()
   enable_message(CLASS_NAV, NAV_PVT, 10);
   enable_message(CLASS_NAV, NAV_POSECEF, 10);
   enable_message(CLASS_NAV, NAV_VELECEF, 10);
+  enable_message(CLASS_CFG, CFG_VALGET, 10);
+  //configure f9p
+  config();
 }
 
 bool UBLOX::detect_baudrate()
@@ -80,6 +82,10 @@ bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& messa
   uint8_t ck_a, ck_b;
   calculate_checksum(msg_class, msg_id, len, message, ck_a, ck_b);  
   
+  std::cout << "msg_class" << msg_class << "\n";
+  std::cout << "msg_id" << msg_id << "\n";
+  std::cout << "message" << message.buffer << "\n";
+  std::cout << "length" << len << "\n";
   // Send message
   serial_.send_byte(START_BYTE_1);
   serial_.send_byte(START_BYTE_2);
@@ -147,6 +153,7 @@ void UBLOX::read_cb(uint8_t byte)
   // Look for a valid NMEA packet (do this at the beginning in case
   // UBX was disabled for some reason) and during autobaud
   // detection
+
   if (looking_for_nmea_)
   {
     if (byte == NMEA_START_BYTE2 && prev_byte_ == NMEA_START_BYTE1)
@@ -287,11 +294,13 @@ bool UBLOX::decode_message()
     break;
 
   case CLASS_CFG:
+    cfg_get_message_ = in_message_.CFG_VALGET;
     DBG("CFG_");
     switch (message_type_)
     {
     default:
       DBG("%d\n", message_type_);
+      std::cout << "CFG_VALGET = " << cfg_get_message_.cfgData << "\n";
       break;
     }
     break;
@@ -370,12 +379,15 @@ void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, cons
 void UBLOX::config()
 {
   
-  std::cout << "I am here!!!!!!!!!!!!!!!!!!!!!!";
+  memset(&out_message_, 0, sizeof(CFG_VALGET_t));
+  out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
   out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
+  out_message_.CFG_VALGET.keys = CFG_VALGET_t::VALGET_MSG_NAV_STATUS;
 
-  send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET));
-
-
+  // std::cout << "version = " << out_message_.CFG_VALGET.version << "\n";
+  // std::cout << "layer = " << out_message_.CFG_VALGET.layer << "\n";
+  // std::cout << "keys = " << out_message_.CFG_VALGET.keys << "\n";
+  send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
 
 }
 
