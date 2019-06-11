@@ -1,7 +1,7 @@
 #ifndef UBLOX_H
 #define UBLOX_H
 
-#define UBLOX_BUFFER_SIZE 128
+#define UBLOX_BUFFER_SIZE 256
 
 #include <stdint.h>
 
@@ -261,7 +261,7 @@ public:
       VALGET_RAM = 0,
       VALGET_BBR = 1,
       VALGET_FLASH = 2,
-      VALGET_DEFAULT = 7
+      VALGET_DEFAULT = 7,
     };
     enum {
       VALGET_REQUEST = 0,
@@ -269,37 +269,66 @@ public:
     };
 
     enum {
-      VALGET_MSG_NAV_STATUS = 0x2091001d, //CFG-MSGOUT-UBX_NAV_STATUS_USB, tells the output rate of ubx-nav-status on usb    
+      VALGET_MSG_NAV_STATUS = 0x2091001d, //CFG-MSGOUT-UBX_NAV_STATUS_USB, tells the output rate of ubx-nav-status on usb
+      VALGET_USB_ENABLED = 0x10650001,
+      VALGET_I2C_ENABLED = 0x10510003,
+      VALGET_DGNSSMODE = 0x20140011, //CFG-NAVHPG-DGNSSMODE Differential corrections mode
     };
 
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
     uint8_t layer;
     uint8_t reserved1[2];
-    uint32_t keys; 
-    uint32_t cfgData;
+    uint32_t cfgDataKey;
+    typedef union
+    {
+        uint8_t byte;
+        uint16_t half;
+        uint32_t word;
+        uint64_t long_word;
+    } uCfgData;
+    uCfgData cfgData; //struggling to get this to work without using uint32 or greater and still it is inconsistent
   }__attribute__((packed)) CFG_VALGET_t;
 
     typedef struct {
     enum {
-      VALGET_RAM = 0,
-      VALGET_BBR = 1,
-      VALGET_FLASH = 2,
-      VALGET_DEFAULT = 7
-    };
-    enum {
-      VALGET_REQUEST = 0,
-      VALGET_POLL  = 1,     
+      VALSET_RAM = 0,
+      VALSET_BBR = 1,
+      VALSET_FLASH = 2,
+      VALSET_DEFAULT = 7
     };
 
     enum {
-      VALGET_MSG_NAV_STATUS = 0x2091001d, //CFG-MSGOUT-UBX_NAV_STATUS_USB, tells the output rate of ubx-nav-status on usb    
+      VALSET_0 = 0b00000000,
+      VALSET_1  = 0b00000001,     
+    };
+
+    enum {
+      // VALSET_float = 2,
+      // VALSET_fixed  = 3,      
+      VALSET_float = 0b00000010,
+      VALSET_fixed  = 0b00000011,     
+    };
+
+    enum {
+      VALSET_MSG_NAV_STATUS = 0x2091001d, //CFG-MSGOUT-UBX_NAV_STATUS_USB, tells the output rate of ubx-nav-status on usb    
+      VALSET_I2C_ENABLED_data = 0x10510003, //this is concatenated.  Should probably change to a more permanent format
+      VALSET_DGNSSMODE = 0x20140011, //CFG-NAVHPG-DGNSSMODE Differential corrections mode
     };
 
     uint16_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
     uint8_t layer;
     uint8_t reserved1[2];
-    uint32_t keys;
-    uint32_t cfgData;
+    uint32_t cfgDataKey;
+    
+    typedef union
+    {
+        uint8_t byte;
+        uint16_t half;
+        uint32_t word;
+        uint64_t long_word;
+    } uCfgData;
+
+    uCfgData cfgData;
   }__attribute__((packed)) CFG_VALSET_t;
   
   typedef struct {
@@ -397,6 +426,7 @@ public:
     CFG_PRT_t CFG_PRT;
     CFG_RATE_t CFG_RATE;
     CFG_NAV5_t CFG_NAV5;
+    CFG_VALSET_t CFG_VALSET;
     CFG_VALGET_t CFG_VALGET;
     NAV_PVT_t NAV_PVT;
     NAV_POSECEF_t NAV_POSECEF;
