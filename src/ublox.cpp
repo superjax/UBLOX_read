@@ -13,7 +13,6 @@ UBLOX::UBLOX(std::string port) :
 
 void UBLOX::init()
 {
-  //std::cout << "Here!!!!!!!!!!!!!!!!!!! init 2" << "\n";
   // Reset message parser
   buffer_head_ = 0;
   parse_state_ = START;
@@ -82,10 +81,6 @@ bool UBLOX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& messa
   uint8_t ck_a, ck_b;
   calculate_checksum(msg_class, msg_id, len, message, ck_a, ck_b);  
   
-  std::cout << "msg_class" << msg_class << "\n";
-  std::cout << "msg_id" << msg_id << "\n";
-  std::cout << "message" << message.buffer << "\n";
-  std::cout << "length" << len << "\n";
   // Send message
   serial_.send_byte(START_BYTE_1);
   serial_.send_byte(START_BYTE_2);
@@ -105,9 +100,11 @@ void UBLOX::set_baudrate(const uint32_t baudrate)
   // Now that we have the right baudrate, let's configure the thing
   memset(&out_message_, 0, sizeof(CFG_PRT_t));
   out_message_.CFG_PRT.portID = CFG_PRT_t::PORT_USB;
+  std::cout << "portID!!!!!!!!!!!!!!!!= " << out_message_.CFG_PRT.portID << "\n";
   out_message_.CFG_PRT.baudrate = baudrate;
   //out_message_.CFG_PRT.inProtoMask = CFG_PRT_t::IN_RTCM3;
   out_message_.CFG_PRT.inProtoMask = CFG_PRT_t::IN_UBX | CFG_PRT_t::IN_NMEA | CFG_PRT_t::IN_RTCM | CFG_PRT_t::IN_RTCM3;
+  std::cout << "inProtoMask!!!!!!!!!!!!!!!!= " << out_message_.CFG_PRT.inProtoMask << "\n";
   out_message_.CFG_PRT.outProtoMask = CFG_PRT_t::OUT_UBX | CFG_PRT_t::OUT_NMEA | CFG_PRT_t::OUT_RTCM3;
   //out_message_.CFG_PRT.outProtoMask = CFG_PRT_t::OUT_RTCM3;
   out_message_.CFG_PRT.mode = CFG_PRT_t::CHARLEN_8BIT | CFG_PRT_t::PARITY_NONE | CFG_PRT_t::STOP_BITS_1;
@@ -197,6 +194,7 @@ void UBLOX::read_cb(uint8_t byte)
     parse_state_ = GOT_LENGTH2;
     if (length_ > UBLOX_BUFFER_SIZE)
     {
+      std::cout << "the message is too big" << "\n";
       num_errors_++;
       parse_state_ = START;
       return;
@@ -300,7 +298,11 @@ bool UBLOX::decode_message()
     {
     default:
       DBG("%d\n", message_type_);
-      std::cout << "CFG_VALGET = " << cfg_get_message_.cfgData << "\n";
+      std::cout << "version = " << cfg_get_message_.version << "\n";
+      std::cout << "layer = " << cfg_get_message_.layer << "\n";
+      std::cout << "reserved1 = " << cfg_get_message_.reserved1 << "\n";
+      std::cout << "keys = " << cfg_get_message_.cfgDataKey << "\n";
+      std::cout << "cfgData!!!!!!!!!!!!!!!!!!!11 = " << cfg_get_message_.cfgData.byte << "\n";
       break;
     }
     break;
@@ -378,11 +380,26 @@ void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, cons
 
 void UBLOX::config()
 {
-  
+  bool conf_set = 1; //use 0 for getting only 
+  //in_message_.CFG_VALGET.cfgData = 0; //clear value
+
+  if (conf_set == 1)
+  {
+    memset(&out_message_, 0, sizeof(CFG_VALGET_t));
+    out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
+    out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
+    out_message_.CFG_VALSET.cfgData.byte = CFG_VALSET_t::VALSET_DGNSSMODE | CFG_VALSET_t::VALSET_float;
+
+    // std::cout << "version = " << out_message_.CFG_VALGET.version << "\n";
+    // std::cout << "layer = " << out_message_.CFG_VALGET.layer << "\n";
+    std::cout << "cfgData = " << (int)out_message_.CFG_VALSET.cfgData.byte << "\n";
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+  }
+
   memset(&out_message_, 0, sizeof(CFG_VALGET_t));
   out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
   out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
-  out_message_.CFG_VALGET.keys = CFG_VALGET_t::VALGET_MSG_NAV_STATUS;
+  out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::VALGET_DGNSSMODE;
 
   // std::cout << "version = " << out_message_.CFG_VALGET.version << "\n";
   // std::cout << "layer = " << out_message_.CFG_VALGET.layer << "\n";
@@ -390,4 +407,3 @@ void UBLOX::config()
   send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
 
 }
-
