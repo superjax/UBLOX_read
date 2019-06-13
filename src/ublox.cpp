@@ -4,8 +4,10 @@
 using namespace std::chrono;
 
 #define DEG2RAD (3.14159 / 180.0)
-#define DBG(...) fprintf(stderr, __VA_ARGS__)
-//#define DBG(...)
+//#define DBG(...) fprintf(stderr, __VA_ARGS__)
+#define DBG(...)
+#define DBG2(...) fprintf(stderr, __VA_ARGS__)
+//#define DBG2(...)
 
 UBLOX::UBLOX(std::string port) :
   serial_(port, 115200)
@@ -100,15 +102,12 @@ void UBLOX::set_baudrate(const uint32_t baudrate)
   // Now that we have the right baudrate, let's configure the thing
   memset(&out_message_, 0, sizeof(CFG_PRT_t));
   out_message_.CFG_PRT.portID = CFG_PRT_t::PORT_USB;
-  std::cout << "portID!!!!!!!!!!!!!!!!= " << out_message_.CFG_PRT.portID << "\n";
   out_message_.CFG_PRT.baudrate = baudrate;
-  //out_message_.CFG_PRT.inProtoMask = CFG_PRT_t::IN_RTCM3;
   out_message_.CFG_PRT.inProtoMask = CFG_PRT_t::IN_UBX | CFG_PRT_t::IN_NMEA | CFG_PRT_t::IN_RTCM | CFG_PRT_t::IN_RTCM3;
-  std::cout << "inProtoMask!!!!!!!!!!!!!!!!= " << out_message_.CFG_PRT.inProtoMask << "\n";
   out_message_.CFG_PRT.outProtoMask = CFG_PRT_t::OUT_UBX | CFG_PRT_t::OUT_NMEA | CFG_PRT_t::OUT_RTCM3;
-  //out_message_.CFG_PRT.outProtoMask = CFG_PRT_t::OUT_RTCM3;
   out_message_.CFG_PRT.mode = CFG_PRT_t::CHARLEN_8BIT | CFG_PRT_t::PARITY_NONE | CFG_PRT_t::STOP_BITS_1;
   out_message_.CFG_PRT.flags = 0;
+  DBG2("send buadrate\n");
   send_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_PRT_t));
   usleep(10000);
   serial_.set_baud_rate(baudrate);
@@ -121,6 +120,7 @@ void UBLOX::set_dynamic_mode()
   out_message_.CFG_NAV5.mask = CFG_NAV5_t::MASK_DYN;
   out_message_.CFG_NAV5.dynModel = CFG_NAV5_t::DYNMODE_AIRBORNE_4G;
   DBG("Setting dynamic mode\n");
+  DBG2("send dynamic mode\n");
   send_message(CLASS_CFG, CFG_NAV5, out_message_, sizeof(CFG_NAV5_t));
 }
 
@@ -131,6 +131,7 @@ void UBLOX::set_nav_rate(uint8_t period_ms)
   out_message_.CFG_RATE.navRate = 1;
   out_message_.CFG_RATE.timeRef = CFG_RATE_t::TIME_REF_GPS;
   DBG("Setting nav rate to %d\n", period_ms);
+  DBG2("send nav rate\n");
   send_message(CLASS_CFG, CFG_RATE, out_message_, sizeof(CFG_RATE_t));
 }
 
@@ -141,6 +142,7 @@ void UBLOX::enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate)
   out_message_.CFG_MSG.msgID = msg_id;
   out_message_.CFG_MSG.rate = rate;
   DBG("Requesting %x:%x message at %d hz\n", msg_cls, msg_id, rate);
+  DBG2("send enable message\n");
   send_message(CLASS_CFG, CFG_MSG, out_message_, sizeof(CFG_MSG_t));
 }
 
@@ -267,7 +269,6 @@ bool UBLOX::decode_message()
   if (ck_a != ck_a_ || ck_b != ck_b_)
     return false;
 
-  num_messages_received_++;
   DBG("recieved message %d: ", num_messages_received_);
 
   // Parse the payload
@@ -302,7 +303,7 @@ bool UBLOX::decode_message()
       std::cout << "layer = " << cfg_get_message_.layer << "\n";
       std::cout << "reserved1 = " << cfg_get_message_.reserved1 << "\n";
       std::cout << "keys = " << cfg_get_message_.cfgDataKey << "\n";
-      std::cout << "cfgData!!!!!!!!!!!!!!!!!!!11 = " << cfg_get_message_.cfgData.byte << "\n";
+      std::cout << "____________________________ cfgData = " << (int)cfg_get_message_.cfgData << "\n";
       break;
     }
     break;
@@ -380,7 +381,7 @@ void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, cons
 
 void UBLOX::config()
 {
-  bool conf_set = 1; //use 0 for getting only 
+  bool conf_set = 1; //use 0 for getting only
   //in_message_.CFG_VALGET.cfgData = 0; //clear value
 
   if (conf_set == 1)
@@ -388,11 +389,13 @@ void UBLOX::config()
     memset(&out_message_, 0, sizeof(CFG_VALGET_t));
     out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData.byte = CFG_VALSET_t::VALSET_DGNSSMODE | CFG_VALSET_t::VALSET_float;
-
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_DGNSSMODE;
+    out_message_.CFG_VALSET.cfgData = CFG_VALSET_t::VALSET_fixed;
     // std::cout << "version = " << out_message_.CFG_VALGET.version << "\n";
     // std::cout << "layer = " << out_message_.CFG_VALGET.layer << "\n";
-    std::cout << "cfgData = " << (int)out_message_.CFG_VALSET.cfgData.byte << "\n";
+    std::cout << "________________________cfgData = " << out_message_.CFG_VALSET.cfgData << "\n";
+    std::cout << "________________________size = " << sizeof(CFG_VALSET_t) << "\n";
+    DBG2("valset\n");
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
   }
 
@@ -404,6 +407,7 @@ void UBLOX::config()
   // std::cout << "version = " << out_message_.CFG_VALGET.version << "\n";
   // std::cout << "layer = " << out_message_.CFG_VALGET.layer << "\n";
   // std::cout << "keys = " << out_message_.CFG_VALGET.keys << "\n";
+  DBG2("VALGET\n");
   send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
 
 }

@@ -273,28 +273,24 @@ public:
       VALGET_USB_ENABLED = 0x10650001,
       VALGET_I2C_ENABLED = 0x10510003,
       VALGET_DGNSSMODE = 0x20140011, //CFG-NAVHPG-DGNSSMODE Differential corrections mode
+      VALGET_FIXMODE = 0x20110011,
+      VALGET_INIFIX3D = 0x10110013,
+      VALGET_WKNROLLOVER = 0x30110017,
     };
 
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
     uint8_t layer;
     uint8_t reserved1[2];
     uint32_t cfgDataKey;
-    typedef union
-    {
-        uint8_t byte;
-        uint16_t half;
-        uint32_t word;
-        uint64_t long_word;
-    } uCfgData;
-    uCfgData cfgData; //struggling to get this to work without using uint32 or greater and still it is inconsistent
+    uint64_t cfgData;
   }__attribute__((packed)) CFG_VALGET_t;
 
     typedef struct {
     enum {
-      VALSET_RAM = 0,
-      VALSET_BBR = 1,
-      VALSET_FLASH = 2,
-      VALSET_DEFAULT = 7
+      VALSET_RAM = 0b00000001,
+      VALSET_BBR = 0b00000010,
+      VALSET_FLASH = 0b00000100,
+      VALSET_DEFAULT = 0b01000000,
     };
 
     enum {
@@ -303,10 +299,8 @@ public:
     };
 
     enum {
-      // VALSET_float = 2,
-      // VALSET_fixed  = 3,      
-      VALSET_float = 0b00000010,
-      VALSET_fixed  = 0b00000011,     
+       VALSET_float = 2,
+       VALSET_fixed  = 3,
     };
 
     enum {
@@ -315,20 +309,12 @@ public:
       VALSET_DGNSSMODE = 0x20140011, //CFG-NAVHPG-DGNSSMODE Differential corrections mode
     };
 
-    uint16_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
+    uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
     uint8_t layer;
     uint8_t reserved1[2];
     uint32_t cfgDataKey;
-    
-    typedef union
-    {
-        uint8_t byte;
-        uint16_t half;
-        uint32_t word;
-        uint64_t long_word;
-    } uCfgData;
+    uint8_t cfgData;
 
-    uCfgData cfgData;
   }__attribute__((packed)) CFG_VALSET_t;
   
   typedef struct {
@@ -477,6 +463,7 @@ private:
   uint8_t ck_b_;
   uint32_t num_errors_ = 0;
   uint32_t num_messages_received_ = 0;
+  int message_sent = 0;
   
   double lla_[3];
   float vel_[3];
