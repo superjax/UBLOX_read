@@ -3,9 +3,16 @@
 #include "ublox.h"
 
 
-int main()
+int main(int argc, char** argv)
 {
-  UBLOX ubx("/dev/ttyACM0");
+    //This is used to select the port and is useful for using more than one.
+  std::string port = "/dev/ttyACM0";
+  if (argc > 1)
+  {
+    port = argv[1];
+  }
+  std::cout << "opening " << port << std::endl;
+  UBLOX ubx(port);
   ubx.init();
 
   double lla[3];
