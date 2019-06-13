@@ -7,13 +7,15 @@ int main(int argc, char** argv)
 {
     //This is used to select the port and is useful for using more than one.
   std::string port = "/dev/ttyACM0";
+  int rover = 0;
   if (argc > 1)
   {
+    rover = 1;
     port = argv[1];
   }
   std::cout << "opening " << port << std::endl;
   UBLOX ubx(port);
-  ubx.init();
+  ubx.init(rover);
 
   double lla[3];
   float uvw[3];

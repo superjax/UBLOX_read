@@ -9,7 +9,6 @@
 
 #include <iostream>
 
-
 class UBLOX {
 public:
     UBLOX(std::string port);
@@ -245,6 +244,7 @@ public:
       OUT_NMEA  = 0b00000010,
       OUT_RTCM3 = 0b00100000,
     };
+
     uint8_t portID;
     uint8_t reserved1;
     uint16_t txReady;
@@ -278,6 +278,36 @@ public:
       VALGET_WKNROLLOVER = 0x30110017,
     };
 
+    enum { //incoming messages enabled
+        VALGET_IN_UBX = 0x10770001, //CFG-USBINPROT-UBX
+        VALGET_IN_NMEA = 0x10770002, //CFG-USBINPROT-NMEA
+        VALGET_IN_RTCM3X = 0x10770004, //CFG-USBINPROT-RTCM3X
+    };
+
+    enum { //outgoing messages enabled
+        VALGET_OUT_UBX = 0x10780001, //CFG-USBOUTPROT-UBX
+        VALGET_OUT_NMEA = 0x10780002, //CFG-USBOUTPROT-NMEA
+        VALGET_OUT_RTCM3X = 0x10780004, //CFG-USBOUTPROT-RTCM3X
+    };
+
+    enum { //outgoing message rates for RTCM 3x on usb type U1
+        //suggested messages for stationary base
+        RTCM_1005USB = 0x209102c0, //CFG-MSGOUT-RTCM_3X_TYPE1005_USB
+        RTCM_1074USB = 0x20910361, //CFG-MSGOUT-RTCM_3X_TYPE1074_USB
+        RTCM_1084USB = 0x20910366, //CFG-MSGOUT-RTCM_3X_TYPE1084_USB
+        RTCM_1094USB = 0x2091036b, //CFG-MSGOUT-RTCM_3X_TYPE1094_USB
+        RTCM_1124USB = 0x20910370, //CFG-MSGOUT-RTCM_3X_TYPE1124_USB
+        RTCM_1230USB = 0x20910306, //CFG-MSGOUT-RTCM_3X_TYPE1230_USB
+        //suggested messages for mobile base
+        RTCM_4072_0USB = 0x20910301, //CFG-MSGOUT-RTCM_3X_TYPE4072_0_USB
+        RTCM_4072_1USB = 0x20910384, //CFG-MSGOUT-RTCM_3X_TYPE4072_1_USB
+        RTCM_1077USB = 0x209102cf, //CFG-MSGOUT-RTCM_3X_TYPE1077_USB
+        RTCM_1087USB = 0x209102d4, //CFG-MSGOUT-RTCM_3X_TYPE1087_USB
+        RTCM_1097USB = 0x2091031b, //CFG-MSGOUT-RTCM_3X_TYPE1097_USB
+        RTCM_1127USB = 0x209102d9, //CFG-MSGOUT-RTCM_3X_TYPE1127_USB
+        //!!!!also use RTCM_1230USB above!!!///
+    };
+
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
     uint8_t layer;
     uint8_t reserved1[2];
@@ -307,6 +337,39 @@ public:
       VALSET_MSG_NAV_STATUS = 0x2091001d, //CFG-MSGOUT-UBX_NAV_STATUS_USB, tells the output rate of ubx-nav-status on usb    
       VALSET_I2C_ENABLED_data = 0x10510003, //this is concatenated.  Should probably change to a more permanent format
       VALSET_DGNSSMODE = 0x20140011, //CFG-NAVHPG-DGNSSMODE Differential corrections mode
+    };
+
+    enum { //incoming messages enabled
+        VALSET_IN_UBX = 0x10770001, //CFG-USBINPROT-UBX
+        VALSET_IN_NMEA = 0x10770002, //CFG-USBINPROT-NMEA
+        VALSET_IN_RTCM3X = 0x10770004, //CFG-USBINPROT-RTCM3X
+    };
+
+    enum { //outgoing messages enabled
+        VALSET_OUT_UBX = 0x10780001, //CFG-USBOUTPROT-UBX
+        VALSET_OUT_NMEA = 0x10780002, //CFG-USBOUTPROT-NMEA
+        VALSET_OUT_RTCM3X = 0x10780004, //CFG-USBOUTPROT-RTCM3X
+    };
+
+    enum { //outgoing message rates for RTCM 3x on usb type U1
+        //suggested messages for stationary base
+        RTCM_1005USB = 0x209102c0, //CFG-MSGOUT-RTCM_3X_TYPE1005_USB
+        RTCM_1074USB = 0x20910361, //CFG-MSGOUT-RTCM_3X_TYPE1074_USB
+        RTCM_1084USB = 0x20910366, //CFG-MSGOUT-RTCM_3X_TYPE1084_USB
+        RTCM_1094USB = 0x2091036b, //CFG-MSGOUT-RTCM_3X_TYPE1094_USB
+        RTCM_1124USB = 0x20910370, //CFG-MSGOUT-RTCM_3X_TYPE1124_USB
+        RTCM_1230USB = 0x20910306, //CFG-MSGOUT-RTCM_3X_TYPE1230_USB
+        //suggested messages for mobile base
+        RTCM_4072_0USB = 0x20910301, //CFG-MSGOUT-RTCM_3X_TYPE4072_0_USB
+        RTCM_4072_1USB = 0x20910384, //CFG-MSGOUT-RTCM_3X_TYPE4072_1_USB
+        RTCM_1077USB = 0x209102cf, //CFG-MSGOUT-RTCM_3X_TYPE1077_USB
+        RTCM_1087USB = 0x209102d4, //CFG-MSGOUT-RTCM_3X_TYPE1087_USB
+        RTCM_1097USB = 0x2091031b, //CFG-MSGOUT-RTCM_3X_TYPE1097_USB
+        RTCM_1127USB = 0x209102d9, //CFG-MSGOUT-RTCM_3X_TYPE1127_USB
+        //!!!!also use RTCM_1230USB above!!!///
+    };
+    enum {
+        RATE_10 = 10,
     };
 
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
@@ -419,8 +482,9 @@ public:
     NAV_VELECEF_t NAV_VELECEF;
   } UBX_message_t;
   
-  void init();
-  void config();
+  void init(int rover);
+  void config_rover();
+  void config_base();
   
   void read(double* lla, float* vel, uint8_t &fix_type, uint32_t& t_ms);
   void read_cb(uint8_t byte);
@@ -481,3 +545,4 @@ private:
 };
 
 #endif // UBLOX_H
+
