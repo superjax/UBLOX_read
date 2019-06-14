@@ -105,6 +105,7 @@ int main(int argc, char** argv)
              lla[0], lla[1], lla[2],
           uvw[0], uvw[1], uvw[2]);
       std::cout.flush();
+      udp();
     }
   }
 }
