@@ -9,6 +9,9 @@
 
 #include <iostream>
 
+int udp();
+void callback(uint8_t, size_t);
+
 class UBLOX {
 public:
     UBLOX(std::string port);
