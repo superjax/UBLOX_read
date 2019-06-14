@@ -4,8 +4,8 @@
 using namespace std::chrono;
 
 #define DEG2RAD (3.14159 / 180.0)
-//#define DBG(...) fprintf(stderr, __VA_ARGS__)
-#define DBG(...)
+#define DBG(...) fprintf(stderr, __VA_ARGS__)
+//#define DBG(...)
 
 UBLOX::UBLOX(std::string port) :
   serial_(port, 115200)
@@ -271,6 +271,7 @@ bool UBLOX::decode_message()
   if (ck_a != ck_a_ || ck_b != ck_b_)
     return false;
 
+  num_messages_received_++;
   DBG("recieved message %d: ", num_messages_received_);
 
   // Parse the payload
@@ -316,6 +317,9 @@ bool UBLOX::decode_message()
     case NAV_PVT:
       new_data_ = true;
       nav_message_ = in_message_.NAV_PVT;
+
+//      in_message_.NAV_PVT.flags = (int)1;
+//      std::cout << "flags = " << in_message_.NAV_PVT.flags << "\n";
       DBG("PVT\n");
       break;
     case NAV_POSECEF:
@@ -335,6 +339,9 @@ bool UBLOX::decode_message()
     break;
   default:
     DBG("%d_%d\n", message_class_, message_type_);
+    break;
+  case CLASS_RTCM:
+    DBG("RTCM_");
     break;
   }
   return true;
@@ -387,7 +394,7 @@ void UBLOX::config_rover()
   bool conf_set = 0; //use 1 to set cfg data
   if (conf_set == 1)
   {
-    memset(&out_message_, 0, sizeof(CFG_VALGET_t));
+    memset(&out_message_, 0, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1077USB;
@@ -395,14 +402,14 @@ void UBLOX::config_rover()
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
   }
 
-  bool conf_get = 0; //use 1 to get conf data
+  bool conf_get = 1; //use 1 to get conf data
   if (conf_get == 1)
   {
     in_message_.CFG_VALGET.cfgData = 0; //clear value
     memset(&out_message_, 0, sizeof(CFG_VALGET_t));
     out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
     out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
-    out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::RTCM_1077USB;
+    out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::VALGET_IN_RTCM3X;
     send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
   }
 
@@ -415,13 +422,29 @@ void UBLOX::config_base()
   bool conf_set = 1; //use 1 to set cfg data
   if (conf_set == 1)
   {
-    memset(&out_message_, 0, sizeof(CFG_VALGET_t));
+    memset(&out_message_, 0, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1077USB;
     out_message_.CFG_VALSET.cfgData = 10;
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_0USB;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-  }
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_1USB;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1077USB;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1087USB;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1097USB;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1127USB;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1230USB;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_TMODE_MODE;
+    out_message_.CFG_VALSET.cfgData = 1; // 1: configured for survey in mode
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+
+}
 
   bool conf_get = 1; //use 1 to get conf data
   if (conf_get == 1)
@@ -430,8 +453,7 @@ void UBLOX::config_base()
     memset(&out_message_, 0, sizeof(CFG_VALGET_t));
     out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
     out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
-    out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::RTCM_1077USB;
+    out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::VALGET_IN_UBX;
     send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
   }
-
 }
