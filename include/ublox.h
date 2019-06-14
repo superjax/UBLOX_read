@@ -44,6 +44,7 @@ public:
     CLASS_ESF = 0x10, //    External Sensor Fusion Messages: External Sensor Measurements and Status Information
     CLASS_MGA = 0x13, //    Multiple GNSS Assistance Messages: Assistance data for various GNSS
     CLASS_LOG = 0x21, //    Logging Messages: Log creation, deletion, info and retrieva
+    CLASS_RTCM = 0XF5, //   RTCM messages (definitely for output possibly for all of the input messages)
   };
   
   enum {
@@ -131,6 +132,21 @@ public:
     NAV_TIMEUTC = 0x21,		// Periodic/Polled UTC Time Solution
     NAV_VELECEF = 0x11,		// Periodic/Polled Velocity Solution in ECEF
     NAV_VELNED = 0x12,		// Periodic/Polled Velocity Solution in NED
+  };
+
+  enum {
+    RTCM_REF_STATION = 0x05, // 1005 Stationary RTK reference station ARP
+    RTCM_GPS_MSM4 = 0x4A, // 1074 GPS MSM4
+    RTCM_GPS_MSM7 = 0x4D, //1077 GPS MSM7
+    RTCM_GLONASS_MSM4 = 0x54, //1084 GLONASS MSM4
+    RTCM_GLONAS_MSM7 = 0x57, //1087 GLONASS MSM7
+    RTCM_GALILEO_MSM4 = 0x5E, //1094 Galileo MSM4
+    RTCM_GALILEO_MSM7 = 0X61, //1097 Galileo MSM7
+    RTCM_BEIDOU_MSM4 = 0x7C, //1124 BeiDou MSM4
+    RTCM_BEIDOU_MSM7 = 0x7F, //1127 BeiDou MSM7
+    RTCM_GLONASS_cpb = 0xE6, //1230 Glonass code-phas biases
+    RTCM_REF_PVT = 0xFE, //4072, sub-type 0 Reference station PVT (u-blox proprietary RTCM Message)
+    RTCM_REF_INFO = 0xFD, // 4072, sub-type 1 Additional reference station information (u-blox proprietary RTCM Message)
   };
   
   typedef enum {
@@ -290,8 +306,12 @@ public:
         VALGET_OUT_RTCM3X = 0x10780004, //CFG-USBOUTPROT-RTCM3X
     };
 
+    enum { //outgoing messages enabled
+        VALGET_TMODE_MODE = 0x20030001, //Receiver mode (BASE)
+    };
+
     enum { //outgoing message rates for RTCM 3x on usb type U1
-        //suggested messages for stationary base
+        //suggested messages for stationary base pg 12 actual integration manual
         RTCM_1005USB = 0x209102c0, //CFG-MSGOUT-RTCM_3X_TYPE1005_USB
         RTCM_1074USB = 0x20910361, //CFG-MSGOUT-RTCM_3X_TYPE1074_USB
         RTCM_1084USB = 0x20910366, //CFG-MSGOUT-RTCM_3X_TYPE1084_USB
@@ -349,6 +369,10 @@ public:
         VALSET_OUT_UBX = 0x10780001, //CFG-USBOUTPROT-UBX
         VALSET_OUT_NMEA = 0x10780002, //CFG-USBOUTPROT-NMEA
         VALSET_OUT_RTCM3X = 0x10780004, //CFG-USBOUTPROT-RTCM3X
+    };
+
+    enum {
+        VALSET_TMODE_MODE = 0x20030001, //Receiver mode (BASE)
     };
 
     enum { //outgoing message rates for RTCM 3x on usb type U1
