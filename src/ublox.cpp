@@ -34,8 +34,6 @@ void UBLOX::init(int rover)
 
   if (!detect_baudrate())
     return;
-  
-
   // Otherwise, Configure the GPS
   set_baudrate(115200);
   set_dynamic_mode();
@@ -45,15 +43,8 @@ void UBLOX::init(int rover)
   enable_message(CLASS_NAV, NAV_VELECEF, 10);
   enable_message(CLASS_CFG, CFG_VALGET, 10);
   //configure f9p
-  if(rover > 0)
-  {
-      config_rover();
-  }
-  else
-  {
-      config_base();
-  }
-
+  config(rover);
+  //DBG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!RELPOSNED %i \n", (int)in_message_.NAV_RELPOSNED.flags);
 }
 
 bool UBLOX::detect_baudrate()
@@ -265,6 +256,8 @@ void UBLOX::read(double* lla, float* vel, uint8_t& fix_type, uint32_t& t_ms)
 
 bool UBLOX::decode_message()
 {
+
+  DBG("RTCM = %d \n", in_message_.RTCM.buf);
   // First, check the checksum
   uint8_t ck_a, ck_b;
   calculate_checksum(message_class_, message_type_, length_, in_message_, ck_a, ck_b);
@@ -302,9 +295,6 @@ bool UBLOX::decode_message()
     {
     default:
       DBG("%d\n", message_type_);
-      std::cout << "version = " << cfg_get_message_.version << "\n";
-      std::cout << "layer = " << cfg_get_message_.layer << "\n";
-      std::cout << "keys = " << cfg_get_message_.cfgDataKey << "\n";
       std::cout << "____________________________ cfgData = " << (int)cfg_get_message_.cfgData << "\n";
       break;
     }
@@ -318,8 +308,6 @@ bool UBLOX::decode_message()
       new_data_ = true;
       nav_message_ = in_message_.NAV_PVT;
 
-//      in_message_.NAV_PVT.flags = (int)1;
-//      std::cout << "flags = " << in_message_.NAV_PVT.flags << "\n";
       DBG("PVT\n");
       break;
     case NAV_POSECEF:
@@ -332,16 +320,18 @@ bool UBLOX::decode_message()
       vel_ecef_ = in_message_.NAV_VELECEF;
       DBG("VELECEF\n");
       break;
+      DBG("NAV_SIG\n");
+      break;
     default:
       DBG("%d\n", message_type_);
       break;
     }
     break;
+  case CLASS_RTCM:
+    DBG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!RTCM_%x-%x\n", message_class_, message_type_);
+    break;
   default:
     DBG("%d_%d\n", message_class_, message_type_);
-    break;
-  case CLASS_RTCM:
-    DBG("RTCM_");
     break;
   }
   return true;
@@ -387,37 +377,8 @@ void UBLOX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, cons
   }
 }
 
-void UBLOX::config_rover()
+void UBLOX::config(int rover)
 {
-  DBG("configuring rover \n");
-
-  bool conf_set = 0; //use 1 to set cfg data
-  if (conf_set == 1)
-  {
-    memset(&out_message_, 0, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
-    out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1077USB;
-    out_message_.CFG_VALSET.cfgData = 20;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-  }
-
-  bool conf_get = 1; //use 1 to get conf data
-  if (conf_get == 1)
-  {
-    in_message_.CFG_VALGET.cfgData = 0; //clear value
-    memset(&out_message_, 0, sizeof(CFG_VALGET_t));
-    out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
-    out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
-    out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::VALGET_IN_RTCM3X;
-    send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
-  }
-
-}
-
-void UBLOX::config_base()
-{
-  DBG("configuring base \n");
 
   bool conf_set = 1; //use 1 to set cfg data
   if (conf_set == 1)
@@ -425,7 +386,7 @@ void UBLOX::config_base()
     memset(&out_message_, 0, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData = 10;
+    out_message_.CFG_VALSET.cfgData = 1; //output every cfg epoch?
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_0USB;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_1USB;
@@ -440,9 +401,40 @@ void UBLOX::config_base()
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1230USB;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_TMODE_MODE;
-    out_message_.CFG_VALSET.cfgData = 1; // 1: configured for survey in mode
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+
+//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_SIG;
+//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_SOL;
+//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_PVT;
+//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_POSLLH;
+//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_RELPOSNED;
+//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_STATUS;
+//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_SVIN;
+//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+
+//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RXM_RTCM_USB;
+//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_NMEA_HP;
+//    out_message_.CFG_VALSET.cfgData = 1;
+//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+//    out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_BBR;
+//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_DGNSSMODE;
+//    out_message_.CFG_VALSET.cfgData = 3;
+//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+
+    if(rover > 0)
+    {
+        config_rover();
+    }
+    else
+    {
+        config_base();
+    }
 
 }
 
@@ -453,7 +445,49 @@ void UBLOX::config_base()
     memset(&out_message_, 0, sizeof(CFG_VALGET_t));
     out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
     out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
-    out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::VALGET_IN_UBX;
+    out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::UBX_NAV_PVT;
     send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
   }
+}
+
+void UBLOX::config_rover()
+{
+  DBG("configuring rover \n");
+
+  bool conf_set = 0; //use 1 to set cfg data
+  if (conf_set == 1)
+  {
+
+  }
+
+  bool conf_get = 1; //use 1 to get conf data
+  if (conf_get == 1)
+  {
+
+  }
+
+}
+
+void UBLOX::config_base()
+{
+  DBG("configuring base \n");
+
+  bool conf_set = 1; //use 1 to set cfg data
+  if (conf_set == 1)
+  {
+
+  }
+
+  bool conf_get = 1; //use 1 to get conf data
+  if (conf_get == 1)
+  {
+
+  }
+}
+
+int UBLOX::get_RTCM()
+{
+    uint8_t f = in_message_.RTCM.buf;
+
+    return f;
 }

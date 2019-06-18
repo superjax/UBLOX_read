@@ -132,6 +132,7 @@ public:
     NAV_TIMEUTC = 0x21,		// Periodic/Polled UTC Time Solution
     NAV_VELECEF = 0x11,		// Periodic/Polled Velocity Solution in ECEF
     NAV_VELNED = 0x12,		// Periodic/Polled Velocity Solution in NED
+    NAV_SIG = 0x43,         // Periodic/Polled signal information
   };
 
   enum {
@@ -292,6 +293,7 @@ public:
       VALGET_FIXMODE = 0x20110011,
       VALGET_INIFIX3D = 0x10110013,
       VALGET_WKNROLLOVER = 0x30110017,
+      VALGET_NMEA_HP = 0x10930006, //Enable high precision mode
     };
 
     enum { //incoming messages enabled
@@ -326,6 +328,18 @@ public:
         RTCM_1097USB = 0x2091031b, //CFG-MSGOUT-RTCM_3X_TYPE1097_USB
         RTCM_1127USB = 0x209102d9, //CFG-MSGOUT-RTCM_3X_TYPE1127_USB
         //!!!!also use RTCM_1230USB above!!!///
+        RXM_RTCM_USB = 0x2091026b, //Output rate of the UBX-RXM-RTCM message on port USB
+    };
+
+    enum { //outgoing message rates for RTCM 3x on usb type U1
+
+        UBX_NAV_SIG = 0x20910348, //Output rate of the UBX-NAV-SIG message on port USB
+        UBX_NAV_SOL = 0x20910004, //
+        UBX_NAV_PVT = 0x20910009, //Output rate of the UBX-NAV-PVT message on port USB
+        UBX_NAV_POSLLH = 0x2091002c, //
+        UBX_NAV_RELPOSNED = 0x20910090, //
+        UBX_NAV_STATUS = 0x2091001d, //Output rate of the UBX-NAV-STATUS message on port USB
+        UBX_NAV_SVIN = 0x2091008b, //Output rate of the UBX-NAV-SVIN message on port USB
     };
 
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
@@ -357,6 +371,7 @@ public:
       VALSET_MSG_NAV_STATUS = 0x2091001d, //CFG-MSGOUT-UBX_NAV_STATUS_USB, tells the output rate of ubx-nav-status on usb    
       VALSET_I2C_ENABLED_data = 0x10510003, //this is concatenated.  Should probably change to a more permanent format
       VALSET_DGNSSMODE = 0x20140011, //CFG-NAVHPG-DGNSSMODE Differential corrections mode
+      VALSET_NMEA_HP = 0x10930006, //Enable high precision mode
     };
 
     enum { //incoming messages enabled
@@ -391,9 +406,22 @@ public:
         RTCM_1097USB = 0x2091031b, //CFG-MSGOUT-RTCM_3X_TYPE1097_USB
         RTCM_1127USB = 0x209102d9, //CFG-MSGOUT-RTCM_3X_TYPE1127_USB
         //!!!!also use RTCM_1230USB above!!!///
+        RXM_RTCM_USB = 0x2091026b, //Output rate of the UBX-RXM-RTCM message on port USB
     };
     enum {
         RATE_10 = 10,
+    };
+
+    enum {
+
+        UBX_NAV_SIG = 0x20910348, //Output rate of the UBX-NAV-SIG message on port USB
+        UBX_NAV_SOL = 0x20910004, //
+        UBX_NAV_PVT = 0x20910009, //Output rate of the UBX-NAV-PVT message on port USB
+        UBX_NAV_POSLLH = 0x2091002c, //
+        UBX_NAV_RELPOSNED = 0x20910090, //
+        UBX_NAV_STATUS = 0x2091001d, //Output rate of the UBX-NAV-STATUS message on port USB
+        UBX_NAV_SVIN = 0x2091008b, //Output rate of the UBX-NAV-SVIN message on port USB
+
     };
 
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
@@ -490,7 +518,65 @@ public:
     int32_t ecefVZ; // cm ECEF Z velocity
     uint32_t sAcc; // cm Speed Accuracy Estimate
   }__attribute__((packed)) NAV_VELECEF_t;
-  
+  typedef struct
+  {
+    uint8_t flags;
+  }__attribute__((packed)) NAV_RELPOSNED_t;
+  typedef struct
+  {
+//      uint8_t* buf;
+      uint8_t buf;
+  }__attribute__((packed)) RTCM_t;
+
+//  typedef struct
+//  {
+//    uint8_t* buf;
+//  }__attribute__((packed)) RTCM_REF_STATION_t;
+//  typedef struct
+//  {
+//    uint8_t* buf;
+//  }__attribute__((packed)) RTCM_GPS_MSM4_t;
+//  typedef struct
+//  {
+//    uint8_t* buf;
+//  }__attribute__((packed)) RTCM_GPS_MSM7_t;
+//  typedef struct
+//  {
+//    uint8_t* buf;
+//  }__attribute__((packed)) RTCM_GLONASS_MSM4_t;
+//  typedef struct
+//  {
+//    uint8_t* buf;
+//  }__attribute__((packed)) RTCM_GLONAS_MSM7_t;
+//  typedef struct
+//  {
+//    uint8_t* buf;
+//  }__attribute__((packed)) RTCM_GALILEO_MSM4_t;
+//  typedef struct
+//  {
+//    uint8_t* buf;
+//  }__attribute__((packed)) RTCM_GALILEO_MSM7_t;
+//  typedef struct
+//  {
+//    uint8_t* buf;
+//  }__attribute__((packed)) RTCM_BEIDOU_MSM4_t;
+//  typedef struct
+//  {
+//    uint8_t* buf;
+//  }__attribute__((packed)) RTCM_BEIDOU_MSM7_t;
+//  typedef struct
+//  {
+//    uint8_t* buf;
+//  }__attribute__((packed)) RTCM_GLONASS_cpb_t;
+//  typedef struct
+//  {
+//    uint8_t* buf;
+//  }__attribute__((packed)) RTCM_REF_PVT_t;
+//  typedef struct
+//  {
+//    uint8_t* buf;
+//  }__attribute__((packed)) RTCM_REF_INFO_t;
+
   typedef union {
     uint8_t buffer[UBLOX_BUFFER_SIZE];
     ACK_ACK_t ACK_ACK;
@@ -504,11 +590,26 @@ public:
     NAV_PVT_t NAV_PVT;
     NAV_POSECEF_t NAV_POSECEF;
     NAV_VELECEF_t NAV_VELECEF;
+    NAV_RELPOSNED_t NAV_RELPOSNED;
+    RTCM_t RTCM;
+//    RTCM_REF_STATION_t RTCM_REF_STATION;
+//    RTCM_GPS_MSM4_t TCM_GPS_MSM4;
+//    RTCM_GPS_MSM7_t RTCM_GPS_MSM7;
+//    RTCM_GLONASS_MSM4_t RTCM_GLONASS_MSM4;
+//    RTCM_GLONAS_MSM7_t RTCM_GLONAS_MSM7;
+//    RTCM_GALILEO_MSM4_t RTCM_GALILEO_MSM4;
+//    RTCM_GALILEO_MSM7_t RTCM_GALILEO_MSM7;
+//    RTCM_BEIDOU_MSM4_t RTCM_BEIDOU_MSM4;
+//    RTCM_BEIDOU_MSM7_t RTCM_BEIDOU_MSM7;
+//    RTCM_GLONASS_cpb_t RTCM_GLONASS_cpb;
+//    RTCM_REF_PVT_t TCM_REF_PVT;
+//    RTCM_REF_INFO_t TCM_REF_INFO;
   } UBX_message_t;
   
   void init(int rover);
   void config_rover();
   void config_base();
+  void config(int rover);
   
   void read(double* lla, float* vel, uint8_t &fix_type, uint32_t& t_ms);
   void read_cb(uint8_t byte);
@@ -520,6 +621,7 @@ public:
   uint8_t fix_type() const;
   void posECEF(double* pos) const;
   void velECEF(double* vel) const;
+  int get_RTCM();
 
   
 private:
@@ -532,7 +634,7 @@ private:
   bool decode_message();
   void calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len, const UBX_message_t payload, uint8_t &ck_a, uint8_t &ck_b) const;
   bool send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& message, uint16_t len);
-  
+
   uint32_t current_baudrate_ = 115200;
   const uint32_t baudrates[5] = {115200, 19200, 57600, 9600, 38400};
   
