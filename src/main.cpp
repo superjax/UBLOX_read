@@ -21,7 +21,7 @@ void callback(const uint8_t* buf, size_t len)
   }
 }
 
-int udp(int rover)
+int udp(int rover, int message)
 {
     /////////udp communication////
 
@@ -37,8 +37,7 @@ int udp(int rover)
           std::cout << "Failed to initialize UDP port 2" << std::endl;
           return 1;
         }
-
-        char message1[] = "hello world 1!";
+        char message1[] = "RTCM = %d", message;
         udp2.send_bytes((uint8_t*) message1, std::strlen(message1));
 
         // wait for all bytes to be received
@@ -117,7 +116,8 @@ int main(int argc, char** argv)
              lla[0], lla[1], lla[2],
           uvw[0], uvw[1], uvw[2]);
       std::cout.flush();
-      udp(rover);
+      int RTCM = ubx.get_RTCM();
+      udp(rover, RTCM);
     }
   }
 }
