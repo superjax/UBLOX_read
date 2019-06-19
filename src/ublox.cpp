@@ -23,7 +23,6 @@ void UBLOX::init(int rover)
   ck_b_ = 0;
   
   // Find the right baudrate
-  looking_for_nmea_ = true;
   auto cb = [this](const uint8_t* buffer, size_t size)
   {
     for (int i = 0; i < size; i++)
@@ -142,52 +141,170 @@ void UBLOX::enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate)
 
 void UBLOX::read_cb(uint8_t byte)
 {
-  // Look for a valid NMEA packet (do this at the beginning in case
-  // UBX was disabled for some reason) and during autobaud
-  // detection
 
   if (looking_for_nmea_)
   {
-    if (byte == NMEA_START_BYTE2 && prev_byte_ == NMEA_START_BYTE1)
-    {
-      got_message_ = true;
-      looking_for_nmea_ = false;
-    }
+      if (byte == NMEA_START_BYTE2 && prev_byte_ == NMEA_START_BYTE1)
+      {
+          NMEA = true;
+          looking_for_nmea_ = false;
+      }
+      if (NMEA == true)
+      {
+          read_nmea(byte);
+          looking_for_ubx_ = true;
+          looking_for_rtcm_ = true;
+      }
   }
+  if (looking_for_ubx_)
+  {
+      if (byte == START_BYTE_2 && prev_byte_ == START_BYTE_1)
+      {
+          UBX = true;
+          looking_for_rtcm_ = false;
+      }
+      if (UBX == true)
+      {
+          read_ubx(byte);
+      }
+  }
+  if (looking_for_rtcm_)
+  {
+      if (byte == RTCM_START_BYTE)
+      {
+          RTCM = true;
+          looking_for_ubx_ = false;
+      }
+      if (RTCM == true)
+      {
+          read_rtcm(byte);
+      }
+  }
+  prev_byte_ = byte;
+}
 
+void UBLOX::read_nmea(uint8_t byte)
+{
+  // Look for a valid NMEA packet (do this at the beginning in case
+  // UBX was disabled for some reason) and during autobaud
+  // detection
+  got_message_ = true;
+  DBG("_____________________________NMEA\n");
+  looking_for_ubx_ = true;
+  looking_for_rtcm_ = true;
+  NMEA = false;
+}
+
+void UBLOX::read_ubx(uint8_t byte)
+{
+  // handle the UBX packet
+    switch (parse_state_)
+    {
+    case START:
+
+        buffer_head_ = 0;
+        parse_state_ = GOT_START_FRAME;
+        message_class_ = 0;
+        message_type_ = 0;
+        length_ = 0;
+        ck_a_ = 0;
+        ck_b_ = 0;
+        got_message_ = true;
+      break;
+    case GOT_START_FRAME:
+      message_class_ = byte;
+      parse_state_ = GOT_CLASS;
+      break;
+    case GOT_CLASS:
+      message_type_ = byte;
+      parse_state_ = GOT_MSG_ID;
+      break;
+    case GOT_MSG_ID:
+      length_ = byte;
+      parse_state_ = GOT_LENGTH1;
+      break;
+    case GOT_LENGTH1:
+      length_ |= (uint16_t) byte << 8;
+      parse_state_ = GOT_LENGTH2;
+      if (length_ > UBLOX_BUFFER_SIZE)
+      {
+        num_errors_++;
+        parse_state_ = START;
+        return;
+      }
+      break;
+    case GOT_LENGTH2:
+      if (buffer_head_ < length_)
+      {
+        // push the byte onto the data buffer
+        in_message_.buffer[buffer_head_] = byte;
+        if (buffer_head_ == length_-1)
+        {
+          parse_state_ = GOT_PAYLOAD;
+        }
+        buffer_head_++;
+      }
+      break;
+    case GOT_PAYLOAD:
+      ck_a_ = byte;
+      parse_state_ = GOT_CK_A;
+      break;
+    case GOT_CK_A:
+      ck_b_ = byte;
+      parse_state_ = GOT_CK_B;
+      break;
+    default:
+      num_errors_++;
+      break;
+    }
+
+    // If we have a complete packet, then try to parse it
+    if (parse_state_ == GOT_CK_B)
+    {
+      if (decode_message())
+      {
+        parse_state_ = START;
+      }
+      else
+      {
+        // indicate error if it didn't work
+        num_errors_++;
+        DBG("failed to parse message\n");
+        parse_state_ = START;
+      }
+      looking_for_rtcm_ = true;
+      UBX = false;
+    }
+
+}
+
+void UBLOX::read_rtcm(uint8_t byte)
+{
   // handle the UBX packet
   switch (parse_state_)
   {
   case START:
-    if (byte == START_BYTE_2 && prev_byte_ == START_BYTE_1)
-    {
-      looking_for_nmea_ = false;
+
       buffer_head_ = 0;
       parse_state_ = GOT_START_FRAME;
-      message_class_ = 0;
-      message_type_ = 0;
       length_ = 0;
       ck_a_ = 0;
       ck_b_ = 0;
+      ck_c_ = 0;
       got_message_ = true;
-    }
+      DBG("RTCM %d ", byte);
+      num ++;
     break;
   case GOT_START_FRAME:
-    message_class_ = byte;
-    parse_state_ = GOT_CLASS;
-    break;
-  case GOT_CLASS:
-    message_type_ = byte;
-    parse_state_ = GOT_MSG_ID;
-    break;
-  case GOT_MSG_ID:
-    length_ = byte;
-    parse_state_ = GOT_LENGTH1;
+      //length_ = byte; this will be stored in prev_byte and used in next case
+      DBG("%d ", byte);
+      parse_state_ = GOT_LENGTH1;
     break;
   case GOT_LENGTH1:
-    length_ |= (uint16_t) byte << 8;
+    length_ = ((prev_byte_ & 0x3)<<8) | byte;
+    DBG("%d ", byte);
     parse_state_ = GOT_LENGTH2;
-    if (length_ > UBLOX_BUFFER_SIZE)
+    if (length_ > RTCM_BUFFER_SIZE)
     {
       std::cout << "the message is too big" << "\n";
       num_errors_++;
@@ -198,6 +315,7 @@ void UBLOX::read_cb(uint8_t byte)
   case GOT_LENGTH2:
     if (buffer_head_ < length_)
     {
+      DBG("%d ", byte);
       // push the byte onto the data buffer
       in_message_.buffer[buffer_head_] = byte;
       if (buffer_head_ == length_-1)
@@ -208,35 +326,32 @@ void UBLOX::read_cb(uint8_t byte)
     }
     break;
   case GOT_PAYLOAD:
+    DBG("%d ", byte);
     ck_a_ = byte;
     parse_state_ = GOT_CK_A;
     break;
   case GOT_CK_A:
+    DBG("%d ", byte);
     ck_b_ = byte;
     parse_state_ = GOT_CK_B;
     break;
+  case GOT_CK_B:
+    DBG("%d \n", byte);
+    ck_b_ = byte;
+    parse_state_ = GOT_CK_C;
+    looking_for_ubx_ = true;
+    RTCM = false;
+    break;
   default:
     num_errors_++;
+    DBG("number of errors = %d", num_errors_);
     break;
   }
-
   // If we have a complete packet, then try to parse it
-  if (parse_state_ == GOT_CK_B)
-  {
-    if (decode_message())
+  if (parse_state_ == GOT_CK_C)
     {
       parse_state_ = START;
     }
-    else
-    {
-      // indicate error if it didn't work
-      num_errors_++;
-      DBG("failed to parse message\n");
-      parse_state_ = START;
-    }
-  }
-
-  prev_byte_ = byte;
 }
 
 void UBLOX::read(double* lla, float* vel, uint8_t& fix_type, uint32_t& t_ms)
@@ -256,8 +371,6 @@ void UBLOX::read(double* lla, float* vel, uint8_t& fix_type, uint32_t& t_ms)
 
 bool UBLOX::decode_message()
 {
-
-  DBG("RTCM = %d \n", in_message_.RTCM.buf);
   // First, check the checksum
   uint8_t ck_a, ck_b;
   calculate_checksum(message_class_, message_type_, length_, in_message_, ck_a, ck_b);
@@ -445,7 +558,7 @@ void UBLOX::config(int rover)
     memset(&out_message_, 0, sizeof(CFG_VALGET_t));
     out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
     out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
-    out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::UBX_NAV_PVT;
+    out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::RTCM_1230USB;
     send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
   }
 }
