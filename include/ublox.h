@@ -2,6 +2,7 @@
 #define UBLOX_H
 
 #define UBLOX_BUFFER_SIZE 256
+#define RTCM_BUFFER_SIZE 1022
 
 #include <stdint.h>
 
@@ -29,6 +30,10 @@ public:
   enum {
     NMEA_START_BYTE1 = '$',
     NMEA_START_BYTE2 = 'G',
+  };
+
+  enum {
+    RTCM_START_BYTE = 0xD3,
   };
   
   enum {
@@ -160,6 +165,7 @@ public:
     GOT_PAYLOAD,
     GOT_CK_A,
     GOT_CK_B,
+    GOT_CK_C,
     DONE,
   } parse_state_t;
   
@@ -613,6 +619,9 @@ public:
   
   void read(double* lla, float* vel, uint8_t &fix_type, uint32_t& t_ms);
   void read_cb(uint8_t byte);
+  void read_nmea(uint8_t byte);
+  void read_ubx(uint8_t byte);
+  void read_rtcm(uint8_t byte);
   inline volatile bool new_data() { return new_data_; }
   uint32_t volatile num_messages_received() { return num_messages_received_; }
 
@@ -651,14 +660,22 @@ private:
   uint16_t length_;  
   uint8_t ck_a_;
   uint8_t ck_b_;
+  uint8_t ck_c_;
   uint32_t num_errors_ = 0;
   uint32_t num_messages_received_ = 0;
   int message_sent = 0;
+  int num = 1;
+  int rtcm_size = 0;
   
   double lla_[3];
   float vel_[3];
   
-  bool looking_for_nmea_;
+  bool looking_for_nmea_ = true;
+  bool looking_for_ubx_ = false;
+  bool looking_for_rtcm_ = false;
+  bool NMEA = false;
+  bool UBX = false;
+  bool RTCM = false;
   uint8_t prev_byte_ = 0;
   
   async_comm::Serial serial_;
