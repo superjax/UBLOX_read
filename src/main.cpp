@@ -11,72 +11,72 @@
 #include <thread>
 #include <vector>
 
-void callback(const uint8_t* buf, size_t len)
-{
-  for (size_t i = 0; i < len; i++)
-  {
-    std::cout << buf[i];
-  }
-}
+//void callback(const uint8_t* buf, size_t len)
+//{
+//  for (size_t i = 0; i < len; i++)
+//  {
+//    std::cout << buf[i];
+//  }
+//}
 
-int udp(int rover, int message)
-{
-    /////////udp communication////
+//int udp(int rover, int message)
+//{
+//    /////////udp communication////
 
-    // send message from base to rover
-    if (rover == 0)
-    {
-        // open UDP port
-        async_comm::UDP udp2("localhost", 14625, "localhost", 14620);
-        udp2.register_receive_callback(&callback);
+//    // send message from base to rover
+//    if (rover == 0)
+//    {
+//        // open UDP port
+//        async_comm::UDP udp2("localhost", 14625, "localhost", 14620);
+//        udp2.register_receive_callback(&callback);
 
-        if (!udp2.init())
-        {
-          std::cout << "Failed to initialize UDP port 2" << std::endl;
-          return 1;
-        }
-        char message1[] = "RTCM = %d", message;
-        udp2.send_bytes((uint8_t*) message1, std::strlen(message1));
+//        if (!udp2.init())
+//        {
+//          std::cout << "Failed to initialize UDP port 2" << std::endl;
+//          return 1;
+//        }
+//        char message1[] = "RTCM = %d", message;
+//        udp2.send_bytes((uint8_t*) message1, std::strlen(message1));
 
-        // wait for all bytes to be received
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        //std::cout << std::endl << std::flush;
+//        // wait for all bytes to be received
+//        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+//        //std::cout << std::endl << std::flush;
 
-        std::cout.flush();
+//        std::cout.flush();
 
-        udp2.close();
-    }
-    else  //send message from rover to base
-    {
+//        udp2.close();
+//    }
+//    else  //send message from rover to base
+//    {
 
-        // open UDP port
-        async_comm::UDP udp1("localhost", 14620, "localhost", 14625);
-        udp1.register_receive_callback(&callback);
+//        // open UDP port
+//        async_comm::UDP udp1("localhost", 14620, "localhost", 14625);
+//        udp1.register_receive_callback(&callback);
 
-        if (!udp1.init())
-        {
-          std::cout << "Failed to initialize UDP port 1" << std::endl;
-          return 1;
-        }
-        // send message the other direction
-        char message2[] = "Hello world 2!";
-        udp1.send_bytes((uint8_t*) message2, std::strlen(message2));
+//        if (!udp1.init())
+//        {
+//          std::cout << "Failed to initialize UDP port 1" << std::endl;
+//          return 1;
+//        }
+//        // send message the other direction
+//        char message2[] = "Hello world 2!";
+//        udp1.send_bytes((uint8_t*) message2, std::strlen(message2));
 
-        // wait for all bytes to be received
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        //std::cout << std::endl << std::flush;
+//        // wait for all bytes to be received
+//        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+//        //std::cout << std::endl << std::flush;
 
-        std::cout.flush();
+//        std::cout.flush();
 
-        // close UDP ports
-        udp1.close();
+//        // close UDP ports
+//        udp1.close();
 
 
-    }
+//    }
 
-    return 0;
+//    return 0;
 
-}
+//}
 
 int main(int argc, char** argv)
 {
