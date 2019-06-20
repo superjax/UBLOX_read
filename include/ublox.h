@@ -3,6 +3,7 @@
 
 #define UBLOX_BUFFER_SIZE 256
 #define RTCM_BUFFER_SIZE 1022
+#define NMEA_BUFFER_SIZE 82
 
 #include <stdint.h>
 
@@ -509,6 +510,7 @@ private:
   uint32_t num_messages_received_ = 0;
   int message_sent = 0;
   int num = 1;
+  int NMEA_length = 0;
   
   double lla_[3];
   float vel_[3];

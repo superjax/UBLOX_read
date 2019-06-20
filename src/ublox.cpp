@@ -192,8 +192,10 @@ void UBLOX::read_cb(uint8_t byte)
 
 void UBLOX::read_nmea(uint8_t byte)
 {
+  NMEA_length ++;
   got_message_ = true;
-  if (byte == NMEA_END_BYTE2 && prev_byte_ == NMEA_END_BYTE1)
+
+  //if ((byte == NMEA_END_BYTE2 && prev_byte_ == NMEA_END_BYTE1) || (NMEA_length >= NMEA_BUFFER_SIZE))
   {
       looking_for_ubx_ = true;
       looking_for_rtcm_ = true;
