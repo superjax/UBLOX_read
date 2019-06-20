@@ -6,6 +6,9 @@ using namespace std::chrono;
 #define DEG2RAD (3.14159 / 180.0)
 #define DBG(...) fprintf(stderr, __VA_ARGS__)
 //#define DBG(...)
+//Use this to see the rtcm message
+#define DBG_RTCM(...) fprintf(stderr, __VA_ARGS__)
+//#define DBG_RTCM(...)
 
 UBLOX::UBLOX(std::string port) :
   serial_(port, 115200)
@@ -21,6 +24,7 @@ void UBLOX::init(int rover)
   length_ = 0;
   ck_a_ = 0;
   ck_b_ = 0;
+  ck_c_ = 0;
   
   // Find the right baudrate
   auto cb = [this](const uint8_t* buffer, size_t size)
@@ -41,9 +45,9 @@ void UBLOX::init(int rover)
   enable_message(CLASS_NAV, NAV_POSECEF, 10);
   enable_message(CLASS_NAV, NAV_VELECEF, 10);
   enable_message(CLASS_CFG, CFG_VALGET, 10);
-  //configure f9p
+
+  //configure f9p for rtk
   config(rover);
-  //DBG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!RELPOSNED %i \n", (int)in_message_.NAV_RELPOSNED.flags);
 }
 
 bool UBLOX::detect_baudrate()
@@ -141,7 +145,9 @@ void UBLOX::enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate)
 
 void UBLOX::read_cb(uint8_t byte)
 {
-
+  // Look for a valid NMEA packet (do this at the beginning in case
+  // UBX was disabled for some reason) and during autobaud
+  // detection
   if (looking_for_nmea_)
   {
       if (byte == NMEA_START_BYTE2 && prev_byte_ == NMEA_START_BYTE1)
@@ -156,6 +162,8 @@ void UBLOX::read_cb(uint8_t byte)
           looking_for_rtcm_ = true;
       }
   }
+
+  // handle the UBX packet
   if (looking_for_ubx_)
   {
       if (byte == START_BYTE_2 && prev_byte_ == START_BYTE_1)
@@ -168,6 +176,7 @@ void UBLOX::read_cb(uint8_t byte)
           read_ubx(byte);
       }
   }
+
   if (looking_for_rtcm_)
   {
       if (byte == RTCM_START_BYTE)
@@ -180,24 +189,18 @@ void UBLOX::read_cb(uint8_t byte)
           read_rtcm(byte);
       }
   }
+
   prev_byte_ = byte;
 }
 
 void UBLOX::read_nmea(uint8_t byte)
 {
-  // Look for a valid NMEA packet (do this at the beginning in case
-  // UBX was disabled for some reason) and during autobaud
-  // detection
   got_message_ = true;
-  DBG("_____________________________NMEA\n");
-  looking_for_ubx_ = true;
-  looking_for_rtcm_ = true;
   NMEA = false;
 }
 
 void UBLOX::read_ubx(uint8_t byte)
 {
-  // handle the UBX packet
     switch (parse_state_)
     {
     case START:
@@ -230,6 +233,9 @@ void UBLOX::read_ubx(uint8_t byte)
       {
         num_errors_++;
         parse_state_ = START;
+        std::cout << "the message is too big" << "\n";
+        looking_for_rtcm_ = true;
+        UBX = false;
         return;
       }
       break;
@@ -255,6 +261,8 @@ void UBLOX::read_ubx(uint8_t byte)
       break;
     default:
       num_errors_++;
+      looking_for_rtcm_ = true;
+      UBX = false;
       break;
     }
 
@@ -271,6 +279,8 @@ void UBLOX::read_ubx(uint8_t byte)
         num_errors_++;
         DBG("failed to parse message\n");
         parse_state_ = START;
+        looking_for_rtcm_ = true;
+        UBX = false;
       }
       looking_for_rtcm_ = true;
       UBX = false;
@@ -292,30 +302,32 @@ void UBLOX::read_rtcm(uint8_t byte)
       ck_b_ = 0;
       ck_c_ = 0;
       got_message_ = true;
-      DBG("RTCM %d ", byte);
+      DBG_RTCM("RTCM %d ", byte);
       num ++;
     break;
   case GOT_START_FRAME:
       //length_ = byte; this will be stored in prev_byte and used in next case
-      DBG("%d ", byte);
+      DBG_RTCM("%d ", byte);
       parse_state_ = GOT_LENGTH1;
     break;
   case GOT_LENGTH1:
     length_ = ((prev_byte_ & 0x3)<<8) | byte;
-    DBG("%d ", byte);
+    DBG_RTCM("%d ", byte);
     parse_state_ = GOT_LENGTH2;
     if (length_ > RTCM_BUFFER_SIZE)
     {
       std::cout << "the message is too big" << "\n";
       num_errors_++;
       parse_state_ = START;
+      looking_for_ubx_ = true;
+      RTCM = false;
       return;
     }
     break;
   case GOT_LENGTH2:
     if (buffer_head_ < length_)
     {
-      DBG("%d ", byte);
+      DBG_RTCM("%d ", byte);
       // push the byte onto the data buffer
       in_message_.buffer[buffer_head_] = byte;
       if (buffer_head_ == length_-1)
@@ -326,31 +338,33 @@ void UBLOX::read_rtcm(uint8_t byte)
     }
     break;
   case GOT_PAYLOAD:
-    DBG("%d ", byte);
+    DBG_RTCM("%d ", byte);
     ck_a_ = byte;
     parse_state_ = GOT_CK_A;
     break;
   case GOT_CK_A:
-    DBG("%d ", byte);
+    DBG_RTCM("%d ", byte);
     ck_b_ = byte;
     parse_state_ = GOT_CK_B;
     break;
   case GOT_CK_B:
-    DBG("%d \n", byte);
+    DBG_RTCM("%d \n", byte);
     ck_b_ = byte;
     parse_state_ = GOT_CK_C;
-    looking_for_ubx_ = true;
-    RTCM = false;
     break;
   default:
     num_errors_++;
     DBG("number of errors = %d", num_errors_);
+    looking_for_ubx_ = true;
+    RTCM = false;
     break;
   }
   // If we have a complete packet, then try to parse it
   if (parse_state_ == GOT_CK_C)
     {
       parse_state_ = START;
+      looking_for_ubx_ = true;
+      RTCM = false;
     }
 }
 
@@ -408,7 +422,7 @@ bool UBLOX::decode_message()
     {
     default:
       DBG("%d\n", message_type_);
-      std::cout << "____________________________ cfgData = " << (int)cfg_get_message_.cfgData << "\n";
+      std::cout << "cfgData = " << (int)cfg_get_message_.cfgData << "\n";
       break;
     }
     break;
@@ -433,15 +447,10 @@ bool UBLOX::decode_message()
       vel_ecef_ = in_message_.NAV_VELECEF;
       DBG("VELECEF\n");
       break;
-      DBG("NAV_SIG\n");
-      break;
     default:
       DBG("%d\n", message_type_);
       break;
     }
-    break;
-  case CLASS_RTCM:
-    DBG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!RTCM_%x-%x\n", message_class_, message_type_);
     break;
   default:
     DBG("%d_%d\n", message_class_, message_type_);
@@ -514,31 +523,6 @@ void UBLOX::config(int rover)
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1230USB;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-
-//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_SIG;
-//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_SOL;
-//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_PVT;
-//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_POSLLH;
-//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_RELPOSNED;
-//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_STATUS;
-//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::UBX_NAV_SVIN;
-//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-
-//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RXM_RTCM_USB;
-//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_NMEA_HP;
-//    out_message_.CFG_VALSET.cfgData = 1;
-//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-//    out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_BBR;
-//    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_DGNSSMODE;
-//    out_message_.CFG_VALSET.cfgData = 3;
-//    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 
     if(rover > 0)
     {
