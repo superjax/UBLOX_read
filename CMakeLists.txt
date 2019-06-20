@@ -14,7 +14,9 @@ add_library(UBLOX
     src/ublox.cpp
 )
 
+find_package(Threads REQUIRED)
+
 add_executable(ublox
   src/main.cpp
 )
-target_link_libraries(ublox UBLOX async_comm)
+target_link_libraries(ublox UBLOX async_comm pthread)

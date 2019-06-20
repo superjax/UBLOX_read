@@ -30,6 +30,8 @@ public:
   enum {
     NMEA_START_BYTE1 = '$',
     NMEA_START_BYTE2 = 'G',
+    NMEA_END_BYTE1 = '\r',
+    NMEA_END_BYTE2 = '\n',
   };
 
   enum {
@@ -472,7 +474,7 @@ public:
   uint8_t fix_type() const;
   void posECEF(double* pos) const;
   void velECEF(double* vel) const;
-  int get_RTCM();
+  void registerRTCMCallback(std::function<void(int, uint8_t*)> fun);
 
   
 private:

@@ -7,8 +7,8 @@ using namespace std::chrono;
 #define DBG(...) fprintf(stderr, __VA_ARGS__)
 //#define DBG(...)
 //Use this to see the rtcm message
-#define DBG_RTCM(...) fprintf(stderr, __VA_ARGS__)
-//#define DBG_RTCM(...)
+//#define DBG_RTCM(...) fprintf(stderr, __VA_ARGS__)
+#define DBG_RTCM(...)
 
 UBLOX::UBLOX(std::string port) :
   serial_(port, 115200)
@@ -153,13 +153,10 @@ void UBLOX::read_cb(uint8_t byte)
       if (byte == NMEA_START_BYTE2 && prev_byte_ == NMEA_START_BYTE1)
       {
           NMEA = true;
-          looking_for_nmea_ = false;
       }
       if (NMEA == true)
       {
           read_nmea(byte);
-          looking_for_ubx_ = true;
-          looking_for_rtcm_ = true;
       }
   }
 
@@ -196,7 +193,13 @@ void UBLOX::read_cb(uint8_t byte)
 void UBLOX::read_nmea(uint8_t byte)
 {
   got_message_ = true;
-  NMEA = false;
+  if (byte == NMEA_END_BYTE2 && prev_byte_ == NMEA_END_BYTE1)
+  {
+      looking_for_ubx_ = true;
+      looking_for_rtcm_ = true;
+      NMEA = false;
+      looking_for_nmea_ = false;
+  }
 }
 
 void UBLOX::read_ubx(uint8_t byte)
@@ -233,7 +236,7 @@ void UBLOX::read_ubx(uint8_t byte)
       {
         num_errors_++;
         parse_state_ = START;
-        std::cout << "the message is too big" << "\n";
+        std::cout << "\n the message is too big" << "\n";
         looking_for_rtcm_ = true;
         UBX = false;
         return;
@@ -277,10 +280,8 @@ void UBLOX::read_ubx(uint8_t byte)
       {
         // indicate error if it didn't work
         num_errors_++;
-        DBG("failed to parse message\n");
+        DBG("\n failed to parse message\n");
         parse_state_ = START;
-        looking_for_rtcm_ = true;
-        UBX = false;
       }
       looking_for_rtcm_ = true;
       UBX = false;
@@ -316,7 +317,7 @@ void UBLOX::read_rtcm(uint8_t byte)
     parse_state_ = GOT_LENGTH2;
     if (length_ > RTCM_BUFFER_SIZE)
     {
-      std::cout << "the message is too big" << "\n";
+      std::cout << "\n the message is too big" << "\n";
       num_errors_++;
       parse_state_ = START;
       looking_for_ubx_ = true;
@@ -354,7 +355,7 @@ void UBLOX::read_rtcm(uint8_t byte)
     break;
   default:
     num_errors_++;
-    DBG("number of errors = %d", num_errors_);
+    DBG("\n number of errors = %d", num_errors_);
     looking_for_ubx_ = true;
     RTCM = false;
     break;
@@ -582,9 +583,7 @@ void UBLOX::config_base()
   }
 }
 
-int UBLOX::get_RTCM()
+void UBLOX::registerRTCMCallback(std::function<void (int, uint8_t *)> fun)
 {
-    uint8_t f = in_message_.RTCM.buf;
-
-    return f;
+    //rtcm_cb_ = fun;
 }
