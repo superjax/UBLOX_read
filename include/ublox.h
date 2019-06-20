@@ -437,12 +437,16 @@ public:
 
   typedef struct
   {
-//      uint8_t* buf;
-      uint8_t buf;
-  }__attribute__((packed)) RTCM_t;
+      uint16_t length;
+      uint8_t buffer[RTCM_BUFFER_SIZE];
+      uint8_t ck_a;
+      uint8_t ck_b;
+      uint8_t ck_c;
+  }__attribute__((packed)) RTCM_message_t;
 
   typedef union {
     uint8_t buffer[UBLOX_BUFFER_SIZE];
+    uint8_t RTCM_buffer[RTCM_BUFFER_SIZE];
     ACK_ACK_t ACK_ACK;
     ACK_NACK_t ACK_NACK;
     CFG_MSG_t CFG_MSG;
@@ -454,13 +458,14 @@ public:
     NAV_PVT_t NAV_PVT;
     NAV_POSECEF_t NAV_POSECEF;
     NAV_VELECEF_t NAV_VELECEF;
-    RTCM_t RTCM;
   } UBX_message_t;
   
   void init(int rover);
   void config(int rover);
   void config_rover();
   void config_base();
+  int udp(int rover);
+  void callback(const uint8_t* buf, size_t len);
   
   void read(double* lla, float* vel, uint8_t &fix_type, uint32_t& t_ms);
   void read_cb(uint8_t byte);
@@ -475,7 +480,6 @@ public:
   uint8_t fix_type() const;
   void posECEF(double* pos) const;
   void velECEF(double* vel) const;
-  void registerRTCMCallback(std::function<void(int, uint8_t*)> fun);
 
   
 private:
@@ -486,6 +490,7 @@ private:
   void set_dynamic_mode();
   void set_nav_rate(uint8_t period_ms);
   bool decode_message();
+  void decode_rtcm();
   void calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len, const UBX_message_t payload, uint8_t &ck_a, uint8_t &ck_b) const;
   bool send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& message, uint16_t len);
 
@@ -494,6 +499,7 @@ private:
   
   UBX_message_t out_message_;
   UBX_message_t in_message_;
+  RTCM_message_t RTCM_message;
     
   uint16_t buffer_head_ = 0;
   bool got_message_ = false;
