@@ -139,21 +139,6 @@ public:
     NAV_VELNED = 0x12,		// Periodic/Polled Velocity Solution in NED
     NAV_SIG = 0x43,         // Periodic/Polled signal information
   };
-
-  enum {
-    RTCM_REF_STATION = 0x05, // 1005 Stationary RTK reference station ARP
-    RTCM_GPS_MSM4 = 0x4A, // 1074 GPS MSM4
-    RTCM_GPS_MSM7 = 0x4D, //1077 GPS MSM7
-    RTCM_GLONASS_MSM4 = 0x54, //1084 GLONASS MSM4
-    RTCM_GLONAS_MSM7 = 0x57, //1087 GLONASS MSM7
-    RTCM_GALILEO_MSM4 = 0x5E, //1094 Galileo MSM4
-    RTCM_GALILEO_MSM7 = 0X61, //1097 Galileo MSM7
-    RTCM_BEIDOU_MSM4 = 0x7C, //1124 BeiDou MSM4
-    RTCM_BEIDOU_MSM7 = 0x7F, //1127 BeiDou MSM7
-    RTCM_GLONASS_cpb = 0xE6, //1230 Glonass code-phas biases
-    RTCM_REF_PVT = 0xFE, //4072, sub-type 0 Reference station PVT (u-blox proprietary RTCM Message)
-    RTCM_REF_INFO = 0xFD, // 4072, sub-type 1 Additional reference station information (u-blox proprietary RTCM Message)
-  };
   
   typedef enum {
     START,    
@@ -291,33 +276,6 @@ public:
       VALGET_POLL  = 1,     
     };
 
-    enum {
-      VALGET_MSG_NAV_STATUS = 0x2091001d, //CFG-MSGOUT-UBX_NAV_STATUS_USB, tells the output rate of ubx-nav-status on usb
-      VALGET_USB_ENABLED = 0x10650001,
-      VALGET_I2C_ENABLED = 0x10510003,
-      VALGET_DGNSSMODE = 0x20140011, //CFG-NAVHPG-DGNSSMODE Differential corrections mode
-      VALGET_FIXMODE = 0x20110011,
-      VALGET_INIFIX3D = 0x10110013,
-      VALGET_WKNROLLOVER = 0x30110017,
-      VALGET_NMEA_HP = 0x10930006, //Enable high precision mode
-    };
-
-    enum { //incoming messages enabled
-        VALGET_IN_UBX = 0x10770001, //CFG-USBINPROT-UBX
-        VALGET_IN_NMEA = 0x10770002, //CFG-USBINPROT-NMEA
-        VALGET_IN_RTCM3X = 0x10770004, //CFG-USBINPROT-RTCM3X
-    };
-
-    enum { //outgoing messages enabled
-        VALGET_OUT_UBX = 0x10780001, //CFG-USBOUTPROT-UBX
-        VALGET_OUT_NMEA = 0x10780002, //CFG-USBOUTPROT-NMEA
-        VALGET_OUT_RTCM3X = 0x10780004, //CFG-USBOUTPROT-RTCM3X
-    };
-
-    enum { //outgoing messages enabled
-        VALGET_TMODE_MODE = 0x20030001, //Receiver mode (BASE)
-    };
-
     enum { //outgoing message rates for RTCM 3x on usb type U1
         //suggested messages for stationary base pg 12 actual integration manual
         RTCM_1005USB = 0x209102c0, //CFG-MSGOUT-RTCM_3X_TYPE1005_USB
@@ -334,18 +292,6 @@ public:
         RTCM_1097USB = 0x2091031b, //CFG-MSGOUT-RTCM_3X_TYPE1097_USB
         RTCM_1127USB = 0x209102d9, //CFG-MSGOUT-RTCM_3X_TYPE1127_USB
         //!!!!also use RTCM_1230USB above!!!///
-        RXM_RTCM_USB = 0x2091026b, //Output rate of the UBX-RXM-RTCM message on port USB
-    };
-
-    enum { //outgoing message rates for RTCM 3x on usb type U1
-
-        UBX_NAV_SIG = 0x20910348, //Output rate of the UBX-NAV-SIG message on port USB
-        UBX_NAV_SOL = 0x20910004, //
-        UBX_NAV_PVT = 0x20910009, //Output rate of the UBX-NAV-PVT message on port USB
-        UBX_NAV_POSLLH = 0x2091002c, //
-        UBX_NAV_RELPOSNED = 0x20910090, //
-        UBX_NAV_STATUS = 0x2091001d, //Output rate of the UBX-NAV-STATUS message on port USB
-        UBX_NAV_SVIN = 0x2091008b, //Output rate of the UBX-NAV-SVIN message on port USB
     };
 
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
@@ -373,29 +319,6 @@ public:
        VALSET_fixed  = 3,
     };
 
-    enum {
-      VALSET_MSG_NAV_STATUS = 0x2091001d, //CFG-MSGOUT-UBX_NAV_STATUS_USB, tells the output rate of ubx-nav-status on usb    
-      VALSET_I2C_ENABLED_data = 0x10510003, //this is concatenated.  Should probably change to a more permanent format
-      VALSET_DGNSSMODE = 0x20140011, //CFG-NAVHPG-DGNSSMODE Differential corrections mode
-      VALSET_NMEA_HP = 0x10930006, //Enable high precision mode
-    };
-
-    enum { //incoming messages enabled
-        VALSET_IN_UBX = 0x10770001, //CFG-USBINPROT-UBX
-        VALSET_IN_NMEA = 0x10770002, //CFG-USBINPROT-NMEA
-        VALSET_IN_RTCM3X = 0x10770004, //CFG-USBINPROT-RTCM3X
-    };
-
-    enum { //outgoing messages enabled
-        VALSET_OUT_UBX = 0x10780001, //CFG-USBOUTPROT-UBX
-        VALSET_OUT_NMEA = 0x10780002, //CFG-USBOUTPROT-NMEA
-        VALSET_OUT_RTCM3X = 0x10780004, //CFG-USBOUTPROT-RTCM3X
-    };
-
-    enum {
-        VALSET_TMODE_MODE = 0x20030001, //Receiver mode (BASE)
-    };
-
     enum { //outgoing message rates for RTCM 3x on usb type U1
         //suggested messages for stationary base
         RTCM_1005USB = 0x209102c0, //CFG-MSGOUT-RTCM_3X_TYPE1005_USB
@@ -412,22 +335,6 @@ public:
         RTCM_1097USB = 0x2091031b, //CFG-MSGOUT-RTCM_3X_TYPE1097_USB
         RTCM_1127USB = 0x209102d9, //CFG-MSGOUT-RTCM_3X_TYPE1127_USB
         //!!!!also use RTCM_1230USB above!!!///
-        RXM_RTCM_USB = 0x2091026b, //Output rate of the UBX-RXM-RTCM message on port USB
-    };
-    enum {
-        RATE_10 = 10,
-    };
-
-    enum {
-
-        UBX_NAV_SIG = 0x20910348, //Output rate of the UBX-NAV-SIG message on port USB
-        UBX_NAV_SOL = 0x20910004, //
-        UBX_NAV_PVT = 0x20910009, //Output rate of the UBX-NAV-PVT message on port USB
-        UBX_NAV_POSLLH = 0x2091002c, //
-        UBX_NAV_RELPOSNED = 0x20910090, //
-        UBX_NAV_STATUS = 0x2091001d, //Output rate of the UBX-NAV-STATUS message on port USB
-        UBX_NAV_SVIN = 0x2091008b, //Output rate of the UBX-NAV-SVIN message on port USB
-
     };
 
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
@@ -524,64 +431,12 @@ public:
     int32_t ecefVZ; // cm ECEF Z velocity
     uint32_t sAcc; // cm Speed Accuracy Estimate
   }__attribute__((packed)) NAV_VELECEF_t;
-  typedef struct
-  {
-    uint8_t flags;
-  }__attribute__((packed)) NAV_RELPOSNED_t;
+
   typedef struct
   {
 //      uint8_t* buf;
       uint8_t buf;
   }__attribute__((packed)) RTCM_t;
-
-//  typedef struct
-//  {
-//    uint8_t* buf;
-//  }__attribute__((packed)) RTCM_REF_STATION_t;
-//  typedef struct
-//  {
-//    uint8_t* buf;
-//  }__attribute__((packed)) RTCM_GPS_MSM4_t;
-//  typedef struct
-//  {
-//    uint8_t* buf;
-//  }__attribute__((packed)) RTCM_GPS_MSM7_t;
-//  typedef struct
-//  {
-//    uint8_t* buf;
-//  }__attribute__((packed)) RTCM_GLONASS_MSM4_t;
-//  typedef struct
-//  {
-//    uint8_t* buf;
-//  }__attribute__((packed)) RTCM_GLONAS_MSM7_t;
-//  typedef struct
-//  {
-//    uint8_t* buf;
-//  }__attribute__((packed)) RTCM_GALILEO_MSM4_t;
-//  typedef struct
-//  {
-//    uint8_t* buf;
-//  }__attribute__((packed)) RTCM_GALILEO_MSM7_t;
-//  typedef struct
-//  {
-//    uint8_t* buf;
-//  }__attribute__((packed)) RTCM_BEIDOU_MSM4_t;
-//  typedef struct
-//  {
-//    uint8_t* buf;
-//  }__attribute__((packed)) RTCM_BEIDOU_MSM7_t;
-//  typedef struct
-//  {
-//    uint8_t* buf;
-//  }__attribute__((packed)) RTCM_GLONASS_cpb_t;
-//  typedef struct
-//  {
-//    uint8_t* buf;
-//  }__attribute__((packed)) RTCM_REF_PVT_t;
-//  typedef struct
-//  {
-//    uint8_t* buf;
-//  }__attribute__((packed)) RTCM_REF_INFO_t;
 
   typedef union {
     uint8_t buffer[UBLOX_BUFFER_SIZE];
@@ -596,26 +451,13 @@ public:
     NAV_PVT_t NAV_PVT;
     NAV_POSECEF_t NAV_POSECEF;
     NAV_VELECEF_t NAV_VELECEF;
-    NAV_RELPOSNED_t NAV_RELPOSNED;
     RTCM_t RTCM;
-//    RTCM_REF_STATION_t RTCM_REF_STATION;
-//    RTCM_GPS_MSM4_t TCM_GPS_MSM4;
-//    RTCM_GPS_MSM7_t RTCM_GPS_MSM7;
-//    RTCM_GLONASS_MSM4_t RTCM_GLONASS_MSM4;
-//    RTCM_GLONAS_MSM7_t RTCM_GLONAS_MSM7;
-//    RTCM_GALILEO_MSM4_t RTCM_GALILEO_MSM4;
-//    RTCM_GALILEO_MSM7_t RTCM_GALILEO_MSM7;
-//    RTCM_BEIDOU_MSM4_t RTCM_BEIDOU_MSM4;
-//    RTCM_BEIDOU_MSM7_t RTCM_BEIDOU_MSM7;
-//    RTCM_GLONASS_cpb_t RTCM_GLONASS_cpb;
-//    RTCM_REF_PVT_t TCM_REF_PVT;
-//    RTCM_REF_INFO_t TCM_REF_INFO;
   } UBX_message_t;
   
   void init(int rover);
+  void config(int rover);
   void config_rover();
   void config_base();
-  void config(int rover);
   
   void read(double* lla, float* vel, uint8_t &fix_type, uint32_t& t_ms);
   void read_cb(uint8_t byte);
@@ -665,7 +507,6 @@ private:
   uint32_t num_messages_received_ = 0;
   int message_sent = 0;
   int num = 1;
-  int rtcm_size = 0;
   
   double lla_[3];
   float vel_[3];

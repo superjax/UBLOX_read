@@ -11,8 +11,6 @@
 #include <thread>
 #include <vector>
 
-//void callback();
-//int udp();
 void callback(const uint8_t* buf, size_t len)
 {
   for (size_t i = 0; i < len; i++)
@@ -82,7 +80,7 @@ int udp(int rover, int message)
 
 int main(int argc, char** argv)
 {
-    //This is used to select the port and is useful for using more than one.
+    //This is used to select the port and is used later as well
   std::string port = "/dev/ttyACM0";
   int rover = 0;
   if (argc > 1)
@@ -116,8 +114,8 @@ int main(int argc, char** argv)
              lla[0], lla[1], lla[2],
           uvw[0], uvw[1], uvw[2]);
       std::cout.flush();
-      int RTCM = ubx.get_RTCM();
-      udp(rover, RTCM);
+//      int RTCM = ubx.get_RTCM();
+//      udp(rover, RTCM);
     }
   }
 }
