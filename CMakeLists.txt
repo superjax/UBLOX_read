@@ -10,9 +10,10 @@ include_directories(include
 )
 
 add_library(UBLOX
-    include/ublox.h
     src/ublox.cpp
     src/ubx.cpp
+    src/rtcm.cpp
+    src/nmea.cpp
 )
 
 find_package(Threads REQUIRED)

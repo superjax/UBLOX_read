@@ -1,7 +1,5 @@
 #ifndef UBLOX_H
 #define UBLOX_H
-#ifndef UBX_H
-#define UBX_H
 
 #define UBLOX_BUFFER_SIZE 256
 #define RTCM_BUFFER_SIZE 1022
@@ -24,12 +22,12 @@ public:
     FIX_TYPE_GPS_AND_DEAD_RECKONING = 0x04,
     FIX_TYPE_TIME_ONLY = 0x05,
   };
-  
+
   enum {
     START_BYTE_1 = 0xB5,
     START_BYTE_2 = 0x62,
   };
-  
+
   enum {
     NMEA_START_BYTE1 = '$',
     NMEA_START_BYTE2 = 'G',
@@ -40,7 +38,7 @@ public:
   enum {
     RTCM_START_BYTE = 0xD3,
   };
-  
+
   enum {
     CLASS_NAV = 0x01, //    Navigation Results Messages: Position, Speed, Time, Acceleration, Heading, DOP, SVs used
     CLASS_RXM = 0x02, //    Receiver Manager Messages: Satellite Status, RTC Status
@@ -56,12 +54,12 @@ public:
     CLASS_LOG = 0x21, //    Logging Messages: Log creation, deletion, info and retrieva
     CLASS_RTCM = 0XF5, //   RTCM messages (definitely for output possibly for all of the input messages)
   };
-  
+
   enum {
     ACK_ACK = 0x01, // Message Acknowledged
     ACK_NACK = 0x00, // Message Not-Acknowledged
   };
-  
+
   enum {
     AID_ALM = 0x30, // Poll GPS Aiding Almanac Data
     AID_AOP = 0x33, // AssistNow Autonomous data
@@ -110,7 +108,7 @@ public:
     CFG_VALGET = 0x8B, //Get configuration items
     CFG_VALSET = 0x8A, //Set values correpsonding to provided...
   };
-  
+
   enum {
     NAV_AOPSTATUS = 0x60,	// Periodic/Polled AssistNow Autonomous Status
     NAV_ATT = 0x05,		// Periodic/Polled Attitude Solution
@@ -144,9 +142,9 @@ public:
     NAV_VELNED = 0x12,		// Periodic/Polled Velocity Solution in NED
     NAV_SIG = 0x43,         // Periodic/Polled signal information
   };
-  
+
   typedef enum {
-    START,    
+    START,
     GOT_START_FRAME,
     GOT_CLASS,
     GOT_MSG_ID,
@@ -158,23 +156,23 @@ public:
     GOT_CK_C,
     DONE,
   } parse_state_t;
-  
+
   typedef struct {
     uint8_t clsID;
     uint8_t msgID;
   }__attribute__((packed)) ACK_ACK_t;
-  
+
   typedef struct {
     uint8_t clsID;
     uint8_t msgID;
   }__attribute__((packed)) ACK_NACK_t;
-  
+
   typedef struct {
     uint8_t msgClass;
     uint8_t msgID;
     uint8_t rate;
   }__attribute__((packed)) CFG_MSG_t;
-  
+
   typedef struct {
     enum {
       DYNMODE_PORTABLE = 0,
@@ -198,7 +196,7 @@ public:
       UTC_STANDARD_RUS = 6, // UTC as operated by the former Soviet Union; derived from GLONASS time
       UTC_STANDARD_CHN = 7, // UTC as operated by the National Time Service Center, China; derived from BeiDou time
     };
-    
+
     enum {
       MASK_DYN            = 0b00000000001, // Apply dynamic model settings
       MASK_MINEL 	  = 0b00000000010, // Apply minimum elevation settings
@@ -211,10 +209,10 @@ public:
       MASK_CNOTHRESHOLD   = 0b00100000000, // Apply CNO threshold settings (cnoThresh, cnoThreshNumSVs).
       MASK_UTC 	          = 0b10000000000, // Apply UTC settings
     };
-    
+
     uint16_t mask;
     uint8_t dynModel;
-    uint8_t fixMode;  
+    uint8_t fixMode;
     int32_t fixedAlt; // (1e-2 m) Fixed altitude (mean sea level) for 2D fix mode.
     uint32_t fixedAltVar; // (0.0001 m^2)Fixed altitude variance for 2D mode.
     int8_t minElev; // (deg) Minimum Elevation for a GNSS satellite to be used in NAV
@@ -231,9 +229,9 @@ public:
     uint16_t staticHoldMax; // Dist m Static hold distance threshold (before quitting static hold)
     uint8_t utcStandard; // - UTC standard to be used:
     uint8_t reserved2[5];
-    
+
   }__attribute__((packed)) CFG_NAV5_t;
-  
+
   typedef struct {
     enum {
       PORT_I2C = 0,
@@ -244,7 +242,7 @@ public:
     enum {
       CHARLEN_8BIT = 0b11000000,
       PARITY_NONE  = 0b100000000000,
-      STOP_BITS_1  = 0x0000          
+      STOP_BITS_1  = 0x0000
     };
     enum {
       IN_UBX   = 0b00000001,
@@ -278,7 +276,7 @@ public:
     };
     enum {
       VALGET_REQUEST = 0,
-      VALGET_POLL  = 1,     
+      VALGET_POLL  = 1,
     };
 
     enum { //outgoing message rates for RTCM 3x on usb type U1
@@ -316,7 +314,7 @@ public:
 
     enum {
       VALSET_0 = 0b00000000,
-      VALSET_1  = 0b00000001,     
+      VALSET_1  = 0b00000001,
     };
 
     enum {
@@ -349,7 +347,7 @@ public:
     uint8_t cfgData;
 
   }__attribute__((packed)) CFG_VALSET_t;
-  
+
   typedef struct {
     enum {
       TIME_REF_UTC = 0,
@@ -362,21 +360,21 @@ public:
     uint16_t navRate; // (cycles) The ratio between the number of measurements and the number of navigation solutions, e.g. 5 means five measurements for every navigation solution
     uint16_t timeRef; // Time system to which measurements are aligned
   }__attribute__((packed)) CFG_RATE_t;
-  
+
   typedef struct  {
     enum {
       VALIDITY_FLAGS_VALIDDATE= 0b01, // Valid UTC Date (see Time Validity section for details)
       VALIDITY_FLAGS_VALIDTIME = 0b10, // Valid UTC Time of Day (see Time Validity section for details)
       VALIDITY_FLAGS_FULLYRESOLVED = 0b100, // UTC Time of Day has been fully resolved (no seconds uncertainty)
     };
-    
+
     enum {
       FIX_STATUS_GNSS_FIX_OK            = 0b00000001, // Valid Fix
       FIX_STATUS_DIFF_SOLN              = 0b00000010, // Differential Corrections were applied
-      FIX_STATUS_PSM_STATE_NOT_ACTIVE   = 0b00000000, 
-      FIX_STATUS_PSM_STATE_ENABLED      = 0b00000100, 
-      FIX_STATUS_PSM_STATE_ACQUISITION  = 0b00001000, 
-      FIX_STATUS_PSM_STATE_TRACKING     = 0b00001100, 
+      FIX_STATUS_PSM_STATE_NOT_ACTIVE   = 0b00000000,
+      FIX_STATUS_PSM_STATE_ENABLED      = 0b00000100,
+      FIX_STATUS_PSM_STATE_ACQUISITION  = 0b00001000,
+      FIX_STATUS_PSM_STATE_TRACKING     = 0b00001100,
       FIX_STATUS_PSM_STATE_POWER_OPTIMIZED_TRACKING   = 0b00010000,
       FIX_STATUS_PSM_STATE_INACTIVE     = 0b00010100,
       FIX_STATUS_HEADING_VALID          = 0b00100000,
@@ -384,7 +382,7 @@ public:
       FIX_STATUS_CARR_SOLN_FLOAT        = 0b01000000,
       FIX_STATUS_CARR_SOLN_FIXED        = 0b10000000,
     };
-    
+
     uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
     uint16_t year; // y Year (UTC)
     uint8_t month; // month Month, range 1..12 (UTC)
@@ -542,9 +540,10 @@ private:
   NAV_POSECEF_t pos_ecef_;
   NAV_VELECEF_t vel_ecef_;
   CFG_VALGET_t cfg_get_message_;
-};
 
-#endif // UBLOX_H
+
+  UBX UBX_;
+};
 
 class UBX {
 public:
