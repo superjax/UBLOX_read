@@ -48,7 +48,7 @@ void UBLOX::init(int rover)
   enable_message(CLASS_NAV, NAV_VELECEF, 10);
   enable_message(CLASS_CFG, CFG_VALGET, 10);
 
-  //configure f9p for rtk
+  //configure f9P for rtk
   config(rover);
 }
 
@@ -590,22 +590,29 @@ void UBLOX::config_base()
 
 void UBLOX::decode_rtcm()
 {
-    RTCM_message.length = length_;
-    for (int i=0;i<RTCM_BUFFER_SIZE;i++)
+    int cap = length_;
+    RTCM_message[0] = RTCM_START_BYTE;
+    RTCM_message[1] = ((length_ & 0xFF00)>>8);
+    RTCM_message[2] = ((length_ & 0xFF));
+    int i = 0;
+    while(i<cap)
     {
-      //clear the value in case there is not content in in_message_
-      RTCM_message.buffer[i] = 0;
-      RTCM_message.buffer[i] = in_message_.RTCM_buffer[i];
+        RTCM_message[i+3] = in_message_.RTCM_buffer[i];
+        i++;
     }
-    RTCM_message.ck_a = ck_a_;
-    RTCM_message.ck_b = ck_b_;
-    RTCM_message.ck_c = ck_c_;
+    RTCM_message[i+3] = ck_a_;
+    RTCM_message[i+4] = ck_b_;
+    RTCM_message[i+5] = ck_c_;
+
+    RTCM_flag = true;
 }
 
 void UBLOX::callback(const uint8_t* buf, size_t len)
 {
+    // move RTCM data into the RTCM Buffer, set flag
   for (size_t i = 0; i < len; i++)
   {
+    //serial_.send_byte(buf[i]);
     std::cout << buf[i];
   }
 }
@@ -617,20 +624,29 @@ int UBLOX::udp(int rover)
     //send message from base to rover
     if (rover == 0)
     {
+//        if (udp_start == true)
+//        {
         // open UDP port
-        async_comm::UDP udp2("localhost", 14625, "localhost", 14620);
-        udp2.register_receive_callback([this](const uint8_t* buf, size_t size){this->callback(buf, size);});
+          async_comm::UDP udp2("localhost", 14625, "localhost", 14620);
+          udp2.register_receive_callback([this](const uint8_t* buf, size_t size){this->callback(buf, size);});
+          udp_start = false;
+       // }
 
         if (!udp2.init())
         {
           std::cout << "Failed to initialize UDP port 2" << std::endl;
           return 1;
         }
-        char message1[] = "hello world 11111111111111111111111111111";
-        udp2.send_bytes((uint8_t*) message1, std::strlen(message1));
+        if (RTCM_flag == true)
+        {
+            int length = RTCM_message[1] | RTCM_message[2];
+            int RTCM_size = length + 6;
+            udp2.send_bytes(&RTCM_message[0], RTCM_size);
+            RTCM_flag == false;
+        }
 
         // wait for all bytes to be received
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         //std::cout << std::endl << std::flush;
 
         std::cout.flush();
@@ -639,10 +655,13 @@ int UBLOX::udp(int rover)
     }
     else  //send message from rover to base
     {
-
+//        if (udp_start == true)
+//        {
         // open UDP port
-        async_comm::UDP udp1("localhost", 14620, "localhost", 14625);
-        udp1.register_receive_callback([this](const uint8_t* buf, size_t size){this->callback(buf, size);});
+            async_comm::UDP udp1("localhost", 14620, "localhost", 14625);
+            udp1.register_receive_callback([this](const uint8_t* buf, size_t size){this->callback(buf, size);});
+            udp_start = false;
+//        }
 
         if (!udp1.init())
         {

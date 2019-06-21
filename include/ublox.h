@@ -435,14 +435,14 @@ public:
     uint32_t sAcc; // cm Speed Accuracy Estimate
   }__attribute__((packed)) NAV_VELECEF_t;
 
-  typedef struct
-  {
-      uint16_t length;
-      uint8_t buffer[RTCM_BUFFER_SIZE];
-      uint8_t ck_a;
-      uint8_t ck_b;
-      uint8_t ck_c;
-  }__attribute__((packed)) RTCM_message_t;
+//  typedef struct
+//  {
+//      uint8_t length[2];
+//      uint8_t buffer[RTCM_BUFFER_SIZE];
+//      uint8_t ck_a;
+//      uint8_t ck_b;
+//      uint8_t ck_c;
+//  }__attribute__((packed)) RTCM_message_t;
 
   typedef union {
     uint8_t buffer[UBLOX_BUFFER_SIZE];
@@ -499,7 +499,7 @@ private:
   
   UBX_message_t out_message_;
   UBX_message_t in_message_;
-  RTCM_message_t RTCM_message;
+//  RTCM_message_t RTCM_message;
     
   uint16_t buffer_head_ = 0;
   bool got_message_ = false;
@@ -517,6 +517,7 @@ private:
   int message_sent = 0;
   int num = 1;
   int NMEA_length = 0;
+  uint8_t RTCM_message[RTCM_BUFFER_SIZE];
   
   double lla_[3];
   float vel_[3];
@@ -527,6 +528,8 @@ private:
   bool NMEA = false;
   bool UBX = false;
   bool RTCM = false;
+  bool RTCM_flag = false;
+  bool udp_start = true;
   uint8_t prev_byte_ = 0;
   
   async_comm::Serial serial_;

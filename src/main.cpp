@@ -48,6 +48,7 @@ int main(int argc, char** argv)
           uvw[0], uvw[1], uvw[2]);
       std::cout.flush();
     }
+    //look for RTCM message
     ubx.udp(rover);
   }
 }
