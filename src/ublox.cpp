@@ -1,7 +1,12 @@
-#include "ublox.h"
 #include <chrono>
 #include <stdio.h>
-#include <async_comm/udp.h>
+
+#include "async_comm/udp.h"
+
+#include "UBLOX/ublox.h"
+#include "UBLOX/ubx.h"
+#include "UBLOX/rtcm.h"
+#include "UBLOX/nmea.h"
 
 using namespace std::chrono;
 
@@ -174,8 +179,7 @@ void UBLOX::read_cb(uint8_t byte)
   }
   if (ubx == true)
   {
-      UBX UBX;
-      ubx = UBX.read_ubx(byte);
+      ubx = UBX_.read_ubx(byte);
       if (ubx == false)
       {
           looking_for_ubx_ = true;
