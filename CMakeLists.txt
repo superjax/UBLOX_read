@@ -12,6 +12,7 @@ include_directories(include
 add_library(UBLOX
     include/ublox.h
     src/ublox.cpp
+    src/ubx.cpp
 )
 
 find_package(Threads REQUIRED)
