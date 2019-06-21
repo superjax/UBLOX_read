@@ -49,7 +49,7 @@ void UBLOX::init(int rover)
   enable_message(CLASS_CFG, CFG_VALGET, 10);
 
   //configure f9P for rtk
-  config(rover);
+  //config(rover);
 }
 
 bool UBLOX::detect_baudrate()
@@ -167,13 +167,20 @@ void UBLOX::read_cb(uint8_t byte)
   {
       if (byte == START_BYTE_2 && prev_byte_ == START_BYTE_1)
       {
-          UBX = true;
+          ubx = true;
+          looking_for_ubx_ = false;
           looking_for_rtcm_ = false;
       }
-      if (UBX == true)
+  }
+  if (ubx == true)
+  {
+      UBX UBX;
+      ubx = UBX.read_ubx(byte);
+      if (ubx == false)
       {
-          read_ubx(byte);
+          looking_for_ubx_ = true;
       }
+      //read_ubx(byte);
   }
 
   if (looking_for_rtcm_)
@@ -181,11 +188,11 @@ void UBLOX::read_cb(uint8_t byte)
       if (byte == RTCM_START_BYTE)
       {
           RTCM = true;
-          looking_for_ubx_ = false;
+          //looking_for_ubx_ = false;
       }
       if (RTCM == true)
       {
-          read_rtcm(byte);
+          //read_rtcm(byte);
       }
   }
 
@@ -200,7 +207,7 @@ void UBLOX::read_nmea(uint8_t byte)
   if ((byte == NMEA_END_BYTE2 && prev_byte_ == NMEA_END_BYTE1) || (NMEA_length >= NMEA_BUFFER_SIZE))
   {
       looking_for_ubx_ = true;
-      looking_for_rtcm_ = true;
+      //looking_for_rtcm_ = true;
       NMEA = false;
       looking_for_nmea_ = false;
   }
@@ -242,7 +249,7 @@ void UBLOX::read_ubx(uint8_t byte)
         parse_state_ = START;
         std::cout << "\n the message is too big" << "\n";
         looking_for_rtcm_ = true;
-        UBX = false;
+        ubx = false;
         return;
       }
       break;
@@ -269,7 +276,7 @@ void UBLOX::read_ubx(uint8_t byte)
     default:
       num_errors_++;
       looking_for_rtcm_ = true;
-      UBX = false;
+      ubx = false;
       break;
     }
 
@@ -288,7 +295,7 @@ void UBLOX::read_ubx(uint8_t byte)
         parse_state_ = START;
       }
       looking_for_rtcm_ = true;
-      UBX = false;
+      ubx = false;
     }
 
 }
@@ -514,7 +521,7 @@ void UBLOX::config(int rover)
     memset(&out_message_, 0, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData = 1; //output every cfg epoch?
+    out_message_.CFG_VALSET.cfgData = 0; //output every cfg epoch?
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_0USB;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_1USB;

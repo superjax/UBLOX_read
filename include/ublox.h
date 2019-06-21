@@ -1,5 +1,7 @@
 #ifndef UBLOX_H
 #define UBLOX_H
+#ifndef UBX_H
+#define UBX_H
 
 #define UBLOX_BUFFER_SIZE 256
 #define RTCM_BUFFER_SIZE 1022
@@ -481,6 +483,8 @@ public:
   void posECEF(double* pos) const;
   void velECEF(double* vel) const;
 
+  UBX_message_t out_message_;
+  UBX_message_t in_message_;
   
 private:
   bool detect_baudrate();
@@ -497,8 +501,7 @@ private:
   uint32_t current_baudrate_ = 115200;
   const uint32_t baudrates[5] = {115200, 19200, 57600, 9600, 38400};
   
-  UBX_message_t out_message_;
-  UBX_message_t in_message_;
+
 //  RTCM_message_t RTCM_message;
     
   uint16_t buffer_head_ = 0;
@@ -526,7 +529,7 @@ private:
   bool looking_for_ubx_ = false;
   bool looking_for_rtcm_ = false;
   bool NMEA = false;
-  bool UBX = false;
+  bool ubx = false;
   bool RTCM = false;
   bool RTCM_flag = false;
   bool udp_start = true;
@@ -543,3 +546,43 @@ private:
 
 #endif // UBLOX_H
 
+class UBX {
+public:
+
+    typedef enum {
+      START,
+      GOT_START_FRAME,
+      GOT_CLASS,
+      GOT_MSG_ID,
+      GOT_LENGTH1,
+      GOT_LENGTH2,
+      GOT_PAYLOAD,
+      GOT_CK_A,
+      GOT_CK_B,
+      GOT_CK_C,
+      DONE,
+    } parse_state_t;
+
+    uint8_t byte;
+    bool read_ubx(uint8_t byte);
+    parse_state_t parse_state_;
+
+
+private:
+
+    uint16_t buffer_head_;
+    bool got_message_ = false;
+    uint8_t message_class_;
+    uint8_t message_type_;
+    uint16_t length_;
+    uint8_t ck_a_;
+    uint8_t ck_b_;
+    uint32_t num_errors_ = 0;
+    uint32_t num_messages_received_ = 0;
+    int message_sent = 0;
+
+    UBLOX::UBX_message_t out_message_;
+    UBLOX::UBX_message_t in_message_;
+};
+
+#endif // UBX_H
