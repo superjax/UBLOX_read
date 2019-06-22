@@ -3,8 +3,18 @@
 
 NMEA::NMEA()
 {
+    prev_byte_ = 0;
+    length_ = 0;
     end_message_ = false;
     start_message_ = false;
+    new_data_ = false;
+}
+
+bool NMEA::new_data()
+{
+    bool tmp = new_data_;
+    new_data_ = false;
+    return tmp;
 }
 
 bool NMEA::parsing_message()
@@ -14,7 +24,7 @@ bool NMEA::parsing_message()
 
 bool NMEA::read_cb(uint8_t byte)
 {
-    length_++;
+    buffer_[length_++] = byte;
 
     // found start of NMEA packet
     if ((byte == START_BYTE2 && prev_byte_ == START_BYTE1))
@@ -32,6 +42,7 @@ bool NMEA::read_cb(uint8_t byte)
         length_ = 0;
 
         prev_byte_ = byte;
+        //printf("%s", buffer_); //to see nmea messages
         return true;
     }
 

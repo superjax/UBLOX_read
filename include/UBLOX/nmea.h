@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 
 class NMEA
 {
@@ -19,13 +20,14 @@ public:
     NMEA();
     bool read_cb(uint8_t byte);
     bool parsing_message();
-    inline volatile bool got_data() const { return got_data_; }
-    volatile bool got_data_;
+    bool new_data();
+    bool new_data_;
 
     size_t length_;
     bool start_message_;
     bool end_message_;
     uint8_t prev_byte_;
+    uint8_t buffer_[BUFFER_SIZE];
 };
 
 #endif

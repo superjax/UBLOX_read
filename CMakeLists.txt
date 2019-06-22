@@ -18,7 +18,11 @@ add_library(UBLOX
 
 find_package(Threads REQUIRED)
 
-add_executable(ublox
-  src/main.cpp
-)
-target_link_libraries(ublox UBLOX async_comm pthread)
+add_executable(base src/base.cpp)
+target_link_libraries(base UBLOX async_comm pthread)
+
+add_executable(rover src/rover.cpp)
+target_link_libraries(rover UBLOX async_comm pthread)
+
+add_executable(read src/read.cpp)
+target_link_libraries(read UBLOX async_comm pthread)

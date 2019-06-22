@@ -5,6 +5,13 @@ UBLOX::UBLOX(rtk_type_t type, std::string port) :
     ubx_(serial_),
     type_(type)
 {
+    auto cb = [this](const uint8_t* buffer, size_t size)
+    {
+        this->serial_read_cb(buffer, size);
+    };
+    serial_.register_receive_callback(cb);
+    serial_.init();
+
     // configure the parsers
     ubx_.set_nav_rate(100);
     ubx_.enable_message(UBX::CLASS_NAV, UBX::NAV_PVT, 10);
@@ -27,11 +34,6 @@ UBLOX::~UBLOX()
         delete udp_;
 }
 
-void UBLOX::serial_read_cb(const uint8_t* buf, size_t size)
-{
-
-}
-
 void UBLOX::udp_read_cb(const uint8_t* buf, size_t size)
 {
     assert(type_ == ROVER);
@@ -40,24 +42,48 @@ void UBLOX::udp_read_cb(const uint8_t* buf, size_t size)
         rtcm_.read_cb(buf[i]);
 }
 
+void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        /// TODO: don't give parsers data they don't need
+        if (ubx_.parsing_message())
+            ubx_.read_cb(buf[i]);
+        else if (rtcm_.parsing_message() && type_ != NONE)
+            rtcm_.read_cb(buf[i]);
+        else if (nmea_.parsing_message())
+            nmea_.read_cb(buf[i]);
+        else
+        {
+            ubx_.read_cb(buf[i]);
+            rtcm_.read_cb(buf[i]);
+            nmea_.read_cb(buf[i]);
+        }
+
+    }
+}
+
 
 void UBLOX::configRover()
 {
-    if (udp_)
-        throw std::runtime_error("Unable to create two UDP connections");
+    assert(udp_ == nullptr);
+
+    // Connect the rtcm_cb callback to forward data to the UBX serial port
+    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
+    {
+        this->rtcm_complete_cb(buf, size);
+    });
 
     // hook up UDP to listen
+    /// TODO: configure ports and IP from cli
     udp_ = new async_comm::UDP("localhost", 14620, "localhost", 14625);
-    auto rec_cb_trampoline = [this](const uint8_t* buf, size_t size)
+    udp_->register_receive_callback([this](const uint8_t* buf, size_t size)
     {
         this->udp_read_cb(buf, size);
-    };
-    udp_->register_receive_callback(rec_cb_trampoline);
+    });
 
     if (!udp_->init())
-    {
         throw std::runtime_error("Failed to initialize Rover receive UDP");
-    }
 }
 
 void UBLOX::configBase()
@@ -74,16 +100,12 @@ void UBLOX::configBase()
     }
 }
 
-void UBLOX::update()
+void UBLOX::rtcm_complete_cb(const uint8_t *buf, size_t size)
 {
-    rtcm_.msg_lock_.lock();
-    if (rtcm_.new_data())
-    {
-        serial_.send_bytes(rtcm_.out_buffer_, rtcm_.message_len_);
-    }
-    rtcm_.msg_lock_.unlock();
+    assert (type_ == ROVER || type_ == BASE);
 
-
+    if (type_ == ROVER)
+        serial_.send_bytes(buf, size);
+    else if (type_ == BASE)
+        udp_->send_bytes(buf, size);
 }
-
-

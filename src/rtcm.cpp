@@ -3,10 +3,12 @@
 
 RTCM::RTCM()
 {
-    new_data_ = false;
     buffer_head_ = 0;
     parse_state_ = START;
+    prev_byte_ = 0;
+
     start_message_ = false;
+    new_data_ = false;
     end_message_ = false;
 }
 
@@ -17,7 +19,9 @@ bool RTCM::parsing_message()
 
 bool RTCM::new_data()
 {
-     return new_data_;
+    bool tmp = new_data_;
+    new_data_ = false;
+    return tmp;
 }
 
 bool RTCM::read_cb(uint8_t byte)
@@ -90,6 +94,7 @@ bool RTCM::read_cb(uint8_t byte)
         end_message_ = true;
         decode();
         prev_byte_ = byte;
+//        printf("RTCM length: %d\n", buffer_head_);
         return true;
     }
 
@@ -99,14 +104,13 @@ bool RTCM::read_cb(uint8_t byte)
 
 void RTCM::decode()
 {
-    // just copy the data into the out buffer for future retreival
-    // and set the new_data flag
-    msg_lock_.lock();
-    for (int i = 0; i < buffer_head_; i++)
-    {
-        out_buffer_[i] = in_buffer_[i];
-    }
     new_data_ = true;
     message_len_ = buffer_head_;
-    msg_lock_.unlock();
+    for (auto& cb : callbacks_)
+        cb(in_buffer_, buffer_head_);
+}
+
+void RTCM::registerCallback(rtcm_cb cb)
+{
+    callbacks_.push_back(cb);
 }
