@@ -15,7 +15,8 @@ public:
     uint8_t out_buffer_[BUFFER_SIZE];
 
     bool read_cb(uint8_t byte);
-    inline volatile bool new_data() const { return new_data_; }
+    bool parsing_message();
+    bool new_data();
     volatile bool new_data_;
 
     void decode();
@@ -24,10 +25,15 @@ public:
     size_t message_len_; // length, including header and footer
     size_t buffer_head_;
     size_t payload_len_;
-    bool got_message_;
+    bool start_message_;
+    bool end_message_;
     uint8_t ck_a_, ck_b_, ck_c_;
     uint8_t prev_byte_;
     size_t num_errors_;
+
+    enum {
+        START_BYTE = 0xD3
+    };
 
     typedef enum {
       START,
