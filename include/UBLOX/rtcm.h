@@ -12,7 +12,6 @@ public:
     static constexpr int BUFFER_SIZE = 1022;
     RTCM();
     uint8_t in_buffer_[BUFFER_SIZE];
-    uint8_t out_buffer_[BUFFER_SIZE];
 
     bool read_cb(uint8_t byte);
     bool parsing_message();
@@ -50,7 +49,9 @@ public:
     } parse_state_t;
     parse_state_t parse_state_;
 
-    std::mutex msg_lock_;
+    typedef std::function<void(uint8_t*, size_t)> rtcm_cb;
+    std::vector<rtcm_cb> callbacks_;
+    void registerCallback(rtcm_cb cb);
 };
 
 

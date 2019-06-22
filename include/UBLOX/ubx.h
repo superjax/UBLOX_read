@@ -26,6 +26,19 @@ public:
     // first time after a new message
     bool new_data();
 
+    // callback handling
+    typedef std::function<void(uint8_t, uint8_t, const UBX_message_t&)> ubx_cb;
+    struct callback_t
+    {
+        uint8_t cls;
+        uint8_t type;
+        ubx_cb cb;
+    };
+    void registerCallback(uint8_t cls, uint8_t type, ubx_cb cb);
+    std::vector<callback_t> callbacks;
+
+    bool parsing_message();
+
     size_t num_messages_received();
 
     // Turns on a message of supplied type and at supplied
@@ -37,16 +50,18 @@ public:
     void set_nav_rate(uint8_t period_ms);
 
     // Send the supplied message
-    bool send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& message, uint16_t len);
+    bool send_message(uint8_t msg_class, uint8_t msg_id,
+                      UBX_message_t& message, uint16_t len);
 
     // Main buffers for communication
     UBX_message_t out_message_;
     UBX_message_t in_message_;
 
-private:
     // low-level parsing functions
     bool decode_message();
-    void calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len, const UBX_message_t payload, uint8_t &ck_a, uint8_t &ck_b) const;
+    void calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id,
+                            const uint16_t len, const UBX_message_t payload,
+                            uint8_t &ck_a, uint8_t &ck_b) const;
 
     // Parsing State Working Memory
     uint8_t prev_byte_;

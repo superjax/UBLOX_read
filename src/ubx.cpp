@@ -21,13 +21,21 @@ UBX::UBX(async_comm::Serial& ser) :
     length_ = 0;
     ck_a_ = 0;
     ck_b_ = 0;
+    prev_byte_ = 0;
+    start_message_ = false;
+    new_data_ = false;
+    end_message_ = false;
+}
 
-    auto cb = [this](const uint8_t* buffer, size_t size)
-    {
-        for (int i = 0; i < size; i++)
-            this->read_cb(buffer[i]);
-    };
-    serial_.register_receive_callback(cb);
+void UBX::registerCallback(uint8_t cls, uint8_t type,
+                std::function<void(uint8_t, uint8_t, const UBX_message_t&)> cb)
+{
+    callbacks.push_back({cls, type, cb});
+}
+
+bool UBX::parsing_message()
+{
+    return (start_message_ == true && end_message_ == false);
 }
 
 bool UBX::new_data()
@@ -167,6 +175,7 @@ bool UBX::read_cb(uint8_t byte)
             start_message_ = false;
             new_data_ = true;
             prev_byte_ = byte;
+            //printf("UBX length: %d \n", length_);
             return true;
         }
         else
@@ -193,7 +202,7 @@ bool UBX::decode_message()
 
     num_messages_received_++;
     DBG("recieved message %d: ", num_messages_received_);
-    DBG("of type %x:%xs\n", message_class_, message_type_);
+    DBG("of type 0x%2x:0x%2x\n", message_class_, message_type_);
 
     // Parse the payload
     switch (message_class_)
@@ -218,6 +227,14 @@ bool UBX::decode_message()
     default:
         break;
     }
+
+    // call callbacks
+    for (auto& cb : callbacks)
+    {
+        if (message_class_ == cb.cls && message_type_ == cb.type)
+            cb.cb(message_class_, message_type_, in_message_);
+    }
+
     new_data_ = true;
     return true;
 }
