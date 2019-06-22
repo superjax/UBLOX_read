@@ -6,6 +6,18 @@ RTCM::RTCM()
     new_data_ = false;
     buffer_head_ = 0;
     parse_state_ = START;
+    start_message_ = false;
+    end_message_ = false;
+}
+
+bool RTCM::parsing_message()
+{
+    return (start_message_ == true && end_message_ == false);
+}
+
+bool RTCM::new_data()
+{
+     return new_data_;
 }
 
 bool RTCM::read_cb(uint8_t byte)
@@ -13,14 +25,18 @@ bool RTCM::read_cb(uint8_t byte)
     switch (parse_state_)
     {
     case START:
-        buffer_head_ = 0;
-        parse_state_ = GOT_START_FRAME;
-        payload_len_ = 0;
-        ck_a_ = 0;
-        ck_b_ = 0;
-        ck_c_ = 0;
-        got_message_ = true;
-        in_buffer_[buffer_head_++] = byte;
+        if (byte == START_BYTE)
+        {
+            buffer_head_ = 0;
+            parse_state_ = GOT_START_FRAME;
+            payload_len_ = 0;
+            ck_a_ = 0;
+            ck_b_ = 0;
+            ck_c_ = 0;
+            start_message_ = true;
+            end_message_ = false;
+            in_buffer_[buffer_head_++] = byte;
+        }
         break;
     case GOT_START_FRAME:
         in_buffer_[buffer_head_++] = byte;
@@ -34,17 +50,15 @@ bool RTCM::read_cb(uint8_t byte)
         {
             num_errors_++;
             parse_state_ = START;
+            prev_byte_ = byte;
             return false;
         }
         break;
     case GOT_LENGTH2:
         in_buffer_[buffer_head_++] = byte;
-        if (buffer_head_ < payload_len_)
+        if (buffer_head_ == payload_len_-1)
         {
-            if (buffer_head_ == payload_len_-1)
-            {
-                parse_state_ = GOT_PAYLOAD;
-            }
+            parse_state_ = GOT_PAYLOAD;
         }
         break;
     case GOT_PAYLOAD:
@@ -64,6 +78,7 @@ bool RTCM::read_cb(uint8_t byte)
         break;
     default:
         num_errors_++;
+        parse_state_ = START;
         break;
     }
 
@@ -71,9 +86,13 @@ bool RTCM::read_cb(uint8_t byte)
     if (parse_state_ == GOT_CK_C)
     {
         parse_state_ = START;
+        start_message_ = false;
+        end_message_ = true;
         decode();
+        prev_byte_ = byte;
         return true;
     }
+
     prev_byte_ = byte;
     return false;
 }
