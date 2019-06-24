@@ -136,6 +136,8 @@ bool UBX::read_cb(uint8_t byte)
             num_errors_++;
             parse_state_ = START;
             prev_byte_ = byte;
+            end_message_ = false;
+            start_message_ = false;
             return false;
         }
         break;
@@ -162,6 +164,8 @@ bool UBX::read_cb(uint8_t byte)
     default:
         num_errors_++;
         parse_state_ = START;
+        end_message_ = false;
+        start_message_ = false;
         break;
     }
 
@@ -273,7 +277,7 @@ void UBX::turnOnRTCM()
     memset(&out_message_, 0, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData = 0; //output every cfg epoch?
+    out_message_.CFG_VALSET.cfgData = 1; //output every cfg epoch?
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_0USB;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_1USB;

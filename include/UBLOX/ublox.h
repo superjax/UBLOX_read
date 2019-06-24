@@ -15,6 +15,17 @@
 class UBLOX
 {
 public:
+    enum
+    {
+        START_BYTE_UBX = 0xB5,
+        START_BYTE_UBX2 = 0x62,
+
+        START_BYTE_RTCM = 0xD3,
+
+        START_BYTE_NMEA = '$',
+        START_BYTE_NMEA2 = 'G',
+    };
+
     typedef enum
     {
         NONE = 0,
@@ -46,6 +57,12 @@ public:
 
     void configRover();
     void configBase();
+
+    int j = 1;
+    int k = 1;
+    int l = 1;
+    int m = 1;
+    int message;
 
 };
 

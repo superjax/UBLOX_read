@@ -9,9 +9,11 @@
 class RTCM
 {
 public:
-    static constexpr int BUFFER_SIZE = 1022;
+    static constexpr int BUFFER_SIZE = 1024;
     RTCM();
     uint8_t in_buffer_[BUFFER_SIZE];
+    uint32_t canary_ = 0xCAFEBABE;
+
 
     bool read_cb(uint8_t byte);
     bool parsing_message();
