@@ -5,6 +5,9 @@ UBLOX::UBLOX(rtk_type_t type, std::string port) :
     ubx_(serial_),
     type_(type)
 {
+    printf("type = %d", type_);
+    fflush(stdout);
+
     auto cb = [this](const uint8_t* buffer, size_t size)
     {
         this->serial_read_cb(buffer, size);
@@ -36,23 +39,34 @@ UBLOX::~UBLOX()
 
 void UBLOX::udp_read_cb(const uint8_t* buf, size_t size)
 {
+
     assert(type_ == ROVER);
 
     for (int i = 0; i < size; i++)
+    {
         rtcm_.read_cb(buf[i]);
+
+    }
 }
 
 void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
 {
+
     for (int i = 0; i < size; i++)
     {
         /// TODO: don't give parsers data they don't need
         if (ubx_.parsing_message())
-            ubx_.read_cb(buf[i]);
+            {
+                ubx_.read_cb(buf[i]);
+            }
         else if (rtcm_.parsing_message() && type_ != NONE)
-            rtcm_.read_cb(buf[i]);
+            {
+                 rtcm_.read_cb(buf[i]);
+            }
         else if (nmea_.parsing_message())
-            nmea_.read_cb(buf[i]);
+            {
+                nmea_.read_cb(buf[i]);
+            }
         else
         {
             ubx_.read_cb(buf[i]);
@@ -67,7 +81,6 @@ void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
 void UBLOX::configRover()
 {
     assert(udp_ == nullptr);
-
     // Connect the rtcm_cb callback to forward data to the UBX serial port
     rtcm_.registerCallback([this](uint8_t* buf, size_t size)
     {
@@ -98,12 +111,16 @@ void UBLOX::configBase()
     {
         throw std::runtime_error("Failed to initialize Rover receive UDP");
     }
+
+    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
+    {
+        this->udp_->send_bytes(buf, size);
+    });
 }
 
 void UBLOX::rtcm_complete_cb(const uint8_t *buf, size_t size)
 {
     assert (type_ == ROVER || type_ == BASE);
-
     if (type_ == ROVER)
         serial_.send_bytes(buf, size);
     else if (type_ == BASE)

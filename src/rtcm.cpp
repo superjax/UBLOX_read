@@ -29,9 +29,9 @@ bool RTCM::read_cb(uint8_t byte)
     switch (parse_state_)
     {
     case START:
+        buffer_head_ = 0;
         if (byte == START_BYTE)
         {
-            buffer_head_ = 0;
             parse_state_ = GOT_START_FRAME;
             payload_len_ = 0;
             ck_a_ = 0;
@@ -50,19 +50,32 @@ bool RTCM::read_cb(uint8_t byte)
         in_buffer_[buffer_head_++] = byte;
         payload_len_ = ((prev_byte_ & 0x3)<<8) | byte;
         parse_state_ = GOT_LENGTH2;
-        if (payload_len_ > BUFFER_SIZE)
+        if (payload_len_ > BUFFER_SIZE || payload_len_ == 0)
         {
             num_errors_++;
             parse_state_ = START;
             prev_byte_ = byte;
+            start_message_ = false;
+            end_message_ = false;
             return false;
         }
         break;
     case GOT_LENGTH2:
         in_buffer_[buffer_head_++] = byte;
-        if (buffer_head_ == payload_len_-1)
+        if (buffer_head_ -3 == payload_len_-1) // remember that buffer_head includes the header
         {
             parse_state_ = GOT_PAYLOAD;
+        }
+        if (buffer_head_ -3 > payload_len_-1) // remember that buffer_head includes the header
+        {
+            printf("buffer head > payload lenght");
+            fflush(stdout);
+            num_errors_++;
+            parse_state_ = START;
+            prev_byte_ = byte;
+            start_message_ = false;
+            end_message_ = false;
+            return false;
         }
         break;
     case GOT_PAYLOAD:
@@ -81,9 +94,15 @@ bool RTCM::read_cb(uint8_t byte)
         parse_state_ = GOT_CK_C;
         break;
     default:
+        buffer_head_ = 0;
         num_errors_++;
         parse_state_ = START;
         break;
+    }
+
+    if (canary_ != 0xCAFEBABE)
+    {
+        int debug = 1;
     }
 
     // If we have a complete packet, then try to parse it
