@@ -275,6 +275,11 @@ typedef struct {
         //!!!!also use RTCM_1230USB above!!!///
     };
 
+    enum {
+        VALGET_DGNSSMODE = 0x20140011,
+        VALGET_MSGOUT_RELPOSNED = 0x20910090,
+    };
+
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
     uint8_t layer;
     uint8_t reserved1[2];
@@ -298,6 +303,7 @@ typedef struct {
     enum {
         VALSET_float = 2,
         VALSET_fixed  = 3,
+        VALSET_MSGOUT_RELPOSNED = 0x20910090,
     };
 
     enum { //outgoing message rates for RTCM 3x on usb type U1
@@ -395,6 +401,42 @@ typedef struct  {
     uint16_t magAcc; // 1e-2 deg Magnetic declination accuracy
 }__attribute__((packed)) NAV_PVT_t;
 
+typedef struct  {
+    enum {
+        FLAGS_gnssFixOK =           0b000000001,
+        FLAGS_diffSoln =            0b000000010,
+        FLAGS_relPosValid =         0b000000100,
+        FLAGS_carrSoln_float =      0b000001000,
+        FLAGS_carrSoln_fixed =      0b000010000,
+        FLAGS_isMoving =            0b000100000,
+        FLAGS_refPosMiss =          0b001000000,
+        FLAGS_refObsMiss =          0b010000000,
+        FLAGS_relPosHeadingValid =  0b100000000,
+    };
+    uint8_t version; //Message version (0x01 for this version)
+    uint8_t reserved1; //Reserved
+    uint16_t refStationId; //Reference Station ID. Must be in the range 0..4095
+    uint32_t iTow; //GPS time of week ms of the navigation epoch. See the description of iTOW for details.
+    uint32_t relPosN; // North component cm of relative position vector
+    uint32_t relPosE; // East component cm of relative position vector
+    uint32_t relPosD; // Down component cm of relative position vector
+    uint32_t relPosLength; // Length cm of relative position vector
+    uint32_t relPosHeading; //Heading deg of the relative position vector. Scaled 1e-5
+    uint8_t reserved2[4]; //reserved
+    uint8_t relPosHPN; //See Interface Description pg 157
+    uint8_t relPosHPE; //See Interface Description pg 157
+    uint8_t relPosHPD; //See Interface Description pg 157
+    uint8_t relPosHPLength; //See Interface Description pg 157
+    uint32_t accN; //Accuracy mm of relative position North component
+    uint32_t accE; //Accuracy mm of relative position East component
+    uint32_t accD; //Accuracy mm of relative position Down component
+    uint32_t accLength; //Accuracy mm of Length of the relative position vector
+    uint32_t accHeading; //Accuracy deg of heading of the relative position vector
+    uint8_t reserved3[4]; //Reserved
+    uint32_t flags; //See graphic in Interface Description pg 158
+
+}__attribute__((packed)) NAV_RELPOSNED_t;
+
 typedef struct
 {
     uint32_t iTOW; // ms GPS time of week of the  navigation epoch . See the  description of iTOW for details.
@@ -426,4 +468,5 @@ typedef union {
     NAV_PVT_t NAV_PVT;
     NAV_POSECEF_t NAV_POSECEF;
     NAV_VELECEF_t NAV_VELECEF;
+    NAV_RELPOSNED_t NAV_RELPOSNED;
 } UBX_message_t;
