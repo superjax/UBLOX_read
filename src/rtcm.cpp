@@ -1,5 +1,6 @@
 #include "UBLOX/rtcm.h"
 
+#define DBG(...) fprintf(stderr, __VA_ARGS__)
 
 RTCM::RTCM()
 {
@@ -62,13 +63,13 @@ bool RTCM::read_cb(uint8_t byte)
         break;
     case GOT_LENGTH2:
         in_buffer_[buffer_head_++] = byte;
-        if (buffer_head_ -3 == payload_len_-1) // remember that buffer_head includes the header
+        if (buffer_head_ -3 == payload_len_) // remember that buffer_head includes the header
         {
             parse_state_ = GOT_PAYLOAD;
         }
-        if (buffer_head_ -3 > payload_len_-1) // remember that buffer_head includes the header
+        if (buffer_head_ -3 > payload_len_) // remember that buffer_head includes the header
         {
-            printf("buffer head > payload lenght");
+            printf("buffer head > payload length");
             fflush(stdout);
             num_errors_++;
             parse_state_ = START;
@@ -92,11 +93,21 @@ bool RTCM::read_cb(uint8_t byte)
         in_buffer_[buffer_head_++] = byte;
         ck_c_ = byte;
         parse_state_ = GOT_CK_C;
+        if (buffer_head_ > BUFFER_SIZE)
+        {
+            buffer_head_ = 0;
+            num_errors_++;
+            parse_state_ = START;
+            start_message_ = false;
+            end_message_ = true;
+        }
         break;
     default:
         buffer_head_ = 0;
         num_errors_++;
         parse_state_ = START;
+        start_message_ = false;
+        end_message_ = true;
         break;
     }
 
@@ -113,7 +124,7 @@ bool RTCM::read_cb(uint8_t byte)
         end_message_ = true;
         decode();
         prev_byte_ = byte;
-//        printf("RTCM length: %d\n", buffer_head_);
+        //DBG("RTCM length: %d\n", buffer_head_);
         return true;
     }
 

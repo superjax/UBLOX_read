@@ -1,4 +1,11 @@
 #include "UBLOX/ublox.h"
+#define DBG(...) fprintf(stderr, __VA_ARGS__)
+
+int p = 1;
+int unknown = 0;
+int ubx = 0;
+int rtcm = 0;
+int nmea = 0;
 
 UBLOX::UBLOX(rtk_type_t type, std::string port) :
     serial_(port, 115200),
@@ -26,9 +33,15 @@ UBLOX::UBLOX(rtk_type_t type, std::string port) :
     if (type_ & RTK == RTK )
         ubx_.turnOnRTCM();
     if (type_ == ROVER)
+    {
         configRover();
+        ubx_.config_rover();
+    }
     if (type_ == BASE)
+    {
         configBase();
+        ubx_.config_base();
+    }
 }
 
 UBLOX::~UBLOX()
@@ -58,20 +71,31 @@ void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
         if (ubx_.parsing_message())
             {
                 ubx_.read_cb(buf[i]);
+                ubx++;
+                p = 1;
             }
         else if (rtcm_.parsing_message() && type_ != NONE)
             {
                  rtcm_.read_cb(buf[i]);
+                 rtcm++;
+                 p = 1;
             }
         else if (nmea_.parsing_message())
             {
                 nmea_.read_cb(buf[i]);
+                nmea++;
+                p = 1;
             }
         else
         {
             ubx_.read_cb(buf[i]);
             rtcm_.read_cb(buf[i]);
             nmea_.read_cb(buf[i]);
+            if(p>1)
+            {
+                unknown++;
+            }
+            p++;
         }
 
     }

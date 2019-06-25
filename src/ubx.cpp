@@ -205,8 +205,8 @@ bool UBX::decode_message()
         return false;
 
     num_messages_received_++;
-    DBG("recieved message %d: ", num_messages_received_);
-    DBG("of type 0x%2x:0x%2x\n", message_class_, message_type_);
+//    DBG("recieved message %d: ", num_messages_received_);
+//    DBG("of type 0x%2x:0x%2x\n", message_class_, message_type_);
 
     // Parse the payload
     switch (message_class_)
@@ -228,6 +228,30 @@ bool UBX::decode_message()
             break;
         }
         break;
+//    case CLASS_NAV:
+//        DBG("NAV_");
+//        switch (message_type_)
+//        {
+//        case NAV_PVT:
+//            DBG("PVT \n");
+//            break;
+//        case NAV_RELPOSNED:
+//            DBG("RELPOSNED \n");
+//            break;
+//        default:
+//            DBG("%d \n", message_type_);
+//            break;
+//        }
+//    case CLASS_CFG: //only needed for getting data
+//        DBG("CFG_");
+//        switch (message_type_)
+//        {
+//        case CFG_VALGET:
+//            DBG("VALGET = ");
+//            int value = in_message_.CFG_VALGET.cfgData;
+//            DBG("%d \n", value);
+//        }
+
     default:
         break;
     }
@@ -274,7 +298,24 @@ void UBX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const 
 
 void UBX::turnOnRTCM()
 {
+
+}
+
+void UBX::config_rover()
+{
+
     memset(&out_message_, 0, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
+    out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
+    out_message_.CFG_VALSET.cfgData = 10; //output every cfg epoch?
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_MSGOUT_RELPOSNED;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+
+}
+
+void UBX::config_base()
+{
+    memset(&out_message_, 1, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
     out_message_.CFG_VALSET.cfgData = 1; //output every cfg epoch?
@@ -293,47 +334,12 @@ void UBX::turnOnRTCM()
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1230USB;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 
-    //    in_message_.CFG_VALGET.cfgData = 0; //clear value
-    //    memset(&out_message_, 0, sizeof(CFG_VALGET_t));
-    //    out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
-    //    out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
-    //    out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::RTCM_1230USB;
-    //    send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
-}
-
-void UBX::config_rover()
-{
-    DBG("configuring rover \n");
-
-    bool conf_set = 0; //use 1 to set cfg data
-    if (conf_set == 1)
-    {
-
-    }
-
-    bool conf_get = 1; //use 1 to get conf data
-    if (conf_get == 1)
-    {
-
-    }
-
-}
-
-void UBX::config_base()
-{
-    DBG("configuring base \n");
-
-    bool conf_set = 1; //use 1 to set cfg data
-    if (conf_set == 1)
-    {
-
-    }
-
-    bool conf_get = 1; //use 1 to get conf data
-    if (conf_get == 1)
-    {
-
-    }
+//        in_message_.CFG_VALGET.cfgData = 0; //clear value
+//        memset(&out_message_, 0, sizeof(CFG_VALGET_t));
+//        out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
+//        out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
+//        out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::VALGET_MSGOUT_RELPOSNED;
+//        send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
 }
 
 //void UBX::set_baudrate(const uint32_t baudrate)
