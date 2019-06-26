@@ -34,7 +34,7 @@ void relposned_callback(uint8_t cls, uint8_t type, const UBX::UBX_message_t& in_
             printf(" , Fixed \n");
         printf("%d relative t: %d, NED: %d, %d, %d, Distance: %d\n",
                i,
-               msg.iTow*1000,
+               msg.iTow/1000,
                msg.relPosN, msg.relPosE, msg.relPosD, msg.relPosLength);
     }
 

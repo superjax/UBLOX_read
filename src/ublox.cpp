@@ -58,6 +58,7 @@ void UBLOX::udp_read_cb(const uint8_t* buf, size_t size)
     for (int i = 0; i < size; i++)
     {
         rtcm_.read_cb(buf[i]);
+        rtcm++;
 
     }
 }
