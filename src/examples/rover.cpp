@@ -61,7 +61,8 @@ int main(int argc, char** argv)
     std::string port = "/dev/ttyACM0";
     if(argc > 1)
         port = argv[1];
-    UBLOX ublox(UBLOX::ROVER, port);
+    UBLOX ublox(port);
+    ublox.initRover("localhost", 16140, "localhost", 16145);
 
     // look for Ctrl+C and quit
     signal(SIGINT, inthand);

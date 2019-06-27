@@ -26,7 +26,7 @@ int main(int argc, char**argv)
     std::string port = "/dev/ttyACM0";
     if(argc > 1)
         port = argv[1];
-    UBLOX ublox(UBLOX::NONE, port);
+    UBLOX ublox(port);
 
     // look for Ctrl+C and quit
     signal(SIGINT, inthand);

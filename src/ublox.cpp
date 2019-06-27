@@ -7,13 +7,11 @@ int ubx = 0;
 int rtcm = 0;
 int nmea = 0;
 
-UBLOX::UBLOX(rtk_type_t type, std::string port) :
+UBLOX::UBLOX(std::string port) :
     serial_(port, 115200),
-    ubx_(serial_),
-    type_(type)
+    ubx_(serial_)
 {
-    printf("type = %d", type_);
-    fflush(stdout);
+    type_ = NONE;
 
     auto cb = [this](const uint8_t* buffer, size_t size)
     {
@@ -28,20 +26,57 @@ UBLOX::UBLOX(rtk_type_t type, std::string port) :
     ubx_.enable_message(UBX::CLASS_NAV, UBX::NAV_POSECEF, 10);
     ubx_.enable_message(UBX::CLASS_NAV, UBX::NAV_VELECEF, 10);
     ubx_.enable_message(UBX::CLASS_CFG, UBX::CFG_VALGET, 10);
+}
 
-    // configure RTCM message
-    if (type_ & RTK == RTK )
-        ubx_.turnOnRTCM();
-    if (type_ == ROVER)
+void UBLOX::initRover(std::string bind_host, uint16_t bind_port,
+                      std::string remote_host, uint16_t remote_port)
+{
+    type_ = ROVER;
+
+    assert(udp_ == nullptr);
+    // Connect the rtcm_cb callback to forward data to the UBX serial port
+    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
     {
-        configRover();
-        ubx_.config_rover();
-    }
-    if (type_ == BASE)
+        this->rtcm_complete_cb(buf, size);
+    });
+
+    // hook up UDP to listen
+    /// TODO: configure ports and IP from cli
+    udp_ = new async_comm::UDP(bind_host, bind_port, remote_host, remote_port);
+    udp_->register_receive_callback([this](const uint8_t* buf, size_t size)
     {
-        configBase();
-        ubx_.config_base();
+        this->udp_read_cb(buf, size);
+    });
+
+    if (!udp_->init())
+        throw std::runtime_error("Failed to initialize Rover receive UDP");
+
+    ubx_.turnOnRTCM();
+    ubx_.config_rover();
+}
+
+void UBLOX::initBase(std::string bind_host, uint16_t bind_port,
+                       std::string remote_host, uint16_t remote_port)
+{
+    type_ = BASE;
+
+    if (udp_)
+        throw std::runtime_error("Unable to create two UDP connections");
+
+    // hook up UDP to send
+    udp_ = new async_comm::UDP(bind_host, bind_port, remote_host, remote_port);
+
+    if (!udp_->init())
+    {
+        throw std::runtime_error("Failed to initialize Rover receive UDP");
     }
+
+    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
+    {
+        this->udp_->send_bytes(buf, size);
+    });
+    ubx_.turnOnRTCM();
+    ubx_.config_base();
 }
 
 UBLOX::~UBLOX()
@@ -100,47 +135,6 @@ void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
         }
 
     }
-}
-
-
-void UBLOX::configRover()
-{
-    assert(udp_ == nullptr);
-    // Connect the rtcm_cb callback to forward data to the UBX serial port
-    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
-    {
-        this->rtcm_complete_cb(buf, size);
-    });
-
-    // hook up UDP to listen
-    /// TODO: configure ports and IP from cli
-    udp_ = new async_comm::UDP("localhost", 14620, "localhost", 14625);
-    udp_->register_receive_callback([this](const uint8_t* buf, size_t size)
-    {
-        this->udp_read_cb(buf, size);
-    });
-
-    if (!udp_->init())
-        throw std::runtime_error("Failed to initialize Rover receive UDP");
-}
-
-void UBLOX::configBase()
-{
-    if (udp_)
-        throw std::runtime_error("Unable to create two UDP connections");
-
-    // hook up UDP to send
-    udp_ = new async_comm::UDP("localhost", 14625, "localhost", 14620);
-
-    if (!udp_->init())
-    {
-        throw std::runtime_error("Failed to initialize Rover receive UDP");
-    }
-
-    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
-    {
-        this->udp_->send_bytes(buf, size);
-    });
 }
 
 void UBLOX::rtcm_complete_cb(const uint8_t *buf, size_t size)

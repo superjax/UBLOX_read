@@ -1,6 +1,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifndef UBX_H
+namespace UBX {
+#endif
+
 static constexpr size_t BUFFER_SIZE = 256;
 
 enum {
@@ -470,3 +474,7 @@ typedef union {
     NAV_VELECEF_t NAV_VELECEF;
     NAV_RELPOSNED_t NAV_RELPOSNED;
 } UBX_message_t;
+
+#ifndef UBX_H
+}
+#endif
