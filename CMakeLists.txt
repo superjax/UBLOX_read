@@ -3,26 +3,59 @@ project(ublox)
 
 set(CMAKE_CXX_FLAGS "-std=c++11")
 
-add_subdirectory(lib/async_comm)
-
-include_directories(include
-  lib/async_comm/include
-)
+find_package(async_comm)
+if (NOT ${async_comm_FOUND})
+	add_subdirectory(lib/async_comm)
+	set(async_comm_LIBRARIES async_comm)
+	set(async_comm_INCLUDE_DIRS lib/async_comm/include)
+endif()
 
 add_library(UBLOX
     src/ublox.cpp
-    src/ubx.cpp
-    src/rtcm.cpp
-    src/nmea.cpp
+    src/parsers/ubx.cpp
+    src/parsers/rtcm.cpp
+    src/parsers/nmea.cpp
 )
+target_link_libraries(UBLOX ${async_comm_LIBRARIES})
+target_include_directories(UBLOX PUBLIC include ${async_comm_INCLUDE_DIRS})
 
-find_package(Threads REQUIRED)
 
-add_executable(base src/base.cpp)
-target_link_libraries(base UBLOX async_comm pthread)
+option(BUILD_EXAMPLES "Build Examples" ON)
+if (${BUILD_EXAMPLES})
+	add_executable(base src/examples/base.cpp)
+	target_link_libraries(base UBLOX)
 
-add_executable(rover src/rover.cpp)
-target_link_libraries(rover UBLOX async_comm pthread)
+	add_executable(rover src/examples/rover.cpp)
+	target_link_libraries(rover UBLOX)
 
-add_executable(read src/read.cpp)
-target_link_libraries(read UBLOX async_comm pthread)
+	add_executable(read src/examples/read.cpp)
+	target_link_libraries(read UBLOX)
+endif()
+
+option(BUILD_ROS "Build ROS Node" ON)
+if (${BUILD_ROS})
+	find_package(catkin REQUIRED COMPONENTS
+		roscpp
+		sensor_msgs
+		message_generation)
+
+	add_executable(ublox_ros src/ros/ublox_ros.cpp)
+	target_link_libraries(ublox_ros UBLOX ${catkin_LIBRARIES})
+        target_include_directories(ublox_ros PUBLIC ${catkin_INCLUDE_DIRS})
+
+	add_message_files(
+		DIRECTORY msg
+		FILES
+		GNSS.msg
+		PositionVelocityTime.msg
+		RelPos.msg)
+	generate_messages(
+  		DEPENDENCIES
+  		std_msgs)
+	catkin_package(
+		LIBRARIES UBLOX
+		INCLUDE_DIRS include
+  		CATKIN_DEPENDS std_msgs
+	)
+
+endif()
