@@ -307,7 +307,7 @@ void UBX::config_rover()
     memset(&out_message_, 0, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData = 10; //output every cfg epoch?
+    out_message_.CFG_VALSET.cfgData = 1;
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_MSGOUT_RELPOSNED;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 
@@ -318,7 +318,7 @@ void UBX::config_base()
     memset(&out_message_, 1, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData = 1; //output every cfg epoch?
+    out_message_.CFG_VALSET.cfgData = 1;
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_0USB;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_1USB;
