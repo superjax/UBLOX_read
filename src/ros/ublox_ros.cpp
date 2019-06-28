@@ -1,13 +1,13 @@
 #include <UBLOX/ublox_ros.h>
 
 #define createCallback(cls, type, fun, arg)\
-    do{\
+do{\
     auto trampoline = [this](uint8_t _class, uint8_t _type, const UBX::UBX_message_t& msg)\
-{\
-    this->fun(msg.arg);\
+    {\
+        this->fun(msg.arg);\
     };\
     ublox_->registerUBXCallback(cls, type, trampoline);\
-    }while(0)
+}while(0)
 
 constexpr double deg2rad(double x) { return M_PI/180.0 * x; }
 
