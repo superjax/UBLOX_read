@@ -22,10 +22,10 @@ UBLOX::UBLOX(std::string port) :
 
     // configure the parsers
     ubx_.set_nav_rate(100);
-    ubx_.enable_message(UBX::CLASS_NAV, UBX::NAV_PVT, 10);
-    ubx_.enable_message(UBX::CLASS_NAV, UBX::NAV_POSECEF, 10);
-    ubx_.enable_message(UBX::CLASS_NAV, UBX::NAV_VELECEF, 10);
-    ubx_.enable_message(UBX::CLASS_CFG, UBX::CFG_VALGET, 10);
+    ubx_.enable_message(UBX::CLASS_NAV, UBX::NAV_PVT, 1);
+    ubx_.enable_message(UBX::CLASS_NAV, UBX::NAV_POSECEF, 1);
+    ubx_.enable_message(UBX::CLASS_NAV, UBX::NAV_VELECEF, 1);
+    ubx_.enable_message(UBX::CLASS_CFG, UBX::CFG_VALGET, 1);
 }
 
 void UBLOX::initRover(std::string bind_host, uint16_t bind_port,
