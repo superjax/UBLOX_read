@@ -34,14 +34,11 @@ endif()
 
 option(BUILD_ROS "Build ROS Node" ON)
 if (${BUILD_ROS})
+    message(WARNING "BUILDING UBLOX ROS NODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	find_package(catkin REQUIRED COMPONENTS
 		roscpp
 		sensor_msgs
 		message_generation)
-
-	add_executable(ublox_ros src/ros/ublox_ros.cpp)
-	target_link_libraries(ublox_ros UBLOX ${catkin_LIBRARIES})
-        target_include_directories(ublox_ros PUBLIC ${catkin_INCLUDE_DIRS})
 
 	add_message_files(
 		DIRECTORY msg
@@ -57,5 +54,10 @@ if (${BUILD_ROS})
 		INCLUDE_DIRS include
   		CATKIN_DEPENDS std_msgs
 	)
+
+	add_executable(ublox_ros src/ros/ublox_ros.cpp)
+	target_link_libraries(ublox_ros UBLOX ${catkin_LIBRARIES})
+    target_include_directories(ublox_ros PUBLIC ${catkin_INCLUDE_DIRS})
+    add_dependencies(ublox_ros ${catkin_EXPORTED_TARGETS})
 
 endif()
