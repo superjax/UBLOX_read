@@ -4,8 +4,8 @@
 		<node name="f9p" pkg="ublox" type="ublox_ros">
 			<param name="serial_port" value="/dev/ttyACM0"/>
 			<param name="rtk_type" value="3"/>
-			<param name="bind_host" value="localhost"/>
-			<param name="bind_port" value="16140"/>
+			<param name="local_host" value="localhost"/>
+			<param name="local_port" value="16140"/>
 			<param name="remote_host" value="localhost"/>
 			<param name="remote_port" value="16145"/>
 		</node>
@@ -15,8 +15,8 @@
 		<node name="f9p" pkg="ublox" type="ublox_ros">
 			<param name="serial_port" value="/dev/ttyACM1"/>
 			<param name="rtk_type" value="2"/>
-			<param name="bind_host" value="localhost"/>
-			<param name="bind_port" value="16145"/>
+			<param name="local_host" value="localhost"/>
+			<param name="local_port" value="16145"/>
 			<param name="remote_host" value="localhost"/>
 			<param name="remote_port" value="16140"/>
 		</node>

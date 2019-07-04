@@ -28,7 +28,7 @@ UBLOX::UBLOX(std::string port) :
     ubx_.enable_message(UBX::CLASS_CFG, UBX::CFG_VALGET, 1);
 }
 
-void UBLOX::initRover(std::string bind_host, uint16_t bind_port,
+void UBLOX::initRover(std::string local_host, uint16_t local_port,
                       std::string remote_host, uint16_t remote_port)
 {
     type_ = ROVER;
@@ -42,7 +42,7 @@ void UBLOX::initRover(std::string bind_host, uint16_t bind_port,
 
     // hook up UDP to listen
     /// TODO: configure ports and IP from cli
-    udp_ = new async_comm::UDP(bind_host, bind_port, remote_host, remote_port);
+    udp_ = new async_comm::UDP(local_host, local_port, remote_host, remote_port);
     udp_->register_receive_callback([this](const uint8_t* buf, size_t size)
     {
         this->udp_read_cb(buf, size);
@@ -55,7 +55,7 @@ void UBLOX::initRover(std::string bind_host, uint16_t bind_port,
     ubx_.config_rover();
 }
 
-void UBLOX::initBase(std::string bind_host, uint16_t bind_port,
+void UBLOX::initBase(std::string local_host, uint16_t local_port,
                        std::string remote_host, uint16_t remote_port)
 {
     type_ = BASE;
@@ -64,7 +64,7 @@ void UBLOX::initBase(std::string bind_host, uint16_t bind_port,
         throw std::runtime_error("Unable to create two UDP connections");
 
     // hook up UDP to send
-    udp_ = new async_comm::UDP(bind_host, bind_port, remote_host, remote_port);
+    udp_ = new async_comm::UDP(local_host, local_port, remote_host, remote_port);
 
     if (!udp_->init())
     {

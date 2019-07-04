@@ -27,10 +27,10 @@ public:
     UBLOX(std::string port);
     ~UBLOX();
 
-    void initBase(std::string bind_host, uint16_t bind_port,
+    void initBase(std::string local_host, uint16_t local_port,
                   std::string remote_host, uint16_t remote_port);
 
-    void initRover(std::string bind_host, uint16_t bind_port,
+    void initRover(std::string local_host, uint16_t local_port,
                    std::string remote_host, uint16_t remote_port);
 
     async_comm::UDP* udp_ = nullptr;
