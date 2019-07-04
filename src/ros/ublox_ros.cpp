@@ -19,8 +19,8 @@ UBLOX_ROS::UBLOX_ROS() :
 {
     int rtk_type = nh_private_.param<int>("rtk_type", 0x00);
     std::string serial_port = nh_private_.param<std::string>("serial_port", "/dev/ttyACM0");
-    std::string bind_host = nh_private_.param<std::string>("bind_host", "localhost");
-    int bind_port = nh_private_.param<int>("bind_port", 16140);
+    std::string local_host = nh_private_.param<std::string>("local_host", "localhost");
+    int local_port = nh_private_.param<int>("local_port", 16140);
     std::string remote_host = nh_private_.param<std::string>("remote_host", "localhost");
     int remote_port = nh_private_.param<int>("remote_port", 16145);
 
@@ -36,9 +36,9 @@ UBLOX_ROS::UBLOX_ROS() :
 
     // set up RTK
     if (rtk_type == UBLOX::ROVER)
-        ublox_->initRover(bind_host, bind_port, remote_host, remote_port);
+        ublox_->initRover(local_host, local_port, remote_host, remote_port);
     else if (rtk_type == UBLOX::BASE)
-        ublox_->initBase(bind_host, bind_port, remote_host, remote_port);
+        ublox_->initBase(local_host, local_port, remote_host, remote_port);
 
     // connect callbacks
     createCallback(UBX::CLASS_NAV, UBX::NAV_PVT, pvtCB, NAV_PVT);
