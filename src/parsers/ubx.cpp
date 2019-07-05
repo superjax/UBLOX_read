@@ -242,15 +242,15 @@ bool UBX::decode_message()
 //            DBG("%d \n", message_type_);
 //            break;
 //        }
-//    case CLASS_CFG: //only needed for getting data
-//        DBG("CFG_");
-//        switch (message_type_)
-//        {
-//        case CFG_VALGET:
-//            DBG("VALGET = ");
-//            int value = in_message_.CFG_VALGET.cfgData;
-//            DBG("%d \n", value);
-//        }
+   case CLASS_CFG: //only needed for getting data
+       DBG("CFG_");
+       switch (message_type_)
+       {
+       case CFG_VALGET:
+           DBG("VALGET = ");
+           int value = in_message_.CFG_VALGET.cfgData;
+           DBG("%d \n", value);
+       }
 
     default:
         break;
@@ -298,7 +298,19 @@ void UBX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const 
 
 void UBX::turnOnRTCM()
 {
+    memset(&out_message_, 0, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
+    out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
+    out_message_.CFG_VALSET.cfgData = CFG_VALSET_t::DYNMODE_AIRBORNE_1G; 
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_DYNMODEL;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 
+    in_message_.CFG_VALGET.cfgData = 0; //clear value
+    memset(&out_message_, 0, sizeof(CFG_VALGET_t));
+    out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
+    out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
+    out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::VALGET_DYNMODEL;
+    send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
 }
 
 void UBX::config_rover()
