@@ -1,3 +1,10 @@
+#include <iostream>
+#include <fstream>
+#include <signal.h>
+
+using namespace std;
+
+
 #include <UBLOX/ublox_ros.h>
 
 #define createCallback(cls, type, fun, arg)\
@@ -116,6 +123,14 @@ void UBLOX_ROS::relposCB(const UBX::NAV_RELPOSNED_t& msg)
     out.accLength = msg.accLength*1e-3;
     out.accHeading = deg2rad(msg.accHeading*1e-5);
     out.flags = msg.flags;
+
+    ofstream myfile;
+    myfile.open ("../ws/src/ublox/textfiles/10 8ft Pivot/data.txt", ios::app);
+    myfile << out.header.stamp
+           << " " << out.relPosNED[0] << " " << out.relPosNED[1] << " " << out.relPosNED[2]
+           << " " << out.relPosLength << " " << out.flags << " \n";
+    myfile.close();
+
     relpos_pub_.publish(out);
 }
 

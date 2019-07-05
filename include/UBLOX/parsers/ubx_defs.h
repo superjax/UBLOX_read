@@ -284,6 +284,10 @@ typedef struct {
         VALGET_MSGOUT_RELPOSNED = 0x20910090,
     };
 
+    enum {
+        VALGET_DYNMODEL = 0x20110021, //Dynamic platform model
+    };
+
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
     uint8_t layer;
     uint8_t reserved1[2];
@@ -326,6 +330,21 @@ typedef struct {
         RTCM_1097USB = 0x2091031b, //CFG-MSGOUT-RTCM_3X_TYPE1097_USB
         RTCM_1127USB = 0x209102d9, //CFG-MSGOUT-RTCM_3X_TYPE1127_USB
         //!!!!also use RTCM_1230USB above!!!///
+    };
+
+    enum {
+
+        VALSET_DYNMODEL = 0x20110021, //Dynamic platform model
+        DYNMODE_PORTABLE = 0,
+        DYNMODE_STATIONARY = 2,
+        DYNMODE_PEDESTRIAN = 3,
+        DYNMODE_AUTOMOTIVE = 4,
+        DYNMODE_SEA = 5,
+        DYNMODE_AIRBORNE_1G = 6,
+        DYNMODE_AIRBORNE_2G = 7,
+        DYNMODE_AIRBORNE_4G = 8,
+        DYNMODE_WRIST_WORN = 9,
+        DYNMODE_BIKE =10,
     };
 
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
