@@ -1,4 +1,5 @@
 #include <signal.h>
+#include <fstream>
 
 #include "UBLOX/ublox.h"
 
@@ -21,23 +22,36 @@ void pvt_callback(uint8_t cls, uint8_t type, const UBX::UBX_message_t& in_msg)
 
 int main(int argc, char**argv)
 {
-    // Create a UBLOX instance
+//    // Create a UBLOX instance
 
-    std::string port = "/dev/ttyACM0";
-    if(argc > 1)
-        port = argv[1];
-    UBLOX ublox(port);
+//    std::string port = "/dev/ttyACM0";
+//    if(argc > 1)
+//        port = argv[1];
+//    UBLOX ublox(port);
 
-    // look for Ctrl+C and quit
-    signal(SIGINT, inthand);
+//    // look for Ctrl+C and quit
+//    signal(SIGINT, inthand);
 
-    // Connect a callback to the PVT message
-    ublox.registerUBXCallback(UBX::CLASS_NAV, UBX::NAV_PVT, &pvt_callback);
+//    // Connect a callback to the PVT message
+//    ublox.registerUBXCallback(UBX::CLASS_NAV, UBX::NAV_PVT, &pvt_callback);
 
-    while (!stop)
+//    while (!stop)
+//    {
+//    }
+
+//    std::cout << "\nquitting" << std::endl;
+//    return 0;
+
+    std::ifstream file("/home/superjax/Downloads/RTCM3.bin",  std::ifstream::binary);
+    file.seekg(0, file.end);
+    uint32_t len = file.tellg();
+    file.seekg (0, file.beg);
+    char* buffer = new char [len];
+    file.read(buffer, len);
+
+    RTCM rtcm;
+    for (int i = 0; i < len; i++)
     {
+        rtcm.read_cb(buffer[i]);
     }
-
-    std::cout << "\nquitting" << std::endl;
-    return 0;
 }

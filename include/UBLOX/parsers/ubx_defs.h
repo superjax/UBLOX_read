@@ -332,8 +332,17 @@ typedef struct {
     uint8_t layer;
     uint8_t reserved1[2];
     uint32_t cfgDataKey;
-    uint8_t cfgData;
+    union
+    {
+        uint8_t bytes[2];
+        uint16_t half_word;
+    } cfgData;
 
+    enum
+    {
+        LEN_BYTE = 8,
+        LEN_TWO_BYTES = 9,
+    };
 }__attribute__((packed)) CFG_VALSET_t;
 
 typedef struct {

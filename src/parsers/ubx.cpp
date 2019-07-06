@@ -304,35 +304,35 @@ void UBX::turnOnRTCM()
 void UBX::config_rover()
 {
 
-    memset(&out_message_, 0, sizeof(CFG_VALSET_t));
+    memset(&out_message_, 0, CFG_VALSET_t::LEN_BYTE);
     out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData = 1;
+    out_message_.CFG_VALSET.cfgData.bytes[0] = 1;
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_MSGOUT_RELPOSNED;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
 
 }
 
 void UBX::config_base()
 {
-    memset(&out_message_, 1, sizeof(CFG_VALSET_t));
+    memset(&out_message_, 1, CFG_VALSET_t::LEN_BYTE);
     out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData = 1;
+    out_message_.CFG_VALSET.cfgData.bytes[0] = 1;
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_0USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_1USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1077USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1087USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1097USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1127USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1230USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
 
 //        in_message_.CFG_VALGET.cfgData = 0; //clear value
 //        memset(&out_message_, 0, sizeof(CFG_VALGET_t));
