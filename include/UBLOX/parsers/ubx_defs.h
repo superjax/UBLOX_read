@@ -347,11 +347,29 @@ typedef struct {
         DYNMODE_BIKE =10,
     };
 
+    enum {
+
+        TMODE_MODE = 0x20030001,
+        TMODE_SVIN_MIN_DUR = 0x40030010, //survey in minimum duration s
+        TMODE_SVIN_ACC_LIMIT = 0x40030011, //Survey-in position accuracy limit mm
+    };
+
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
     uint8_t layer;
     uint8_t reserved1[2];
     uint32_t cfgDataKey;
-    uint8_t cfgData;
+
+    enum {
+        LEN_BYTE = 8,
+        LEN_2BYTE = 9
+    };
+
+    union 
+    {
+        uint8_t bytes[2];
+        uint16_t half_word;
+    } cfgData;
+
 
 }__attribute__((packed)) CFG_VALSET_t;
 
@@ -459,6 +477,27 @@ typedef struct  {
     uint32_t flags; //See graphic in Interface Description pg 158
 
 }__attribute__((packed)) NAV_RELPOSNED_t;
+
+typedef struct  {
+
+    uint8_t version; //Message version (0x01 for this version)
+    uint8_t reserved1[3]; //Reserved
+    uint32_t iTow; //GPS time of week ms of the navigation epoch. See the description of iTOW for details.
+    uint32_t dur; //Passed survey-in observation time s
+    uint32_t meanx; // Current survey-in mean position ECEF X coordinate cm
+    uint32_t meany; // Current survey-in mean position ECEF Y coordinate cm
+    uint32_t meanz; // Current survey-in mean position ECEF Z coordinate cm
+    uint8_t meanXHP; //See Interface Description pg 165
+    uint8_t meanYHP; //See Interface Description pg 165
+    uint8_t meanZHP; //See Interface Description pg 165
+    uint8_t reserved2[4]; //Reserved
+    uint32_t meanAcc; //Current survey-in mean position accuracy mm
+    uint32_t obs; //number of position observations used during survey-in
+    uint8_t valid; // Survey-in postion validity flag, 1=valid, otherwise 0
+    uint8_t active; // survey-in in progress flag, 1 = in-progress, otherwise 0
+    uint8_t reserved3[2]; //Reserved
+
+}__attribute__((packed)) NAV_SVIN_t;
 
 typedef struct
 {
