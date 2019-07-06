@@ -45,7 +45,8 @@ if (${BUILD_ROS})
 		FILES
 		GNSS.msg
 		PositionVelocityTime.msg
-		RelPos.msg)
+		RelPos.msg
+		SVIN.msg)
 	generate_messages(
   		DEPENDENCIES
   		std_msgs)

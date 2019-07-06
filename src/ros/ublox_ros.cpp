@@ -35,6 +35,7 @@ UBLOX_ROS::UBLOX_ROS() :
     pvt_pub_ = nh_.advertise<ublox::PositionVelocityTime>("PosVelTime", 10);
     relpos_pub_ = nh_.advertise<ublox::RelPos>("RelPos", 10);
     gnss_pub_ = nh_.advertise<ublox::GNSS>("ECEF", 10);
+    svin_pub_ = nh_.advertise<ublox::SVIN>("SVIN", 10);
 //    nav_sat_fix_pub_ = nh_.advertise<sensor_msgs::NavSatFix>("NavSatFix");
 //    nav_sat_status_pub_ = nh_.advertise<sensor_msgs::NavSatStatus>("NavSatStatus");
 
@@ -124,14 +125,34 @@ void UBLOX_ROS::relposCB(const UBX::NAV_RELPOSNED_t& msg)
     out.accHeading = deg2rad(msg.accHeading*1e-5);
     out.flags = msg.flags;
 
-    ofstream myfile;
-    myfile.open ("../ws/src/ublox/textfiles/10 8ft Pivot/data.txt", ios::app);
-    myfile << out.header.stamp
-           << " " << out.relPosNED[0] << " " << out.relPosNED[1] << " " << out.relPosNED[2]
-           << " " << out.relPosLength << " " << out.flags << " \n";
-    myfile.close();
+    // ofstream myfile;
+    // myfile.open ("../ws/src/ublox/textfiles/10 8ft Pivot/data.txt", ios::app);
+    // myfile << out.header.stamp
+    //        << " " << out.relPosNED[0] << " " << out.relPosNED[1] << " " << out.relPosNED[2]
+    //        << " " << out.relPosLength << " " << out.flags << " \n";
+    // myfile.close();
 
     relpos_pub_.publish(out);
+}
+
+void UBLOX_ROS::navsvinCB(const UBX::NAV_SVIN_t& msg)
+{
+    ublox::SVIN out;
+    out.header.stamp = ros::Time::now(); /// TODO: do this right
+    out.dur = msg.dur;
+    out.meanXYZ[0] = msg.meanX*1e-2;
+    out.meanXYZ[1] = msg.meanY*1e-2;
+    out.meanXYZ[2] = msg.meanZ*1e-2;
+    out.meanXYZHP[0] = msg.meanXHP*1e-3;
+    out.meanXYZHP[1] = msg.meanYHP*1e-3;
+    out.meanXYZHP[2] = msg.meanZHP*1e-3;
+    out.meanAcc = msg.meanAcc*1e-3;
+    out.obs = msg.obs;
+    out.valid = msg.valid;
+    out.active = msg.active;
+
+    svin_pub_.publish(out);
+
 }
 
 void UBLOX_ROS::posECEFCB(const UBX::NAV_POSECEF_t& msg)
