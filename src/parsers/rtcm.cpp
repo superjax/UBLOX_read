@@ -175,8 +175,23 @@ void RTCM::decode()
     {
         message_len_ = buffer_head_;
         msg_type_ = (uint16_t)(in_buffer_.buf[3] << 4) | uint16_t(in_buffer_.buf[4] & 0xF0) >> 4;
-        std::cout << "RTCM: msg_type" <<  msg_type_ << std::endl;
-        std::cout << "RTCM: msg_type2" <<  in_buffer_.rtcm1004.type << std::endl;
+        int hdr = in_buffer_.hdr;
+        int len = in_buffer_.len;
+        int type = in_buffer_.type;
+        int staid = in_buffer_.rtcm1001.hdr.staid;
+        int tow = in_buffer_.rtcm1001.hdr.tow;
+        std::cout << "**************************************" << std::endl;
+        printf("RTCM: hdr %x\n", hdr);
+        printf("RTCM: type %d\n", type);
+        switch (type)
+        {
+          case 1004:
+            printf("RTCM: len %d\n", len);
+            printf("RTCM: staid %d\n", staid);
+            printf("RTCM: tow %d\n", tow);
+          break;
+        }
+        fflush(stdout);
         for (auto& cb : callbacks_)
             cb(in_buffer_.buf, buffer_head_);
     }
