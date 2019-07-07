@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 template<int firstBit, int bitSize>
 struct BitField
 {
@@ -7,7 +9,7 @@ struct BitField
     typedef unsigned char uchar;
     enum {
         lastBit = firstBit + bitSize - 1,
-        mask = (1 << bitSize) - 1
+        mask = (1ul << bitSize) - 1ul
     };
     uchar *selfArray()
     {
@@ -20,10 +22,10 @@ struct BitField
 
     /* used to read data from the field */
     /* will also work with all the operators that work with integral types */
-    inline operator unsigned() const
+    operator unsigned() const
     {
-        const uchar *arr = selfArray();
-        const uchar *p = arr + firstBit / 8;
+//        const uint8_t *arr = selfArray();
+        const uint8_t *p = selfArray() + (firstBit / 8);
         int i = 8 - (firstBit & 7);
         unsigned ret = 0;
         ret |= *p;
@@ -115,5 +117,4 @@ struct BitField
         *this = *this ^ m;
         return *this;
     }
-
 };
