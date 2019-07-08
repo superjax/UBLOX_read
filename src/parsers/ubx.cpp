@@ -344,24 +344,27 @@ void UBX::config_base()
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1230USB;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 
-    memset(&out_message_, 0, CFG_VALSET_t::LEN_BYTE);
-    out_message_.CFG_VALSET.cfgData.bytes[0] = 1;
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::TMODE_MODE;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    memset(&out_message_, 0, CFG_VALSET_t::LEN_2BYTE);
-    out_message_.CFG_VALSET.cfgData.half_word = 300;
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_MSGOUT_SVIN;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    memset(&out_message_, 0, CFG_VALSET_t::LEN_4BYTE);
+    out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
+    out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
+    out_message_.CFG_VALSET.cfgData.word = 100; //mm
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::TMODE_SVIN_ACC_LIMIT;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.cfgData.word = 60;
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::TMODE_SVIN_MIN_DUR;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgData.bytes[0] = 30; //mm
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::TMODE_SVIN_ACC_LIMIT;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));    
+    
 
-//        in_message_.CFG_VALGET.cfgData = 0; //clear value
-//        memset(&out_message_, 0, sizeof(CFG_VALGET_t));
-//        out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
-//        out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
-//        out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::VALGET_MSGOUT_RELPOSNED;
-//        send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
+       in_message_.CFG_VALGET.cfgData = 0; //clear value
+       memset(&out_message_, 0, sizeof(CFG_VALGET_t));
+       out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
+       out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
+       out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::TMODE_SVIN_ACC_LIMIT;
+       send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
 }
 
 //void UBX::set_baudrate(const uint32_t baudrate)

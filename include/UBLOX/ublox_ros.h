@@ -10,6 +10,7 @@
 #include "ublox/GNSS.h"
 #include "ublox/PositionVelocityTime.h"
 #include "ublox/RelPos.h"
+#include "ublox/SVIN.h"
 
 namespace ublox_ros
 {
@@ -37,7 +38,7 @@ private:
     void relposCB(const UBX::NAV_RELPOSNED_t& msg);
     void posECEFCB(const UBX::NAV_POSECEF_t& msg);
     void velECEFCB(const UBX::NAV_VELECEF_t& msg);
-    void navsvinCB(const UBX::NAV_SVIN_t& msg);
+    void svinCB(const UBX::NAV_SVIN_t& msg);
 
     uint32_t pos_tow_;
     uint32_t vel_tow_;

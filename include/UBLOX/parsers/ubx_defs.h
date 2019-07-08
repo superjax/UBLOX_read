@@ -282,6 +282,10 @@ typedef struct {
     enum {
         VALGET_DGNSSMODE = 0x20140011,
         VALGET_MSGOUT_RELPOSNED = 0x20910090,
+        VALGET_MSGOUT_SVIN = 0x2091008b,
+        TMODE_MODE = 0x20030001,
+        TMODE_SVIN_MIN_DUR = 0x40030010, //survey in minimum duration s
+        TMODE_SVIN_ACC_LIMIT = 0x40030011,
     };
 
     enum {
@@ -348,7 +352,7 @@ typedef struct {
     };
 
     enum {
-
+        VALSET_MSGOUT_SVIN = 0x2091008b,
         TMODE_MODE = 0x20030001,
         TMODE_SVIN_MIN_DUR = 0x40030010, //survey in minimum duration s
         TMODE_SVIN_ACC_LIMIT = 0x40030011, //Survey-in position accuracy limit mm
@@ -361,13 +365,15 @@ typedef struct {
 
     enum {
         LEN_BYTE = 8,
-        LEN_2BYTE = 9
+        LEN_2BYTE = 9,
+        LEN_4BYTE = 11,
     };
 
     union 
     {
         uint8_t bytes[2];
         uint16_t half_word;
+        uint32_t word;
     } cfgData;
 
 
@@ -484,13 +490,13 @@ typedef struct  {
     uint8_t reserved1[3]; //Reserved
     uint32_t iTow; //GPS time of week ms of the navigation epoch. See the description of iTOW for details.
     uint32_t dur; //Passed survey-in observation time s
-    uint32_t meanx; // Current survey-in mean position ECEF X coordinate cm
-    uint32_t meany; // Current survey-in mean position ECEF Y coordinate cm
-    uint32_t meanz; // Current survey-in mean position ECEF Z coordinate cm
+    uint32_t meanX; // Current survey-in mean position ECEF X coordinate cm
+    uint32_t meanY; // Current survey-in mean position ECEF Y coordinate cm
+    uint32_t meanZ; // Current survey-in mean position ECEF Z coordinate cm
     uint8_t meanXHP; //See Interface Description pg 165
     uint8_t meanYHP; //See Interface Description pg 165
     uint8_t meanZHP; //See Interface Description pg 165
-    uint8_t reserved2[4]; //Reserved
+    uint8_t reserved2; //Reserved
     uint32_t meanAcc; //Current survey-in mean position accuracy mm
     uint32_t obs; //number of position observations used during survey-in
     uint8_t valid; // Survey-in postion validity flag, 1=valid, otherwise 0
@@ -531,6 +537,7 @@ typedef union {
     NAV_POSECEF_t NAV_POSECEF;
     NAV_VELECEF_t NAV_VELECEF;
     NAV_RELPOSNED_t NAV_RELPOSNED;
+    NAV_SVIN_t NAV_SVIN;
 } UBX_message_t;
 
 #ifndef UBX_H
