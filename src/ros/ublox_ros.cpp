@@ -51,6 +51,7 @@ UBLOX_ROS::UBLOX_ROS() :
     // connect callbacks
     createCallback(UBX::CLASS_NAV, UBX::NAV_PVT, pvtCB, NAV_PVT);
     createCallback(UBX::CLASS_NAV, UBX::NAV_RELPOSNED, relposCB, NAV_RELPOSNED);
+    createCallback(UBX::CLASS_NAV, UBX::NAV_SVIN, svinCB, NAV_SVIN);
     createCallback(UBX::CLASS_NAV, UBX::NAV_POSECEF, posECEFCB, NAV_POSECEF);
     createCallback(UBX::CLASS_NAV, UBX::NAV_VELECEF, velECEFCB, NAV_VELECEF);
 }
@@ -135,7 +136,7 @@ void UBLOX_ROS::relposCB(const UBX::NAV_RELPOSNED_t& msg)
     relpos_pub_.publish(out);
 }
 
-void UBLOX_ROS::navsvinCB(const UBX::NAV_SVIN_t& msg)
+void UBLOX_ROS::svinCB(const UBX::NAV_SVIN_t& msg)
 {
     ublox::SVIN out;
     out.header.stamp = ros::Time::now(); /// TODO: do this right
