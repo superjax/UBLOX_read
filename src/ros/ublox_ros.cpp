@@ -147,7 +147,7 @@ void UBLOX_ROS::svinCB(const UBX::NAV_SVIN_t& msg)
     out.meanXYZHP[0] = msg.meanXHP*1e-3;
     out.meanXYZHP[1] = msg.meanYHP*1e-3;
     out.meanXYZHP[2] = msg.meanZHP*1e-3;
-    out.meanAcc = msg.meanAcc*1e-3;
+    out.meanAcc = msg.meanAcc;
     out.obs = msg.obs;
     out.valid = msg.valid;
     out.active = msg.active;
