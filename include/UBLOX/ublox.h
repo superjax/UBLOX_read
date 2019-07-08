@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <iostream>
+#include <fstream>
 
 #include "async_comm/serial.h"
 #include "async_comm/udp.h"
@@ -33,12 +34,17 @@ public:
     void initRover(std::string local_host, uint16_t local_port,
                    std::string remote_host, uint16_t remote_port);
 
+    void initLogFile(std::string filename);
+    void readFile(std::string filename);
+
     async_comm::UDP* udp_ = nullptr;
     async_comm::Serial serial_;
 
     UBX ubx_;
     RTCM rtcm_;
     NMEA nmea_;
+
+    std::ofstream log_file_;
 
     inline void registerUBXCallback(uint8_t cls, uint8_t type, UBX::ubx_cb cb)
     {
