@@ -25,7 +25,7 @@ public:
         RTK = 0b10,
     } rtk_type_t;
 
-    UBLOX(std::string port);
+    UBLOX(const std::string& port);
     ~UBLOX();
 
     void initBase(std::string local_host, uint16_t local_port,
@@ -34,8 +34,8 @@ public:
     void initRover(std::string local_host, uint16_t local_port,
                    std::string remote_host, uint16_t remote_port);
 
-    void initLogFile(std::string filename);
-    void readFile(std::string filename);
+    void initLogFile(const std::string& filename);
+    void readFile(const std::string& filename);
 
     async_comm::UDP* udp_ = nullptr;
     async_comm::Serial serial_;

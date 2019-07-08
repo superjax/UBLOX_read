@@ -7,7 +7,7 @@ int ubx = 0;
 int rtcm = 0;
 int nmea = 0;
 
-UBLOX::UBLOX() :
+UBLOX::UBLOX(const std::string& port) :
     serial_(port, 115200),
     ubx_(serial_)
 {
@@ -28,7 +28,7 @@ UBLOX::UBLOX() :
     ubx_.enable_message(UBX::CLASS_CFG, UBX::CFG_VALGET, 1);
 }
 
-void UBLOX::readFile(std::string filename)
+void UBLOX::readFile(const std::string& filename)
 {
     std::ifstream file(filename,  std::ifstream::binary);
     file.seekg(0, file.end);
@@ -37,10 +37,10 @@ void UBLOX::readFile(std::string filename)
     char* buffer = new char [len];
     file.read(buffer, len);
 
-    serial_read_cb(buffer, len);
+    serial_read_cb((const uint8_t*)buffer, len);
 }
 
-void UBLOX::initLogFile(std::string filename)
+void UBLOX::initLogFile(const std::string& filename)
 {
     if (log_file_.is_open())
         log_file_.close();
@@ -159,7 +159,7 @@ void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
     }
     if (log_file_.is_open())
     {
-        log_file_.write(buf, size);
+        log_file_.write((const char*)buf, size);
     }
 }
 

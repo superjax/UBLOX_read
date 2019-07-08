@@ -19,6 +19,7 @@
 			<param name="local_port" value="16145"/>
 			<param name="remote_host" value="localhost"/>
 			<param name="remote_port" value="16140"/>
+			<param name="log_filename" value="/tmp/1_file"/>
 		</node>
 	</group>
 
