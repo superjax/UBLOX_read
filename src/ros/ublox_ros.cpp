@@ -44,7 +44,7 @@ UBLOX_ROS::UBLOX_ROS() :
     ublox_ = new UBLOX(serial_port);
 
     if (!log_filename.empty())
-        ublox_->initLogFile(filename);
+        ublox_->initLogFile(log_filename);
 
     // set up RTK
     if (rtk_type == UBLOX::ROVER)
