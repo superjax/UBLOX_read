@@ -30,6 +30,7 @@ UBLOX_ROS::UBLOX_ROS() :
     int local_port = nh_private_.param<int>("local_port", 16140);
     std::string remote_host = nh_private_.param<std::string>("remote_host", "localhost");
     int remote_port = nh_private_.param<int>("remote_port", 16145);
+    std::string log_filename = nh_private_.param<std::string>("log_filename", "");
 
     // Connect ROS topics
     pvt_pub_ = nh_.advertise<ublox::PositionVelocityTime>("PosVelTime", 10);
@@ -41,6 +42,9 @@ UBLOX_ROS::UBLOX_ROS() :
 
     // create the parser
     ublox_ = new UBLOX(serial_port);
+
+    if (!log_filename.empty())
+        ublox_->initLogFile(filename);
 
     // set up RTK
     if (rtk_type == UBLOX::ROVER)
