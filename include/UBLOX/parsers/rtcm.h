@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <bitset>
 
 #include "UBLOX/bitfield.h"
 
@@ -317,6 +318,35 @@ private:
       BitField<338,5> N4;
       BitField<343,22> tau_GPS;
       BitField<365,1> One_M;
+    };
+
+    union MSM_HDR
+    {
+      BitField<36,12> sta_id;
+      BitField<48,30> gnss_time;
+      BitField<78,1> multiple_msg;
+      BitField<79,3> iods;
+      BitField<82,7> res;
+      BitField<89,2> clock_steering_ind;
+      BitField<91,2> external_clk_ind;
+      BitField<93,1> gnss_diverg_smooth_ind;
+      BitField<94,3> gnss_smoothing_interval;
+      BitField<97,64> gnss_sat_mask;
+      BitField<161,32> gnss_signal_mask;
+    };
+
+    class MSM
+    {
+      MSM_HDR hdr;
+
+      size_t nSat;
+      size_t nSat()
+      {
+        std::bitset<64> bits(hdr.gnss_sat_mask);
+        return bits.count();
+      }
+
+
     };
 
 
