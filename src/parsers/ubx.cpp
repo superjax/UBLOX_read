@@ -25,6 +25,7 @@ UBX::UBX(async_comm::Serial& ser) :
     start_message_ = false;
     new_data_ = false;
     end_message_ = false;
+    
 }
 
 void UBX::registerCallback(uint8_t cls, uint8_t type,
