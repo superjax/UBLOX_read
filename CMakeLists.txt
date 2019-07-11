@@ -36,6 +36,7 @@ option(BUILD_ROS "Build ROS Node" ON)
 if (${BUILD_ROS})
     message(WARNING "BUILDING UBLOX ROS NODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	find_package(catkin REQUIRED COMPONENTS
+		rosbag
 		roscpp
 		sensor_msgs
 		message_generation)

@@ -17,6 +17,9 @@ public:
     void turnOnRTCM();
     void config_rover();
     void config_base();
+    void config_base_stationary();
+    void config_base_mobile();
+    void poll_value();
 
     // This function returns true when a new message has been parsed
     bool read_cb(uint8_t byte);
