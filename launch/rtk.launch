@@ -25,7 +25,7 @@
 			<param name="remote_port" value="16140"/>
 			<param name="log_filename" value=""/>
 		</node>
-		<node pkg="rosbag" type="record" name="RelPos" output="screen" args="-O ../data/125cm_centered_lazy/data.bag /rover/RelPos"/> 
+		<!-- <node pkg="rosbag" type="record" name="RelPos" output="screen" args="-O ../data/125cm_centered_lazy/data.bag /rover/RelPos"/>  -->
 	</group>
 
 </launch>
