@@ -40,7 +40,7 @@ UBLOX_ROS::UBLOX_ROS() :
     pvt_pub_ = nh_.advertise<ublox::PositionVelocityTime>("PosVelTime", 10);
     relpos_pub_ = nh_.advertise<ublox::RelPos>("RelPos", 10);
     gnss_pub_ = nh_.advertise<ublox::GNSS>("ECEF", 10);
-//    svin_pub_ = nh_.advertise<ublox::SVIN>("SVIN", 10);
+    svin_pub_ = nh_.advertise<ublox::SVIN>("SVIN", 10);
 //    nav_sat_fix_pub_ = nh_.advertise<sensor_msgs::NavSatFix>("NavSatFix");
 //    nav_sat_status_pub_ = nh_.advertise<sensor_msgs::NavSatStatus>("NavSatStatus");
 
