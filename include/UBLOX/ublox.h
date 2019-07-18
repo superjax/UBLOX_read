@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <iostream>
+#include <fstream>
 
 #include "async_comm/serial.h"
 #include "async_comm/udp.h"
@@ -26,7 +27,7 @@ public:
         RTK = 0b10,
     } rtk_type_t;
 
-    UBLOX(std::string port);
+    UBLOX(const std::string& port);
     ~UBLOX();
 
     void initBase(std::string local_host, uint16_t local_port,
@@ -35,12 +36,17 @@ public:
     void initRover(std::string local_host, uint16_t local_port,
                    std::string remote_host, uint16_t remote_port);
 
+    void initLogFile(const std::string& filename);
+    void readFile(const std::string& filename);
+
     async_comm::UDP* udp_ = nullptr;
     async_comm::Serial serial_;
 
     UBX ubx_;
     rtcm::RTCM rtcm_;
     NMEA nmea_;
+
+    std::ofstream log_file_;
 
     inline void registerUBXCallback(uint8_t cls, uint8_t type, UBX::ubx_cb cb)
     {

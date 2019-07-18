@@ -1,3 +1,14 @@
+#include <iostream>
+#include <fstream>
+#include <signal.h>
+
+#include <rosbag/bag.h>
+#include <std_msgs/Int32.h>
+#include <std_msgs/String.h>
+
+using namespace std;
+
+
 #include <UBLOX/ublox_ros.h>
 
 #define createCallback(cls, type, fun, arg)\
@@ -23,16 +34,21 @@ UBLOX_ROS::UBLOX_ROS() :
     int local_port = nh_private_.param<int>("local_port", 16140);
     std::string remote_host = nh_private_.param<std::string>("remote_host", "localhost");
     int remote_port = nh_private_.param<int>("remote_port", 16145);
+    std::string log_filename = nh_private_.param<std::string>("log_filename", "");
 
     // Connect ROS topics
     pvt_pub_ = nh_.advertise<ublox::PositionVelocityTime>("PosVelTime", 10);
     relpos_pub_ = nh_.advertise<ublox::RelPos>("RelPos", 10);
     gnss_pub_ = nh_.advertise<ublox::GNSS>("ECEF", 10);
+    svin_pub_ = nh_.advertise<ublox::SVIN>("SVIN", 10);
 //    nav_sat_fix_pub_ = nh_.advertise<sensor_msgs::NavSatFix>("NavSatFix");
 //    nav_sat_status_pub_ = nh_.advertise<sensor_msgs::NavSatStatus>("NavSatStatus");
 
     // create the parser
     ublox_ = new ublox::UBLOX(serial_port);
+
+    if (!log_filename.empty())
+        ublox_->initLogFile(log_filename);
 
     // set up RTK
     if (rtk_type == ublox::UBLOX::ROVER)
@@ -45,6 +61,8 @@ UBLOX_ROS::UBLOX_ROS() :
     createCallback(ublox::CLASS_NAV, ublox::NAV_RELPOSNED, relposCB, NAV_RELPOSNED);
     createCallback(ublox::CLASS_NAV, ublox::NAV_POSECEF, posECEFCB, NAV_POSECEF);
     createCallback(ublox::CLASS_NAV, ublox::NAV_VELECEF, velECEFCB, NAV_VELECEF);
+    createCallback(ublox::CLASS_NAV, ublox::NAV_SVIN, svinCB, NAV_SVIN);
+   
 }
 
 UBLOX_ROS::~UBLOX_ROS()
@@ -116,7 +134,35 @@ void UBLOX_ROS::relposCB(const ublox::NAV_RELPOSNED_t& msg)
     out.accLength = msg.accLength*1e-3;
     out.accHeading = deg2rad(msg.accHeading*1e-5);
     out.flags = msg.flags;
+
+    // ofstream myfile;
+    // myfile.open ("../ws/src/ublox/textfiles/10 8ft Pivot/data.txt", ios::app);
+    // myfile << out.header.stamp
+    //        << " " << out.relPosNED[0] << " " << out.relPosNED[1] << " " << out.relPosNED[2]
+    //        << " " << out.relPosLength << " " << out.flags << " \n";
+    // myfile.close();
+
     relpos_pub_.publish(out);
+}
+
+void UBLOX_ROS::svinCB(const ublox::NAV_SVIN_t& msg)
+{
+    ublox::SVIN out;
+    out.header.stamp = ros::Time::now(); /// TODO: do this right
+    out.dur = msg.dur;
+    out.meanXYZ[0] = msg.meanX*1e-2;
+    out.meanXYZ[1] = msg.meanY*1e-2;
+    out.meanXYZ[2] = msg.meanZ*1e-2;
+    out.meanXYZHP[0] = msg.meanXHP*1e-3;
+    out.meanXYZHP[1] = msg.meanYHP*1e-3;
+    out.meanXYZHP[2] = msg.meanZHP*1e-3;
+    out.meanAcc = msg.meanAcc;
+    out.obs = msg.obs;
+    out.valid = msg.valid;
+    out.active = msg.active;
+
+    svin_pub_.publish(out);
+
 }
 
 void UBLOX_ROS::posECEFCB(const ublox::NAV_POSECEF_t& msg)

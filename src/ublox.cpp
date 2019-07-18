@@ -4,7 +4,7 @@
 namespace ublox
 {
 
-UBLOX::UBLOX(std::string port) :
+UBLOX::UBLOX(const std::string& port) :
     serial_(port, 115200),
     ubx_(serial_)
 {
@@ -25,6 +25,26 @@ UBLOX::UBLOX(std::string port) :
     ubx_.enable_message(CLASS_CFG, CFG_VALGET, 1);
     ubx_.enable_message(CLASS_RXM, RXM_RAWX, 1);
     ubx_.enable_message(CLASS_RXM, RXM_SFRBX, 1);
+}
+
+void UBLOX::readFile(const std::string& filename)
+{
+    std::ifstream file(filename,  std::ifstream::binary);
+    file.seekg(0, file.end);
+    uint32_t len = file.tellg();
+    file.seekg (0, file.beg);
+    char* buffer = new char [len];
+    file.read(buffer, len);
+
+    serial_read_cb((const uint8_t*)buffer, len);
+}
+
+void UBLOX::initLogFile(const std::string& filename)
+{
+    if (log_file_.is_open())
+        log_file_.close();
+
+    log_file_.open(filename);
 }
 
 void UBLOX::initRover(std::string local_host, uint16_t local_port,
@@ -82,6 +102,9 @@ UBLOX::~UBLOX()
 {
     if (udp_)
         delete udp_;
+
+    if (log_file_.is_open())
+        log_file_.close();
 }
 
 void UBLOX::udp_read_cb(const uint8_t* buf, size_t size)
@@ -119,6 +142,10 @@ void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
             rtcm_.read_cb(buf[i]);
             nmea_.read_cb(buf[i]);
         }
+    }
+    if (log_file_.is_open())
+    {
+        log_file_.write((const char*)buf, size);
     }
 }
 

@@ -5,9 +5,13 @@
 			<param name="serial_port" value="/dev/ttyACM0"/>
 			<param name="rtk_type" value="3"/>
 			<param name="local_host" value="localhost"/>
+			<!-- <param name="local_host" value="192.168.0.111"/> -->
 			<param name="local_port" value="16140"/>
 			<param name="remote_host" value="localhost"/>
 			<param name="remote_port" value="16145"/>
+<!-- 			<param name="remote_host" value="192.168.0.87"/> -->
+			<param name="remote_host" value="localhost"/>
+			<!-- <param name="remote_port" value="12345"/> -->
 		</node>
 	</group>
 
@@ -19,7 +23,9 @@
 			<param name="local_port" value="16145"/>
 			<param name="remote_host" value="localhost"/>
 			<param name="remote_port" value="16140"/>
+			<param name="log_filename" value=""/>
 		</node>
+		<!-- <node pkg="rosbag" type="record" name="RelPos" output="screen" args="-O ../data/125cm_centered_lazy/data.bag /rover/RelPos"/>  -->
 	</group>
 
 </launch>
