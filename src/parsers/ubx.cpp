@@ -362,7 +362,7 @@ void UBX::config_base_stationary()
     out_message_.CFG_VALSET.cfgData.word = 500000; //mm
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::TMODE_SVIN_ACC_LIMIT;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgData.word = 120;
+    out_message_.CFG_VALSET.cfgData.word = 240;
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::TMODE_SVIN_MIN_DUR;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 }
