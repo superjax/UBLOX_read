@@ -15,9 +15,19 @@ add_library(UBLOX
     src/parsers/ubx.cpp
     src/parsers/rtcm.cpp
     src/parsers/nmea.cpp
+    src/utctime.cpp
 )
 target_link_libraries(UBLOX ${async_comm_LIBRARIES})
 target_include_directories(UBLOX PUBLIC include ${async_comm_INCLUDE_DIRS})
+
+option(BUILD_TESTS "Build Tests" ON)
+if (${BUILD_TESTS})
+    message(STATUS "Building UBLOX parser Tests")
+    find_package(GTest REQUIRED)
+    find_package(Threads REQUIRED)
+    add_executable(ublox_test src/test/rtcm.cpp)
+    target_link_libraries(ublox_test gtest gtest_main pthread UBLOX)
+endif()
 
 
 option(BUILD_EXAMPLES "Build Examples" ON)
