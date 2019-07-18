@@ -179,18 +179,18 @@ void RTCM::decode()
     {
         message_len_ = buffer_head_;
         msg_type_ = (uint16_t)(in_buffer_.buf[3] << 4) | uint16_t(in_buffer_.buf[4] & 0xF0) >> 4;
-        uint16_t type = in_buffer_.type;
+//        uint16_t type = in_buffer_.type;
 
         // Call the buffer callbacks (no parsing)
         for (auto& cb : buffer_callbacks_)
             cb(in_buffer_.buf, message_len_);
 
-        // Call the message-specific callbacks
-        for (auto& cb : callbacks_)
-        {
-            if (cb.rtcm_msg == type || cb.rtcm_msg == ID_ALL)
-                cb.cb(type, in_buffer_);
-        }
+//        // Call the message-specific callbacks
+//        for (auto& cb : callbacks_)
+//        {
+//            if (cb.rtcm_msg == type || cb.rtcm_msg == ID_ALL)
+//                cb.cb(type, in_buffer_);
+//        }
     }
     else
     {
@@ -198,10 +198,10 @@ void RTCM::decode()
     }
 }
 
-void RTCM::registerCallback(uint16_t msg_id, rtcm_cb cb)
-{
-    callbacks_.push_back({msg_id, cb});
-}
+//void RTCM::registerCallback(uint16_t msg_id, rtcm_cb cb)
+//{
+//    callbacks_.push_back({msg_id, cb});
+//}
 
 void RTCM::registerBufferCallback(buffer_cb cb)
 {

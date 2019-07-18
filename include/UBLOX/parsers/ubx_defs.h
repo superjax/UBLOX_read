@@ -546,6 +546,7 @@ typedef struct
     U2 week;        // GPS week number in receiver local time.
     I1 leapS;       // GPS leap seconds (GPS-UTC). This field represents the receiver's best knowledge of the leap seconds 
                     // offset. A flag is given in the recStat bitfield to indicate if the leap seconds are known.
+    I1 numMeas;     // number of measurements to follow
     X1 recStat;     // Receiver tracking status bitfield (see graphic below)
     U1 version;     // Message Version
     U1 reserved1[2];
@@ -584,6 +585,66 @@ typedef struct
         trkStat_prValid    = 0b0001,
     };
 }__attribute__((packed)) RXM_RAWX_t;
+
+enum
+{
+    GnssID_GPS = 0,
+    GnssID_SBAS = 1,
+    GnssID_Galileo = 2,
+    GnssID_Beidou = 3,
+    GnssID_Qzss = 5,
+    GnssID_Glonass = 6
+};
+
+inline int sysId(int svId)
+{
+    return (svId >= 1   && svId <= 32)  ? GnssID_GPS :
+           (svId >= 120 && svId <= 158) ? GnssID_SBAS :
+           (svId >= 211 && svId <= 246) ? GnssID_Galileo :
+           (svId >= 159 && svId <= 163) ? GnssID_Beidou :
+           (svId >= 33  && svId <= 64)  ? GnssID_Beidou :
+           (svId >= 193 && svId <= 197) ? GnssID_Qzss :
+           (svId >= 65  && svId <= 96)  ? GnssID_Glonass :
+           (svId == 255)                ? GnssID_Glonass :
+                                          -1;
+}
+
+enum
+{
+    GPS_L1_CA,
+    GPS_L2_CL,
+    GPS_L2_CM,
+    Galileo_E1_C,
+    Galileo_E1_B,
+    Galileo_E5_BI,
+    Galileo_E5_BQ,
+    Beidou_B1I_D1,
+    Beidou_B1I_D2,
+    Beidou_B2I_D1,
+    Beidou_B2I_D2,
+    QZSS_L1_CA,
+    Glonass_L1,
+    Glonass_L2,
+};
+
+inline int sigId(int gnssId, int sigId)
+{
+    return (gnssId == 0 && sigId == 0) ? GPS_L1_CA :
+           (gnssId == 0 && sigId == 3) ? GPS_L2_CL :
+           (gnssId == 0 && sigId == 4) ? GPS_L2_CM :
+           (gnssId == 2 && sigId == 0) ? Galileo_E1_C :
+           (gnssId == 2 && sigId == 1) ? Galileo_E1_B :
+           (gnssId == 2 && sigId == 5) ? Galileo_E5_BI :
+           (gnssId == 2 && sigId == 6) ? Galileo_E5_BQ :
+           (gnssId == 3 && sigId == 0) ? Beidou_B1I_D1 :
+           (gnssId == 3 && sigId == 1) ? Beidou_B1I_D2 :
+           (gnssId == 3 && sigId == 2) ? Beidou_B2I_D1 :
+           (gnssId == 3 && sigId == 3) ? Beidou_B2I_D2 :
+           (gnssId == 5 && sigId == 0) ? QZSS_L1_CA :
+           (gnssId == 6 && sigId == 0) ? Glonass_L1 :
+           (gnssId == 6 && sigId == 2) ? Glonass_L2 :
+                                         -1;
+}
 
 
 typedef struct
