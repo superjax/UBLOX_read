@@ -14,10 +14,10 @@ void inthand(int signum)
     stop = true;
 }
 
-void relposned_callback(uint8_t cls, uint8_t type, const UBX::UBX_message_t& in_msg)
+void relposned_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
 {
     int RTK_flag;
-    const UBX::NAV_RELPOSNED_t& msg(in_msg.NAV_RELPOSNED);
+    const ublox::NAV_RELPOSNED_t& msg(in_msg.NAV_RELPOSNED);
     if (msg.flags && 0b000000010)
     {
         printf("RTK");
@@ -61,14 +61,14 @@ int main(int argc, char** argv)
     std::string port = "/dev/ttyACM0";
     if(argc > 1)
         port = argv[1];
-    UBLOX ublox(port);
+    ublox::UBLOX ublox(port);
     ublox.initRover("localhost", 16140, "localhost", 16145);
 
     // look for Ctrl+C and quit
     signal(SIGINT, inthand);
 
     // Connect a callback to the RELPOSNED message
-    ublox.registerUBXCallback(UBX::CLASS_NAV, UBX::NAV_RELPOSNED, &relposned_callback);
+    ublox.registerUBXCallback(ublox::CLASS_NAV, ublox::NAV_RELPOSNED, &relposned_callback);
 
     while (!stop)
     {

@@ -1,11 +1,8 @@
 #include "UBLOX/ublox.h"
 #define DBG(...) fprintf(stderr, __VA_ARGS__)
 
-int p = 1;
-int unknown = 0;
-int ubx = 0;
-int rtcm = 0;
-int nmea = 0;
+namespace ublox
+{
 
 UBLOX::UBLOX(std::string port) :
     serial_(port, 115200),
@@ -22,10 +19,10 @@ UBLOX::UBLOX(std::string port) :
 
     // configure the parsers
     ubx_.set_nav_rate(100);
-    ubx_.enable_message(UBX::CLASS_NAV, UBX::NAV_PVT, 1);
-    ubx_.enable_message(UBX::CLASS_NAV, UBX::NAV_POSECEF, 1);
-    ubx_.enable_message(UBX::CLASS_NAV, UBX::NAV_VELECEF, 1);
-    ubx_.enable_message(UBX::CLASS_CFG, UBX::CFG_VALGET, 1);
+    ubx_.enable_message(CLASS_NAV, NAV_PVT, 1);
+    ubx_.enable_message(CLASS_NAV, NAV_POSECEF, 1);
+    ubx_.enable_message(CLASS_NAV, NAV_VELECEF, 1);
+    ubx_.enable_message(CLASS_CFG, CFG_VALGET, 1);
 }
 
 void UBLOX::initRover(std::string local_host, uint16_t local_port,
@@ -35,7 +32,7 @@ void UBLOX::initRover(std::string local_host, uint16_t local_port,
 
     assert(udp_ == nullptr);
     // Connect the rtcm_cb callback to forward data to the UBX serial port
-    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
+    rtcm_.registerBufferCallback([this](uint8_t* buf, size_t size)
     {
         this->rtcm_complete_cb(buf, size);
     });
@@ -71,7 +68,7 @@ void UBLOX::initBase(std::string local_host, uint16_t local_port,
         throw std::runtime_error("Failed to initialize Rover receive UDP");
     }
 
-    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
+    rtcm_.registerBufferCallback([this](uint8_t* buf, size_t size)
     {
         this->udp_->send_bytes(buf, size);
     });
@@ -93,8 +90,6 @@ void UBLOX::udp_read_cb(const uint8_t* buf, size_t size)
     for (int i = 0; i < size; i++)
     {
         rtcm_.read_cb(buf[i]);
-        rtcm++;
-
     }
 }
 
@@ -105,35 +100,23 @@ void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
     {
         /// TODO: don't give parsers data they don't need
         if (ubx_.parsing_message())
-            {
-                ubx_.read_cb(buf[i]);
-                ubx++;
-                p = 1;
-            }
+        {
+            ubx_.read_cb(buf[i]);
+        }
         else if (rtcm_.parsing_message() && type_ != NONE)
-            {
-                 rtcm_.read_cb(buf[i]);
-                 rtcm++;
-                 p = 1;
-            }
+        {
+            rtcm_.read_cb(buf[i]);
+        }
         else if (nmea_.parsing_message())
-            {
-                nmea_.read_cb(buf[i]);
-                nmea++;
-                p = 1;
-            }
+        {
+            nmea_.read_cb(buf[i]);
+        }
         else
         {
             ubx_.read_cb(buf[i]);
             rtcm_.read_cb(buf[i]);
             nmea_.read_cb(buf[i]);
-            if(p>1)
-            {
-                unknown++;
-            }
-            p++;
         }
-
     }
 }
 
@@ -144,4 +127,5 @@ void UBLOX::rtcm_complete_cb(const uint8_t *buf, size_t size)
         serial_.send_bytes(buf, size);
     else if (type_ == BASE)
         udp_->send_bytes(buf, size);
+}
 }

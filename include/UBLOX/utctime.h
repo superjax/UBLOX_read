@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ctime>
 #include <cstdint>
 #include <cmath>
@@ -6,7 +8,7 @@
 class UTCTime
 {
 public:
-    int64_t sec;  // time since Jan 1 1970
+    int64_t sec;  // time since Jan 1 1970 (with leap-seconds)
     int64_t nsec;
 
     static constexpr uint64_t ONE_BILLION = 1000000000;

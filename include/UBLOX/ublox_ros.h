@@ -21,7 +21,7 @@ public:
     ~UBLOX_ROS();
 
 private:
-    UBLOX* ublox_ = nullptr;
+    ublox::UBLOX* ublox_ = nullptr;
 
     ros::NodeHandle nh_;
     ros::NodeHandle nh_private_;
@@ -32,10 +32,10 @@ private:
     ros::Publisher nav_sat_fix_pub_;
     ros::Publisher nav_sat_status_pub_;
 
-    void pvtCB(const UBX::NAV_PVT_t& msg);
-    void relposCB(const UBX::NAV_RELPOSNED_t& msg);
-    void posECEFCB(const UBX::NAV_POSECEF_t& msg);
-    void velECEFCB(const UBX::NAV_VELECEF_t& msg);
+    void pvtCB(const ublox::NAV_PVT_t& msg);
+    void relposCB(const ublox::NAV_RELPOSNED_t& msg);
+    void posECEFCB(const ublox::NAV_POSECEF_t& msg);
+    void velECEFCB(const ublox::NAV_VELECEF_t& msg);
 
     uint32_t pos_tow_;
     uint32_t vel_tow_;
