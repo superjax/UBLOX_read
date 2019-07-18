@@ -533,7 +533,15 @@ typedef struct
 
 typedef struct
 {
-    U1
+    U1 gnssId;
+    U1 svId;
+    U1 reserved1;
+    U1 freqId;
+    U1 numWords;
+    U1 chn;
+    U1 version;
+    U1 reserved2;
+    U4 dwrd[10];
 }__attribute__((packed)) RXM_SFRBX_t;
 
 typedef union {
@@ -550,6 +558,8 @@ typedef union {
     NAV_POSECEF_t NAV_POSECEF;
     NAV_VELECEF_t NAV_VELECEF;
     NAV_RELPOSNED_t NAV_RELPOSNED;
+    RXM_RAWX_t RXM_RAWX;
+    RXM_SFRBX_t RXM_SFRBX;
 } UBX_message_t;
 
 }
