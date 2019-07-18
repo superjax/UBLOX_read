@@ -1,5 +1,5 @@
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 namespace ublox
 {
@@ -123,6 +123,11 @@ enum {
     NAV_SIG = 0x43,         // Periodic/Polled signal information
 };
 
+enum {
+   RXM_RAWX = 0x15,         // Multi-GNSS Raw Measurement Data
+   RXM_SFRBX = 0x13         // Broadcast Navigation Data Subframe (ephemeris)
+};
+
 typedef enum {
     START,
     GOT_START_FRAME,
@@ -179,15 +184,15 @@ typedef struct {
 
     enum {
         MASK_DYN            = 0b00000000001, // Apply dynamic model settings
-        MASK_MINEL 	  = 0b00000000010, // Apply minimum elevation settings
+        MASK_MINEL 	        = 0b00000000010, // Apply minimum elevation settings
         MASK_POSFIXMODE     = 0b00000000100, // Apply fix mode settings
-        MASK_DRLIM 	  = 0b00000001000, // Reserved
-        MASK_POSMASK 	  = 0b00000010000, // Apply position mask settings
-        MASK_TIMEMASK 	  = 0b00000100000, // Apply time mask settings
+        MASK_DRLIM 	        = 0b00000001000, // Reserved
+        MASK_POSMASK 	    = 0b00000010000, // Apply position mask settings
+        MASK_TIMEMASK 	    = 0b00000100000, // Apply time mask settings
         MASK_STATICHOLDMASK = 0b00001000000, // Apply static hold settings
-        MASK_DGPSMASK 	  = 0b00010000000, // Apply DGPS settings.
+        MASK_DGPSMASK 	    = 0b00010000000, // Apply DGPS settings.
         MASK_CNOTHRESHOLD   = 0b00100000000, // Apply CNO threshold settings (cnoThresh, cnoThreshNumSVs).
-        MASK_UTC 	          = 0b10000000000, // Apply UTC settings
+        MASK_UTC 	        = 0b10000000000, // Apply UTC settings
     };
 
     uint16_t mask;
@@ -310,20 +315,22 @@ typedef struct {
 
     enum { //outgoing message rates for RTCM 3x on usb type U1
         //suggested messages for stationary base
-        RTCM_1005USB = 0x209102c0, //CFG-MSGOUT-RTCM_3X_TYPE1005_USB
-        RTCM_1074USB = 0x20910361, //CFG-MSGOUT-RTCM_3X_TYPE1074_USB
-        RTCM_1084USB = 0x20910366, //CFG-MSGOUT-RTCM_3X_TYPE1084_USB
-        RTCM_1094USB = 0x2091036b, //CFG-MSGOUT-RTCM_3X_TYPE1094_USB
-        RTCM_1124USB = 0x20910370, //CFG-MSGOUT-RTCM_3X_TYPE1124_USB
-        RTCM_1230USB = 0x20910306, //CFG-MSGOUT-RTCM_3X_TYPE1230_USB
+        RTCM_1005USB = 0x209102c0, //CFG-MSGOUT-RTCM_3X_TYPE1005_USB -- Stationary RTK Reference Station ARP
+        RTCM_1074USB = 0x20910361, //CFG-MSGOUT-RTCM_3X_TYPE1074_USB -- GPS MSM 4
+        RTCM_1084USB = 0x20910366, //CFG-MSGOUT-RTCM_3X_TYPE1084_USB -- GLONASS MSM 4
+        RTCM_1094USB = 0x2091036b, //CFG-MSGOUT-RTCM_3X_TYPE1094_USB -- Galileo MSM 4
+        RTCM_1124USB = 0x20910370, //CFG-MSGOUT-RTCM_3X_TYPE1124_USB -- Beidou MSM 4
+        RTCM_1230USB = 0x20910306, //CFG-MSGOUT-RTCM_3X_TYPE1230_USB -- Glonass L1 and L2 Code-Phase Biases
         //suggested messages for mobile base
-        RTCM_4072_0USB = 0x20910301, //CFG-MSGOUT-RTCM_3X_TYPE4072_0_USB
-        RTCM_4072_1USB = 0x20910384, //CFG-MSGOUT-RTCM_3X_TYPE4072_1_USB
-        RTCM_1077USB = 0x209102cf, //CFG-MSGOUT-RTCM_3X_TYPE1077_USB
-        RTCM_1087USB = 0x209102d4, //CFG-MSGOUT-RTCM_3X_TYPE1087_USB
-        RTCM_1097USB = 0x2091031b, //CFG-MSGOUT-RTCM_3X_TYPE1097_USB
-        RTCM_1127USB = 0x209102d9, //CFG-MSGOUT-RTCM_3X_TYPE1127_USB
+        RTCM_4072_0USB = 0x20910301, //CFG-MSGOUT-RTCM_3X_TYPE4072_0_USB -- UBLOX Proprietary RTCM message
+        RTCM_4072_1USB = 0x20910384, //CFG-MSGOUT-RTCM_3X_TYPE4072_1_USB --
+        RTCM_1077USB   = 0x209102cf, //CFG-MSGOUT-RTCM_3X_TYPE1077_USB __ GPS MSM 7 (high precision)
+        RTCM_1087USB   = 0x209102d4, //CFG-MSGOUT-RTCM_3X_TYPE1087_USB __ GLONASS MSM 7 (high precision)
+        RTCM_1097USB   = 0x2091031b, //CFG-MSGOUT-RTCM_3X_TYPE1097_USB __ Galileo MSM 7 (high precision)
+        RTCM_1127USB   = 0x209102d9, //CFG-MSGOUT-RTCM_3X_TYPE1127_USB __ Beidou MSM 7 (high precision)
         //!!!!also use RTCM_1230USB above!!!///
+
+        UBX_RAWX_USB   = 0x209102a7,
     };
 
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
@@ -465,6 +472,69 @@ typedef struct
     int32_t ecefVZ; // cm ECEF Z velocity
     uint32_t sAcc; // cm Speed Accuracy Estimate
 }__attribute__((packed)) NAV_VELECEF_t;
+
+typedef float R4;
+typedef double R8;
+typedef int8_t I1;
+typedef uint8_t U1;
+typedef uint16_t U2;
+typedef uint32_t U4;
+typedef uint8_t X1;
+
+typedef struct
+{
+    R8 rcvTow;      // Measurement time of week in receiver localtime approximately aligned to the GPS timesystem. 
+                    // The receiver local time of week, week number and leap second information can be used to translate 
+                    // the time to other time systems. More information about the difference in time systems can be found 
+                    // in RINEX 3 documentation. For a receiver operating in GLONASS only mode, UTC time can be determined 
+                    // by subtracting the leapS field from GPS time regardless of whether the GPS leap seconds are valid.
+    U2 week;        // GPS week number in receiver local time.
+    I1 leapS;       // GPS leap seconds (GPS-UTC). This field represents the receiver's best knowledge of the leap seconds 
+                    // offset. A flag is given in the recStat bitfield to indicate if the leap seconds are known.
+    X1 recStat;     // Receiver tracking status bitfield (see graphic below)
+    U1 version;     // Message Version
+    U1 reserved1[2];
+
+    struct RawxMeas
+    {
+        R8 prMeas;  // Pseudorange measurement [m]. GLONASS inter-frequency channel delays are compensated with an internal calibration table.
+        R8 cpMeas;  // Carrier phase measurement [cycles]. The carrierphase initial ambiguity is initialized using anapproximate value to 
+                    // make the magnitude of the phase close to the pseudorange measurement. Clock resets are applied to both phase and code 
+                    // measurements in accordance with the RINEX specification.
+        R4 doMeas;  // Doppler measurement (positive sign forapproaching satellites) [Hz]
+        U1 gnssId;  // GNSS identifier (see Satellite Numbering for a list of identifiers)
+        U1 svId;    // Satellite identifier (see Satellite Numbering)
+        U1 sigId;   // New style signal identifier (see Signal Identifiers)
+        U1 freqId;  // Only used for GLONASS: This is the frequencyslot + 7 (range from 0 to 13)
+        U2 locktime;    // Carrier phase locktime counter (maximum 64500ms)
+        U1 cno;     // Carrier-to-noise density ratio (signal strength)[dB-Hz]
+        X1 prStdev; // (0.01*2^n)  Estimated pseudorange measurement standard deviation
+        X1 cpStdev; // (0.004)     Estimated carrier phase measurement standard deviation (note a raw value of 0x0F indicates thevalue is invalid) (see graphic below)
+        X1 doStdev; // (0.002*2^n) Estimated Doppler measurement standard deviation.
+        X1 trkStat; // Tracking status bitfield
+        U1 reserved;
+    };
+    RawxMeas meas[30];
+
+    enum 
+    {
+        recStat_clkReset = 0b10,
+        recStat_leapSec = 0b01,
+    };
+    enum
+    {
+        trkStat_subHalfCyc = 0b1000,
+        trkStat_HalfCyc    = 0b0100,
+        trkStat_cpValid    = 0b0010,
+        trkStat_prValid    = 0b0001,
+    };
+}__attribute__((packed)) RXM_RAWX_t;
+
+
+typedef struct
+{
+    U1
+}__attribute__((packed)) RXM_SFRBX_t;
 
 typedef union {
     uint8_t buffer[BUFFER_SIZE];
