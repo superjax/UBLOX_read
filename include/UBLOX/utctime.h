@@ -122,7 +122,6 @@ public:
 
     static UTCTime fromGPS(int week, int tow_ms)
     {
-
         UTCTime out;
         out.sec = week * SEC_IN_WEEK + tow_ms/1000 + UTC_TO_GPS_OFFSET;
         out.nsec = (tow_ms % 1000)*ONE_BILLION;
@@ -179,9 +178,4 @@ private:
             nsec -= ONE_BILLION;
         }
     }
-
-
-
-
-
 };
