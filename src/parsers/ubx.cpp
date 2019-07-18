@@ -11,6 +11,9 @@ using namespace std;
 #define DEG2RAD (3.14159 / 180.0)
 #define DBG(...) fprintf(stderr, __VA_ARGS__)
 
+namespace ublox
+{
+
 UBX::UBX(async_comm::Serial& ser) :
     serial_(ser)
 {
@@ -340,6 +343,7 @@ void UBX::config_base()
 //        out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
 //        out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::VALGET_MSGOUT_RELPOSNED;
 //        send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
+}
 }
 
 //void UBX::set_baudrate(const uint32_t baudrate)

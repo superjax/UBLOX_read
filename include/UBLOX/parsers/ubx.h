@@ -2,15 +2,17 @@
 #define UBX_H
 
 #include <stdint.h>
+#include <iostream>
 
 #include "async_comm/serial.h"
+#include "UBLOX/parsers/ubx_defs.h"
 
-#include <iostream>
+namespace ublox
+{
 
 class UBX
 {
 public:
-    #include "ubx_defs.h"
 
     UBX(async_comm::Serial& ser);
 
@@ -92,6 +94,7 @@ public:
 //  uint32_t current_baudrate_ = 115200;
 //  const uint32_t baudrates[5] = {115200, 19200, 57600, 9600, 38400};
 
+}
 #endif // UBX_H
 
 

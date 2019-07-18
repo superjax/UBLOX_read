@@ -1,9 +1,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#ifndef UBX_H
-namespace UBX {
-#endif
+namespace ublox
+{
 
 static constexpr size_t BUFFER_SIZE = 256;
 
@@ -90,7 +89,6 @@ enum {
     CFG_VALGET = 0x8B, //Get configuration items
     CFG_VALSET = 0x8A, //Set values correpsonding to provided...
 };
-
 enum {
     NAV_AOPSTATUS = 0x60,	// Periodic/Polled AssistNow Autonomous Status
     NAV_ATT = 0x05,		// Periodic/Polled Attitude Solution
@@ -484,6 +482,4 @@ typedef union {
     NAV_RELPOSNED_t NAV_RELPOSNED;
 } UBX_message_t;
 
-#ifndef UBX_H
 }
-#endif

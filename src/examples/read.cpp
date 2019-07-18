@@ -9,9 +9,9 @@ void inthand(int signum)
     stop = true;
 }
 
-void pvt_callback(uint8_t cls, uint8_t type, const UBX::UBX_message_t& in_msg)
+void pvt_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
 {
-    const UBX::NAV_PVT_t& msg(in_msg.NAV_PVT);
+    const ublox::NAV_PVT_t& msg(in_msg.NAV_PVT);
     printf("t: %d.%d, lla: %.3f, %.3f, %.3f, vel: %2.3f, %2.3f, %2.3f\n",
            msg.min, msg.sec,
            msg.lat*1e-7, msg.lon*1e-7, msg.height*1e-3,
@@ -49,7 +49,7 @@ int main(int argc, char**argv)
     char* buffer = new char [len];
     file.read(buffer, len);
 
-    RTCM rtcm;
+    rtcm::RTCM rtcm;
     for (int i = 0; i < len; i++)
     {
         rtcm.read_cb(buffer[i]);

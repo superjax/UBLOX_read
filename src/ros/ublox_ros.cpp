@@ -2,7 +2,7 @@
 
 #define createCallback(cls, type, fun, arg)\
 do{\
-    auto trampoline = [this](uint8_t _class, uint8_t _type, const UBX::UBX_message_t& msg)\
+    auto trampoline = [this](uint8_t _class, uint8_t _type, const ublox::UBX_message_t& msg)\
     {\
         this->fun(msg.arg);\
     };\
@@ -32,19 +32,19 @@ UBLOX_ROS::UBLOX_ROS() :
 //    nav_sat_status_pub_ = nh_.advertise<sensor_msgs::NavSatStatus>("NavSatStatus");
 
     // create the parser
-    ublox_ = new UBLOX(serial_port);
+    ublox_ = new ublox::UBLOX(serial_port);
 
     // set up RTK
-    if (rtk_type == UBLOX::ROVER)
+    if (rtk_type == ublox::UBLOX::ROVER)
         ublox_->initRover(local_host, local_port, remote_host, remote_port);
-    else if (rtk_type == UBLOX::BASE)
+    else if (rtk_type == ublox::UBLOX::BASE)
         ublox_->initBase(local_host, local_port, remote_host, remote_port);
 
     // connect callbacks
-    createCallback(UBX::CLASS_NAV, UBX::NAV_PVT, pvtCB, NAV_PVT);
-    createCallback(UBX::CLASS_NAV, UBX::NAV_RELPOSNED, relposCB, NAV_RELPOSNED);
-    createCallback(UBX::CLASS_NAV, UBX::NAV_POSECEF, posECEFCB, NAV_POSECEF);
-    createCallback(UBX::CLASS_NAV, UBX::NAV_VELECEF, velECEFCB, NAV_VELECEF);
+    createCallback(ublox::CLASS_NAV, ublox::NAV_PVT, pvtCB, NAV_PVT);
+    createCallback(ublox::CLASS_NAV, ublox::NAV_RELPOSNED, relposCB, NAV_RELPOSNED);
+    createCallback(ublox::CLASS_NAV, ublox::NAV_POSECEF, posECEFCB, NAV_POSECEF);
+    createCallback(ublox::CLASS_NAV, ublox::NAV_VELECEF, velECEFCB, NAV_VELECEF);
 }
 
 UBLOX_ROS::~UBLOX_ROS()
@@ -53,7 +53,7 @@ UBLOX_ROS::~UBLOX_ROS()
         delete ublox_;
 }
 
-void UBLOX_ROS::pvtCB(const UBX::NAV_PVT_t& msg)
+void UBLOX_ROS::pvtCB(const ublox::NAV_PVT_t& msg)
 {
     pos_tow_ = msg.iTOW;
     ublox::PositionVelocityTime out;
@@ -100,7 +100,7 @@ void UBLOX_ROS::pvtCB(const UBX::NAV_PVT_t& msg)
 }
 
 
-void UBLOX_ROS::relposCB(const UBX::NAV_RELPOSNED_t& msg)
+void UBLOX_ROS::relposCB(const ublox::NAV_RELPOSNED_t& msg)
 {
     ublox::RelPos out;
     out.header.stamp = ros::Time::now(); /// TODO: do this right
@@ -119,7 +119,7 @@ void UBLOX_ROS::relposCB(const UBX::NAV_RELPOSNED_t& msg)
     relpos_pub_.publish(out);
 }
 
-void UBLOX_ROS::posECEFCB(const UBX::NAV_POSECEF_t& msg)
+void UBLOX_ROS::posECEFCB(const ublox::NAV_POSECEF_t& msg)
 {
     pos_tow_ = msg.iTOW;
     ecef_msg_.header.stamp = ros::Time::now();
@@ -130,7 +130,7 @@ void UBLOX_ROS::posECEFCB(const UBX::NAV_POSECEF_t& msg)
         gnss_pub_.publish(ecef_msg_);
 }
 
-void UBLOX_ROS::velECEFCB(const UBX::NAV_VELECEF_t& msg)
+void UBLOX_ROS::velECEFCB(const ublox::NAV_VELECEF_t& msg)
 {
     vel_tow_ = msg.iTOW;
     ecef_msg_.header.stamp = ros::Time::now();

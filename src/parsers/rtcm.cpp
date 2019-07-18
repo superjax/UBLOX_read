@@ -3,6 +3,10 @@
 
 #define DBG(...) fprintf(stderr, __VA_ARGS__)
 
+namespace rtcm
+{
+
+
 const uint32_t RTCM::CRC24_TABLE[] = {
     0x000000,0x864CFB,0x8AD50D,0x0C99F6,0x93E6E1,0x15AA1A,0x1933EC,0x9F7F17,
     0xA18139,0x27CDC2,0x2B5434,0xAD18CF,0x3267D8,0xB42B23,0xB8B2D5,0x3EFE2E,
@@ -175,25 +179,18 @@ void RTCM::decode()
     {
         message_len_ = buffer_head_;
         msg_type_ = (uint16_t)(in_buffer_.buf[3] << 4) | uint16_t(in_buffer_.buf[4] & 0xF0) >> 4;
-        int hdr = in_buffer_.hdr;
-        int len = in_buffer_.len;
-        int type = in_buffer_.type;
-        int staid = in_buffer_.rtcm1001.hdr.staid;
-        int tow = in_buffer_.rtcm1001.hdr.tow;
-        std::cout << "**************************************" << std::endl;
-        printf("RTCM: hdr %x\n", hdr);
-        printf("RTCM: type %d\n", type);
-        switch (type)
-        {
-          case 1004:
-            printf("RTCM: len %d\n", len);
-            printf("RTCM: staid %d\n", staid);
-            printf("RTCM: tow %d\n", tow);
-          break;
-        }
-        fflush(stdout);
+        uint16_t type = in_buffer_.type;
+
+        // Call the buffer callbacks (no parsing)
+        for (auto& cb : buffer_callbacks_)
+            cb(in_buffer_.buf, message_len_);
+
+        // Call the message-specific callbacks
         for (auto& cb : callbacks_)
-            cb(in_buffer_.buf, buffer_head_);
+        {
+            if (cb.rtcm_msg == type || cb.rtcm_msg == ID_ALL)
+                cb.cb(type, in_buffer_);
+        }
     }
     else
     {
@@ -201,9 +198,14 @@ void RTCM::decode()
     }
 }
 
-void RTCM::registerCallback(rtcm_cb cb)
+void RTCM::registerCallback(uint16_t msg_id, rtcm_cb cb)
 {
-    callbacks_.push_back(cb);
+    callbacks_.push_back({msg_id, cb});
+}
+
+void RTCM::registerBufferCallback(buffer_cb cb)
+{
+    buffer_callbacks_.push_back(cb);
 }
 
 bool RTCM::check_crc()
@@ -218,3 +220,4 @@ bool RTCM::check_crc()
     return crc == ((uint32_t)(ck_a_ << 16) | (uint32_t)(ck_b_ << 8) | (uint32_t)ck_c_);
 }
 
+}

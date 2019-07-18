@@ -11,6 +11,8 @@
 #include "UBLOX/parsers/rtcm.h"
 #include "UBLOX/parsers/nmea.h"
 
+namespace ublox
+{
 
 class UBLOX
 {
@@ -37,7 +39,7 @@ public:
     async_comm::Serial serial_;
 
     UBX ubx_;
-    RTCM rtcm_;
+    rtcm::RTCM rtcm_;
     NMEA nmea_;
 
     inline void registerUBXCallback(uint8_t cls, uint8_t type, UBX::ubx_cb cb)
@@ -51,5 +53,6 @@ public:
     void udp_read_cb(const uint8_t *buf, size_t size);
     void rtcm_complete_cb(const uint8_t* buf, size_t size);
 };
+}
 
 #endif
