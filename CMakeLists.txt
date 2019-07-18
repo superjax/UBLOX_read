@@ -3,6 +3,7 @@ project(ublox)
 
 set(CMAKE_CXX_FLAGS "-std=c++11")
 
+find_package(Eigen3 REQUIRED)
 find_package(async_comm)
 if (NOT ${async_comm_FOUND})
 	add_subdirectory(lib/async_comm)
@@ -16,9 +17,10 @@ add_library(UBLOX
     src/parsers/rtcm.cpp
     src/parsers/nmea.cpp
     src/utctime.cpp
+    src/obs.cpp
 )
 target_link_libraries(UBLOX ${async_comm_LIBRARIES})
-target_include_directories(UBLOX PUBLIC include ${async_comm_INCLUDE_DIRS})
+target_include_directories(UBLOX PUBLIC include ${async_comm_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS})
 
 option(BUILD_TESTS "Build Tests" ON)
 if (${BUILD_TESTS})
