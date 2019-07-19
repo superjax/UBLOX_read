@@ -305,7 +305,7 @@ void UBX::turnOnRTCM()
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_DYNMODEL;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 
-    bool poll = false;
+    bool poll = true;
     if(poll == true)
         poll_value();
 }
@@ -319,12 +319,14 @@ void UBX::config_rover()
     out_message_.CFG_VALSET.cfgData.bytes[0] = 1;
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_MSGOUT_RELPOSNED;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::SIGNAL_BDS_B2;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 
 }
 
 void UBX::config_base()
 {
-    bool mobile = false;
+    bool mobile = true;
     if(mobile == true)
         config_base_mobile();
     else
@@ -350,6 +352,8 @@ void UBX::config_base_stationary()
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1124USB;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1230USB;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+        out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::SIGNAL_BDS_B2;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::TMODE_MODE;
@@ -389,6 +393,8 @@ void UBX::config_base_mobile()
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1230USB;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::SIGNAL_BDS_B2;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 }
 
 void UBX::poll_value()
@@ -397,7 +403,7 @@ void UBX::poll_value()
        memset(&out_message_, 0, sizeof(CFG_VALGET_t));
        out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
        out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
-       out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::RTCM_1230USB;
+       out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::SIGNAL_BDS_B2;
        send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
 }
 

@@ -292,6 +292,20 @@ typedef struct {
         VALGET_DYNMODEL = 0x20110021, //Dynamic platform model
     };
 
+    //enum not finished, but not needed.  The rest is not needed.
+    enum {
+        SIGNAL_GPS = 0x1031001f, //GPS enable
+        SIGNAL_GPS_L1 = 0x10310001, //GPS L1C/A
+        SIGNAL_GPS_L2 = 0x10310003, //GPS L2C (only on u-blox F9 platform products)
+        SIGNAL_GAL = 0x10310021, //Galileo enable
+        SIGNAL_GAL_E1 = 0x10310007, //Galileo E1
+        SIGNAL_GAL_E5B = 0x1031000a, //Galileo E5b (only on u-blox F9 platform products)
+        SIGNAL_BDS = 0x10310022, //BeiDou Enable
+        SIGNAL_BDS_B1 = 0x1031000d, //BeiDou B1I
+        SIGNAL_BDS_B2 = 0x1031000e, //BeiDou B2I
+
+    };
+
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
     uint8_t layer;
     uint8_t reserved1[2];
@@ -356,6 +370,20 @@ typedef struct {
         TMODE_MODE = 0x20030001,
         TMODE_SVIN_MIN_DUR = 0x40030010, //survey in minimum duration s
         TMODE_SVIN_ACC_LIMIT = 0x40030011, //Survey-in position accuracy limit mm
+    };
+
+        //enum not finished, but not needed.  The rest is not needed.
+    enum {
+        SIGNAL_GPS = 0x1031001f, //GPS enable
+        SIGNAL_GPS_L1 = 0x10310001, //GPS L1C/A
+        SIGNAL_GPS_L2 = 0x10310003, //GPS L2C (only on u-blox F9 platform products)
+        SIGNAL_GAL = 0x10310021, //Galileo enable
+        SIGNAL_GAL_E1 = 0x10310007, //Galileo E1
+        SIGNAL_GAL_E5B = 0x1031000a, //Galileo E5b (only on u-blox F9 platform products)
+        SIGNAL_BDS = 0x10310022, //BeiDou Enable
+        SIGNAL_BDS_B1 = 0x1031000d, //BeiDou B1I
+        SIGNAL_BDS_B2 = 0x1031000e, //BeiDou B2I
+
     };
 
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
