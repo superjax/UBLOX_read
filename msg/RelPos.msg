@@ -4,7 +4,9 @@ uint16 refStationId 	# Reference Station ID. Must be in the range 0..4095
 float64[3] relPosNED	# NED component of relative position vector (m)
 float64 relPosLength 	# Length of relative position vector (m)
 float64 relPosHeading 	# Heading of the relative position vector. (rad)
-float64[3] accNED 			# Accuracy of relative position North component (m)
+float64[3] relPosHPNED 	# High precision NED, the measurment portion less than a mm. (m)
+float64 relPosHPLength 	# High precision Length, the measurment portion less than a mm. (m)
+float64[3] accNED 		# Accuracy of relative position North component (m)
 float64 accLength 		# Accuracy of Length of the relative position vector (m)
 uint32 accHeading 		# Accuracy of heading of the relative position vector (rad)
 uint32 flags 			# See enums below
