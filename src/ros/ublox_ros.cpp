@@ -48,7 +48,8 @@ UBLOX_ROS::UBLOX_ROS() :
     ublox_ = new UBLOX(serial_port);
 
     if (!log_filename.empty())
-        ublox_->initLogFile(log_filename);
+        //ublox_->initLogFile(log_filename);
+        ublox_->readFile(log_filename);
 
     // set up RTK
     if (rtk_type == UBLOX::ROVER)
@@ -62,6 +63,7 @@ UBLOX_ROS::UBLOX_ROS() :
     createCallback(UBX::CLASS_NAV, UBX::NAV_SVIN, svinCB, NAV_SVIN);
     createCallback(UBX::CLASS_NAV, UBX::NAV_POSECEF, posECEFCB, NAV_POSECEF);
     createCallback(UBX::CLASS_NAV, UBX::NAV_VELECEF, velECEFCB, NAV_VELECEF);
+
 }
 
 UBLOX_ROS::~UBLOX_ROS()
@@ -127,20 +129,16 @@ void UBLOX_ROS::relposCB(const UBX::NAV_RELPOSNED_t& msg)
     out.relPosNED[2] = msg.relPosD*1e-2;
     out.relPosLength = msg.relPosLength*1e-2;
     out.relPosHeading = deg2rad(msg.relPosHeading*1e-5);
-    out.accNED[0] = msg.accN;
-    out.accNED[1] = msg.accE;
-    out.accNED[2] = msg.accD;
-    out.accLength = msg.accLength*1e-3;
+    out.relPosHPNED[0] = msg.relPosHPN*1e-3*10; //These are converted to meters as well even though they are in mm, because of a scalling of .1
+    out.relPosHPNED[1] = msg.relPosHPE*1e-3*10;
+    out.relPosHPNED[2] = msg.relPosHPD*1e-3*10;
+    out.relPosHPLength = msg.relPosHPLength*1e-3*10; 
+    out.accNED[0] = msg.accN*1e-3*10;
+    out.accNED[1] = msg.accE*1e-3*10;
+    out.accNED[2] = msg.accD*1e-3*10;
+    out.accLength = msg.accLength*1e-3*10;
     out.accHeading = deg2rad(msg.accHeading*1e-5);
     out.flags = msg.flags;
-
-    // ofstream myfile;
-    // myfile.open ("../ws/src/ublox/textfiles/10 8ft Pivot/data.txt", ios::app);
-    // myfile << out.header.stamp
-    //        << " " << out.relPosNED[0] << " " << out.relPosNED[1] << " " << out.relPosNED[2]
-    //        << " " << out.relPosLength << " " << out.flags << " \n";
-    // myfile.close();
-
     relpos_pub_.publish(out);
 }
 
