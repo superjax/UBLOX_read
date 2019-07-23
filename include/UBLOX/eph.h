@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <vector>
 #include <type_traits>
 #include "UBLOX/parsers/ubx_defs.h"
 
@@ -25,90 +26,6 @@ struct SignedMinimumTypeHelper {
     typename std::conditional<len <= 64, int64_t,
     void>::type>::type>::type>::type>::type type;
 };
-
-enum class BitOrder
-{
-    BE,
-    LE
-};
-
-template<int start, int len, BitOrder bitorder=BitOrder::LE>
-typename MinimumTypeHelper<len>::type getBits(const uint8_t* const buf)
-{
-    static_assert(len > 0, "get at least one bit");
-    static_assert(start % 8 != 0 ? len <= 58 : len <= 64, "trying to get too many bits");
-    static_assert(start >= 0, "must start >= 0");
-    constexpr typename MinimumTypeHelper<len>::type mask = (len == 64) ? 0xFFFFFFFF : (1ul << len) - 1ul;
-    if constexpr(bitorder == BitOrder::LE)
-    {
-        const uint8_t * p = buf + start / 8;
-        int i = 0;
-        typename MinimumTypeHelper<len+8>::type ret = *p;
-        while (i < len)
-        {
-            ret |= (*(++p) << (i+8));
-            i += 8;
-        }
-        return ((ret >> (start % 8)) & mask);
-    }
-    else
-    {
-      typename MinimumTypeHelper<len>::type ret = 0;
-      for (size_t i = start; i < start + len; i++)
-        ret = (ret << 1) + ((buf[i/8] >> (7 - i % 8)) & 1u);
-      return ret;
-    }
-}
-
-template<int len, BitOrder bitorder=BitOrder::LE>
-typename MinimumTypeHelper<len>::type getBits(const uint8_t* const buf, int start)
-{
-    static_assert(len > 0, "get at least one bit");
-    assert(start % 8 != 0 ? len <= 58 : len <= 64);
-    assert(start >= 0);
-
-    constexpr typename MinimumTypeHelper<len>::type mask = (len == 64) ? 0xFFFFFFFF : (1ul << len) - 1ul;
-    if constexpr (bitorder == BitOrder::LE)
-    {
-        const uint8_t * p = buf + start % 8;
-        int i = 0;
-        typename MinimumTypeHelper<len+8>::type ret = *p;
-        while (i < len)
-        {
-            ret |= (*(++p) << (i+8));
-            i += 8;
-        }
-        return ((ret >> (start % 8)) & mask);
-    }
-    else
-    {
-        typename MinimumTypeHelper<len>::type ret = 0;
-        for (size_t i = start; i < start + len; i++)
-          ret = (ret << 1) + ((buf[i/8] >> (7 - i % 8)) & 1u);
-        return ret;
-    }
-}
-
-template<int len, BitOrder bitorder=BitOrder::LE>
-typename MinimumTypeHelper<len>::type getBitsSigned(const uint8_t* const buf, int start)
-{
-    typename MinimumTypeHelper<len>::type bits = getBits<len,bitorder>(buf, start);
-    if (len <= 0 || 32 <= len || !(bits & (1u << (len-1))))
-        return (typename SignedMinimumTypeHelper<len>::type)bits;
-    else
-        return (typename SignedMinimumTypeHelper<len>::type)(bits | (~0u<<len));
-}
-
-template<int start, int len, BitOrder bitorder=BitOrder::LE>
-typename MinimumTypeHelper<len>::type getBitsSigned(const uint8_t* const buf)
-{
-    typename MinimumTypeHelper<len>::type bits = getBits<start,len,bitorder>(buf);
-    if (len <= 0 || 32 <= len || !(bits & (1u << (len-1))))
-        return (typename SignedMinimumTypeHelper<len>::type)bits;
-    else
-        return (typename SignedMinimumTypeHelper<len>::type)(bits | (~0u<<len));
-}
-// Thanks to  http://gnsstk.sourceforge.net/gps_8c-source.html
 
 class Eph
 {
@@ -168,26 +85,15 @@ public:
     static constexpr double P2_33 = 1.164153218269348E-10; /* 2^-33 */
     static constexpr double P2_43 = 1.136868377216160E-13; /* 2^-43 */
     static constexpr double P2_55 = 2.775557561562891E-17; /* 2^-55 */
-    bool convertUBX(const ublox::RXM_SFRBX_t& msg, Eph& eph);
-    bool decodeGPS(const uint8_t *const buf, Eph& eph);
+    bool convertUBX(const ublox::RXM_SFRBX_t& msg, std::vector<Eph>& eph_vec);
+    bool decodeGPS(const uint8_t *const buf, Eph* eph);
     bool decodeGalileo(const uint8_t *const buf, Eph& eph);
-    bool decodeGPSSubframe1(const uint8_t *const buf, Eph& eph);
-    bool decodeGPSSubframe2(const uint8_t *const buf, Eph& eph);
-    bool decodeGPSSubframe3(const uint8_t *const buf, Eph& eph);
-    bool decodeGPSSubframe4(const uint8_t *const buf, Eph& eph);
-    bool decodeGPSSubframe5(const uint8_t *const buf, Eph& eph);
+    bool decodeGPSSubframe1(const uint8_t *const buf, Eph* eph);
+    bool decodeGPSSubframe2(const uint8_t *const buf, Eph* eph);
+    bool decodeGPSSubframe3(const uint8_t *const buf, Eph* eph);
+    bool decodeGPSSubframe4(const uint8_t *const buf, Eph* eph);
+    bool decodeGPSSubframe5(const uint8_t *const buf, Eph* eph);
 
-    template<int start, int len, int page>
-    typename MinimumTypeHelper<len>::type getBitsPage(const uint8_t* const buf)
-    {
-        return getBits<start, len, BitOrder::BE>(buf + 3*page);
-    }
-
-    template<int start, int len, int page>
-    typename SignedMinimumTypeHelper<len>::type getSignedBitsPage(const uint8_t* const buf)
-    {
-        return (getBitsSigned<start, len, BitOrder::BE>(buf + 3*page));
-    }
 
     void printSubframe(int frame, const uint8_t* buf);
 };

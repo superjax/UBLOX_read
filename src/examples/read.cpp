@@ -24,7 +24,7 @@ void pvt_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
 
 }
 
-Eph eph;
+std::vector<Eph> eph;
 
 void eph_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
 {
