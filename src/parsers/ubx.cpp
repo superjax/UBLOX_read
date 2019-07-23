@@ -97,7 +97,7 @@ void UBX::enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate)
     out_message_.CFG_MSG.msgClass = msg_cls;
     out_message_.CFG_MSG.msgID = msg_id;
     out_message_.CFG_MSG.rate = rate;
-    DBG("Requesting %x:%x message at %d hz\n", msg_cls, msg_id, rate);
+    DBG("Requesting %x:%x message with period=%d\n", msg_cls, msg_id, rate);
     send_message(CLASS_CFG, CFG_MSG, out_message_, sizeof(CFG_MSG_t));
 }
 
@@ -130,6 +130,7 @@ bool UBX::read_cb(uint8_t byte)
     case GOT_MSG_ID:
         length_ = byte;
         parse_state_ = GOT_LENGTH1;
+        DBG("Started %x-%x\n", message_class_, message_type_);
         break;
     case GOT_LENGTH1:
         length_ |= (uint16_t) byte << 8;
@@ -231,6 +232,17 @@ bool UBX::decode_message()
             break;
         }
         break;
+      case CLASS_RXM:
+        DBG("NAV_");
+        switch(message_type_)
+        {
+        case RXM_RAWX:
+            DBG("RAWX\n");
+            break;
+        case RXM_SFRBX:
+            DBG("SFRBX\n");
+            break;
+        }
 //    case CLASS_NAV:
 //        DBG("NAV_");
 //        switch (message_type_)
@@ -250,9 +262,15 @@ bool UBX::decode_message()
        switch (message_type_)
        {
        case CFG_VALGET:
+       {
            DBG("VALGET = ");
            int value = in_message_.CFG_VALGET.cfgData;
            DBG("%d \n", value);
+           break;
+       }
+       default:
+           DBG("unknown: %x\n", message_type_);
+           break;
        }
 
     default:

@@ -3,6 +3,8 @@
 
 #include "UBLOX/ublox.h"
 
+#include "UBLOX/eph.h"
+
 bool stop = false;
 void inthand(int signum)
 {
@@ -12,46 +14,49 @@ void inthand(int signum)
 void pvt_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
 {
     const ublox::NAV_PVT_t& msg(in_msg.NAV_PVT);
-    printf("t: %d.%d, lla: %.3f, %.3f, %.3f, vel: %2.3f, %2.3f, %2.3f\n",
-           msg.min, msg.sec,
+    printf("t: %d %d/%d, %d:%d:%d.%d, lla: %.3f, %.3f, %.3f, vel: %2.3f, %2.3f, %2.3f\n",
+           msg.year, msg.month, msg.day,
+           msg.hour, msg.min, msg.sec, msg.nano/1000000,
            msg.lat*1e-7, msg.lon*1e-7, msg.height*1e-3,
            msg.velN*1e-3, msg.velE*1e-3, msg.velD*1e-3);
+    printf("tow: %d\n", msg.iTOW);
     fflush(stdout); // Will now print everything in the stdout buffer
 
 }
 
+Eph eph;
+
+void eph_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
+{
+    EphConverter conv;
+    conv.convertUBX(in_msg.RXM_SFRBX, eph);
+}
+
 int main(int argc, char**argv)
 {
-//    // Create a UBLOX instance
+    // Create a UBLOX instance
 
-//    std::string port = "/dev/ttyACM0";
-//    if(argc > 1)
-//        port = argv[1];
-//    UBLOX ublox(port);
+    std::string port = "/dev/ttyACM1";
+    if(argc > 1)
+        port = argv[1];
+    ublox::UBLOX ublox(port);
 
-//    // look for Ctrl+C and quit
-//    signal(SIGINT, inthand);
+    // look for Ctrl+C and quit
+    signal(SIGINT, inthand);
 
-//    // Connect a callback to the PVT message
-//    ublox.registerUBXCallback(UBX::CLASS_NAV, UBX::NAV_PVT, &pvt_callback);
+    // Connect a callback to the PVT message
+    ublox.registerUBXCallback(ublox::CLASS_NAV, ublox::NAV_PVT, &pvt_callback);
+    ublox.registerUBXCallback(ublox::CLASS_RXM, ublox::RXM_SFRBX, &eph_callback);
 
-//    while (!stop)
-//    {
-//    }
+    ublox.readFile("/home/superjax/ublox_test/ublox.raw");
+//    ublox.initLogFile("/tmp/ublox.raw");
 
-//    std::cout << "\nquitting" << std::endl;
-//    return 0;
-
-    std::ifstream file("/home/superjax/Downloads/RTCM3.bin",  std::ifstream::binary);
-    file.seekg(0, file.end);
-    uint32_t len = file.tellg();
-    file.seekg (0, file.beg);
-    char* buffer = new char [len];
-    file.read(buffer, len);
-
-    rtcm::RTCM rtcm;
-    for (int i = 0; i < len; i++)
+    while (!stop)
     {
-        rtcm.read_cb(buffer[i]);
+//        ublox.ubx_.enable_message(ublox::CLASS_RXM, ublox::RXM_RAWX, 1);
+//        sleep(1);
     }
+
+    std::cout << "\nquitting" << std::endl;
+    return 0;
 }
