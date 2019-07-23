@@ -12,8 +12,9 @@
 			<param name="local_port" value="16140"/>
 			<param name="remote_host" value="192.168.0.8"/>
 			<param name="remote_port" value="12345"/> -->
-			<param name="log_filename" value="../data/redo_lazy/three/base_binary"/>
+			<param name="log_filename" value="../data/redo_rod/one/base_binary"/>
 		</node>
+		<node pkg="rosbag" type="record" name="record" output="screen" args="-O ../data/redo_rod/one/data2.bag --all"/> 
 	</group>
 
 	<group ns="rover">
@@ -24,9 +25,8 @@
 			<param name="local_port" value="16145"/>
 			<param name="remote_host" value="localhost"/>
 			<param name="remote_port" value="16140"/>
-			<param name="log_filename" value="../data/redo_lazy/three/rover_binary"/>
+			<param name="log_filename" value="../data/redo_rod/one/rover_binary"/>
 		</node>
-		<node pkg="rosbag" type="record" name="record" output="screen" args="-O ../data/redo_lazy/three/data2.bag --all"/> 
 	</group>
 
 </launch>

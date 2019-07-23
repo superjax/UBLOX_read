@@ -36,7 +36,8 @@ void UBLOX::readFile(const std::string& filename)
     file.seekg (0, file.beg);
     char* buffer = new char [len];
     file.read(buffer, len);
-
+    std::cerr << "buffer = " << *buffer << "\n";
+    std::cerr << "len = " << len << "\n";
     serial_read_cb((const uint8_t*)buffer, len);
 }
 
@@ -112,7 +113,6 @@ void UBLOX::udp_read_cb(const uint8_t* buf, size_t size)
 {
 
     assert(type_ == ROVER);
-
     for (int i = 0; i < size; i++)
     {
         rtcm_.read_cb(buf[i]);
@@ -135,9 +135,9 @@ void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
             }
         else if (rtcm_.parsing_message() && type_ != NONE)
             {
-                 rtcm_.read_cb(buf[i]);
-                 rtcm++;
-                 p = 1;
+                rtcm_.read_cb(buf[i]);
+                rtcm++;
+                p = 1;
             }
         else if (nmea_.parsing_message())
             {
@@ -157,6 +157,7 @@ void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
             p++;
         }
     }
+
     if (log_file_.is_open())
     {
         log_file_.write((const char*)buf, size);

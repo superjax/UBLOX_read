@@ -228,20 +228,20 @@ bool UBX::decode_message()
             break;
         }
         break;
-//    case CLASS_NAV:
-//        DBG("NAV_");
-//        switch (message_type_)
-//        {
-//        case NAV_PVT:
-//            DBG("PVT \n");
-//            break;
-//        case NAV_RELPOSNED:
-//            DBG("RELPOSNED \n");
-//            break;
-//        default:
-//            DBG("%d \n", message_type_);
-//            break;
-//        }
+   // case CLASS_NAV:
+   //     DBG("NAV_");
+   //     switch (message_type_)
+   //     {
+   //     case NAV_PVT:
+   //         DBG("PVT \n");
+   //         break;
+   //     case NAV_RELPOSNED:
+   //         DBG("RELPOSNED \n");
+   //         break;
+   //     default:
+   //         DBG("%d \n", message_type_);
+   //         break;
+   //     }
    case CLASS_CFG: //only needed for getting data
        DBG("CFG_");
        switch (message_type_)
