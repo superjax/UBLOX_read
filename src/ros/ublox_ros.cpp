@@ -47,10 +47,6 @@ UBLOX_ROS::UBLOX_ROS() :
     // create the parser
     ublox_ = new UBLOX(serial_port);
 
-    if (!log_filename.empty())
-        //ublox_->initLogFile(log_filename);
-        ublox_->readFile(log_filename);
-
     // set up RTK
     if (rtk_type == UBLOX::ROVER)
         ublox_->initRover(local_host, local_port, remote_host, remote_port);
@@ -64,6 +60,12 @@ UBLOX_ROS::UBLOX_ROS() :
     createCallback(UBX::CLASS_NAV, UBX::NAV_POSECEF, posECEFCB, NAV_POSECEF);
     createCallback(UBX::CLASS_NAV, UBX::NAV_VELECEF, velECEFCB, NAV_VELECEF);
 
+    if (!log_filename.empty())
+    {
+        //ublox_->initLogFile(log_filename);
+        ublox_->readFile(log_filename);
+        
+    }
 }
 
 UBLOX_ROS::~UBLOX_ROS()
