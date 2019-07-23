@@ -2,11 +2,6 @@
 //#include "UBLOX/bitfield.h"
 //#include "UBLOX/parsers/rtcm.h"
 
-TEST (Empty, NoTest)
-{
-
-}
-
 //TEST (BitField, CheckAlignedData)
 //{
 //  union TestUnion

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ublox)
 
-set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS "-std=c++17")
 
 find_package(Eigen3 REQUIRED)
 find_package(async_comm)
@@ -18,6 +18,8 @@ add_library(UBLOX
     src/parsers/nmea.cpp
     src/utctime.cpp
     src/obs.cpp
+    src/eph.cpp
+    src/geph.cpp
 )
 target_link_libraries(UBLOX ${async_comm_LIBRARIES})
 target_include_directories(UBLOX PUBLIC include ${async_comm_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS})
@@ -27,7 +29,9 @@ if (${BUILD_TESTS})
     message(STATUS "Building UBLOX parser Tests")
     find_package(GTest REQUIRED)
     find_package(Threads REQUIRED)
-    add_executable(ublox_test src/test/rtcm.cpp)
+    add_executable(ublox_test
+        src/test/rtcm.cpp
+        src/test/eph.cpp)
     target_link_libraries(ublox_test gtest gtest_main pthread UBLOX)
 endif()
 

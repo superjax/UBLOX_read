@@ -22,7 +22,7 @@ UBLOX::UBLOX(const std::string& port) :
     ubx_.enable_message(CLASS_NAV, NAV_PVT, 1);
     ubx_.enable_message(CLASS_NAV, NAV_POSECEF, 1);
     ubx_.enable_message(CLASS_NAV, NAV_VELECEF, 1);
-    ubx_.enable_message(CLASS_CFG, CFG_VALGET, 1);
+//    ubx_.enable_message(CLASS_CFG, CFG_VALGET, 1);
     ubx_.enable_message(CLASS_RXM, RXM_RAWX, 1);
     ubx_.enable_message(CLASS_RXM, RXM_SFRBX, 1);
 }
