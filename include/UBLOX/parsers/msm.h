@@ -69,15 +69,15 @@ struct MSM
         {
             int dow = getBits<3>(48);
             int tod_ms = getBits<27>(51);
-            t = UTCTime::fromGalileo(dow, tod_ms);
+//            t = UTCTime::fromGlonass(dow, tod_ms);
             break;
         }
-        case Beidou:
-        {
-            uint32_t tow = getBits<30>(48);
-            t = UTCTime::fromBeidou(UTCTime::now().BeidouWeek(), tow);
-            break;
-        }
+//        case Beidou:
+//        {
+//            uint32_t tow = getBits<30>(48);
+//            t = UTCTime::fromBeidou(UTCTime::now().BeidouWeek(), tow);
+//            break;
+//        }
         }
     }
 
