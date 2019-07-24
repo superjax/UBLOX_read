@@ -4,7 +4,7 @@ project(ublox)
 set(CMAKE_CXX_FLAGS "-std=c++17")
 
 find_package(Eigen3 REQUIRED)
-find_package(async_comm)
+find_package(async_comm QUIET)
 if (NOT ${async_comm_FOUND})
 	add_subdirectory(lib/async_comm)
 	set(async_comm_LIBRARIES async_comm)
@@ -57,7 +57,7 @@ endif()
 
 option(BUILD_ROS "Build ROS Node" ON)
 if (${BUILD_ROS})
-    message(WARNING "BUILDING UBLOX ROS NODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    message(STATUS "BUILDING UBLOX ROS NODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	find_package(catkin REQUIRED COMPONENTS
 		rosbag
 		roscpp
