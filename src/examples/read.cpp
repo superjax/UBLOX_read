@@ -24,12 +24,12 @@ void pvt_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
 
 }
 
-std::vector<Eph> eph;
+std::vector<Ephemeris> eph;
+NavConverter conv;
 
 void eph_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
 {
-    EphConverter conv;
-    conv.convertUBX(in_msg.RXM_SFRBX, eph);
+    conv.convertUBX(in_msg.RXM_SFRBX);
 }
 
 int main(int argc, char**argv)
