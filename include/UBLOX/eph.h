@@ -29,18 +29,43 @@ struct SignedMinimumTypeHelper {
     void>::type>::type>::type>::type>::type type;
 };
 
-class Ephemeris
+class EphBase
+{
+public:
+    uint8_t gnssID; //!< GNSS ID
+    uint8_t sat;    //!< Sat ID
+
+    std::string Type()
+    {
+        switch (gnssID)
+        {
+        case ublox::GnssID_GPS:
+            return "GPS";
+        case ublox::GnssID_Galileo:
+            return "Galileo";
+        case ublox::GnssID_Glonass:
+            return "Glonass";
+        case ublox::GnssID_Qzss:
+            return "Qzss";
+        case ublox::GnssID_Beidou:
+            return "Beidou";
+        }
+    }
+};
+
+/* GPS, Galileo, QZSS, Beidou broadcast ephemeris type */
+class Ephemeris : public EphBase
 {
 public:
     UTCTime  toe;                //!< reference time ephemeris (UTC Time)                                           [s]
     UTCTime  toc;                //!< reference time (clock)   (UTC Time)                                           [s]
 
-    uint8_t  sat;                //!< Sat ID
-    uint16_t prn;                //!< GPS PRN number (helps with debugging)
     uint32_t tow;                //!< time of week in subframe1; the time of the leading bit edge of subframe 2     [s]
     uint16_t iodc;               //!< 10 bit issue of data (clock); 8 LSB bits will match the iode                  []
     uint8_t  iode;               //!< 8 bit  issue of data (ephemeris)                                              []
     uint16_t week;               //!< 10 bit gps week 0-1023 (user must account for week rollover )                 [week]
+    uint32_t toes;               //!< Time of ephemeris (seconds part)
+    uint32_t tocs;               //!< Time of clock (seconds part)
     uint8_t  health;             //!< 6 bit health parameter; 0 if healthy; unhealth othersize                      [0=healthy]
     uint8_t  alert_flag;         //!< 1 = URA may be worse than indicated                                           [0,1]
     uint8_t  anti_spoof;         //!< anti-spoof flag from 0=off; 1=on                                              [0,1]
@@ -69,6 +94,7 @@ public:
     double   cic;                //!< amplitude of the cosine harmonic correction term to the angle of inclination  [rad]
     double   cis;                //!< amplitude of the sine harmonic correction term to the angle of inclination    [rad]
 
+
     // Synchronization Variables
     uint8_t iode1 = 0;
     uint8_t iode2 = 0;
@@ -78,10 +104,10 @@ public:
     bool got_subframe3 = false;
 };
 
-class GlonassEphemeris /* GLONASS broadcast ephemeris type */
+/* GLONASS broadcast ephemeris type */
+class GlonassEphemeris : public EphBase
 {        
 public:
-    int sat;            /* satellite number */
     int iode;           /* IODE (0-6 bit of tb field) */
     int frq;            /* satellite frequency number */
     int svh,sva,age;    /* satellite health, accuracy, age of operation */
@@ -150,6 +176,8 @@ public:
 
     void registerCallback(eph_cb cb);
     void registerCallback(geph_cb cb);
+
+    uint8_t subfrm[255][380];
 };
 
 

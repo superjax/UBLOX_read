@@ -24,12 +24,29 @@ void pvt_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
 
 }
 
-std::vector<Ephemeris> eph;
 NavConverter conv;
 
-void eph_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
+void sfrbx_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
 {
     conv.convertUBX(in_msg.RXM_SFRBX);
+}
+
+void eph_callback(const Ephemeris& eph)
+{
+    std::cout << "GPS\n";
+    std::cout << "now = " << UTCTime::now() << std::endl;
+    std::cout << "toe = " << eph.toe << std::endl;
+    std::cout << "tof = " << eph.toe << std::endl;
+    int debug = 1;
+}
+
+void geph_callback(const GlonassEphemeris& geph)
+{
+    std::cout << "Glonass\n";
+    std::cout << "now = " << UTCTime::now() << std::endl;
+    std::cout << "toe = " << geph.toe << std::endl;
+    std::cout << "tof = " << geph.toe << std::endl;
+    int debug = 1;
 }
 
 int main(int argc, char**argv)
@@ -46,16 +63,19 @@ int main(int argc, char**argv)
 
     // Connect a callback to the PVT message
     ublox.registerUBXCallback(ublox::CLASS_NAV, ublox::NAV_PVT, &pvt_callback);
-    ublox.registerUBXCallback(ublox::CLASS_RXM, ublox::RXM_SFRBX, &eph_callback);
+    ublox.registerUBXCallback(ublox::CLASS_RXM, ublox::RXM_SFRBX, &sfrbx_callback);
+
+    conv.registerCallback(geph_callback);
+    conv.registerCallback(eph_callback);
 
     ublox.readFile("/home/superjax/ublox_test/ublox.raw");
 //    ublox.initLogFile("/tmp/ublox.raw");
 
-    while (!stop)
-    {
+    // while (!stop)
+    // {
 //        ublox.ubx_.enable_message(ublox::CLASS_RXM, ublox::RXM_RAWX, 1);
 //        sleep(1);
-    }
+    // }
 
     std::cout << "\nquitting" << std::endl;
     return 0;

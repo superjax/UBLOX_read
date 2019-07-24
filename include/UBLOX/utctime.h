@@ -3,6 +3,8 @@
 #include <ctime>
 #include <cstdint>
 #include <cmath>
+#include <ostream>
+#include <chrono>
 
 
 class UTCTime
@@ -11,171 +13,62 @@ public:
     int64_t sec;  // time since Jan 1 1970 (with leap-seconds)
     int64_t nsec;
 
-    static constexpr uint64_t ONE_BILLION = 1000000000;
+    static constexpr uint64_t E9 = 1000000000;
+    static constexpr uint64_t E6 = 1000000;
+
     static constexpr int SEC_IN_WEEK = 7*24*60*60;
-    static constexpr int64_t GPS_UTC_OFFSET = 315964800; // GPS time started on 6/1/1980 while UNIX time started 1/1/1970 this is the difference between those in seconds
+    static constexpr int SEC_IN_DAY = 24*60*60;
+
     static constexpr int64_t LEAP_SECONDS = 18; // GPS time does not have leap seconds, UNIX does (as of 1/1/2017 - next one is probably in 2020 sometime unless there is some crazy earthquake or nuclear blast)
-    static constexpr int64_t UTC_TO_GPS_OFFSET = (GPS_UTC_OFFSET - LEAP_SECONDS);
     static constexpr int GPS_BEIDOU_OFFSET = 14; // Beidou is 14 seconds ahead of GPS, because it's synced with UTC in 2006, when UTC had 14 leap seconds wrt GPS
 
-    UTCTime()
-    {
-        sec = 0;
-        nsec = 0;
-    }
+    // T_UTC = T_G + G_UTC_OFFSET
+    static constexpr int64_t GPS_UTC_OFFSET = 315964800 - LEAP_SECONDS; // GPS time started on 6/1/1980 while UNIX time started 1/1/1970 this is the difference between those in seconds
+    static constexpr int64_t GLO_UTC_OFFSET = -3*3600; // GLONASS is exactly 3 hours ahead of UTC (including leap seconds)
+    static constexpr int BD_UTC_OFFSET = GPS_UTC_OFFSET + 14;
 
-    UTCTime(int _sec, int _nsec) :
-        sec(_sec),
-        nsec(_nsec)
-    {
-        wrapNsec();
-    }
+    UTCTime();
 
-    UTCTime(double _sec)
-    {
-        sec = std::floor(_sec);
-        nsec = (uint64_t)(_sec*ONE_BILLION) % ONE_BILLION;
-        wrapNsec();
-    }
+    UTCTime(int _sec, int _nsec);
 
-    bool operator>(const UTCTime& other) const
-    {
-        return (sec > other.sec)   ? true  :
-               (sec < other.sec)   ? false :
-               (nsec > other.nsec) ? true  :
-                                     false;
-    }
-    bool operator<(const UTCTime& other) const
-    {
-        return (sec < other.sec)   ? true  :
-               (sec > other.sec)   ? false :
-               (nsec < other.nsec) ? true  :
-                                     false;
-    }
+    UTCTime(double _sec);
 
-    UTCTime operator- (const UTCTime& other) const
-    {
-        UTCTime out;
-        out.sec = sec - other.sec;
-        out.nsec = nsec - other.nsec;
-        out.wrapNsec();
-        return out;
-    }
+    bool operator>(const UTCTime& other) const;
+    bool operator<(const UTCTime& other) const;
+    bool operator==(const UTCTime& other) const;
 
-    UTCTime operator+ (const UTCTime& other) const
-    {
-        UTCTime out;
-        out.sec = sec + other.sec;
-        out.nsec = nsec + other.nsec;
-        out.wrapNsec();
-        return out;
-    }
+    UTCTime operator- (const UTCTime& other) const;
+    UTCTime& operator-= (const UTCTime& other);
+    UTCTime operator+ (const UTCTime& other) const;
+    UTCTime& operator+= (const UTCTime& other);
 
-    double toSec()
-    {
-        return (double)sec + (double)nsec*1e-9;
-    }
+    UTCTime operator+ (double sec_) const;
+    UTCTime& operator+= (double sec_);
+    UTCTime operator+ (int sec_) const;
+    UTCTime& operator+= (int sec_);
 
-    UTCTime operator+ (double sec_) const
-    {
-        UTCTime out;
-        out.nsec = nsec + (uint64_t)(sec_*ONE_BILLION) % ONE_BILLION;
-        out.sec = sec + std::floor(sec_);
-        out.wrapNsec();
-        return out;
-    }
-    UTCTime operator+= (double sec_)
-    {
-        nsec = nsec + (uint64_t)(sec_*ONE_BILLION) % ONE_BILLION;
-        sec = sec +std::floor(sec_);
-        wrapNsec();
-        return *this;
-    }
-    UTCTime operator+ (int sec_) const
-    {
-        UTCTime out;
-        out.sec = sec +std::floor(sec_);
-        return out;
-    }
-    UTCTime operator+= (int sec_)
-    {
-        UTCTime out;
-        sec = sec +std::floor(sec_);
-        return *this;
-    }
+    UTCTime operator- (double sec_) const;
+    UTCTime& operator-= (double sec_);
+    UTCTime operator- (int sec_) const;
+    UTCTime& operator-= (int sec_);
 
-    static UTCTime now()
-    {
-        timespec start;
-        clock_gettime(CLOCK_REALTIME, &start);
-        UTCTime out;
-        out.sec  = start.tv_sec;
-        out.nsec = start.tv_nsec;
-        return out;
-    }
+    double toSec();
+    void wrapNsec();
 
-    static UTCTime fromGlonass(int dow, int tod_ms)
-    {
-        return now() + 10800.0 + dow + tod_ms*1e-3;
+    static UTCTime now();
 
-    }
+    static UTCTime fromGPS(int week, int tow_ms);
+    static UTCTime fromGlonass(int week, int tow_ms);
+//    static UTCTime fromGalileo(int week, int tow_ms);
+//    static UTCTime fromBeidou(int week, int tow_ms);
 
-    static UTCTime fromGPS(int week, int tow_ms)
-    {
-        UTCTime out;
-        out.sec = week * SEC_IN_WEEK + tow_ms/1000 + UTC_TO_GPS_OFFSET;
-        out.nsec = (tow_ms % 1000)*ONE_BILLION;
-        out.wrapNsec();
-        return out;
-    }
+    int week();
+    int GpsWeek();
+    int GlonassWeek();
+    int GlonassDayOfWeek();
+//    int BeidouWeek();
 
-    static UTCTime fromGalileo(int week, int tow_ms)
-    {
-        // Galileo and GPS use the same time system
-        return fromGPS(week, tow_ms);
-    }
 
-    static UTCTime fromBeidou(int week, int tow_ms)
-    {
-
-        int64_t new_tow = tow_ms - GPS_BEIDOU_OFFSET*1000;
-        if (new_tow < 0)
-        {
-            week -= SEC_IN_WEEK;
-            tow_ms += SEC_IN_WEEK;
-        }
-        return fromGPS(week, tow_ms);
-    }
-
-    int week()
-    {
-        return std::floor(sec/(SEC_IN_WEEK));
-    }
-
-    int GpsWeek()
-    {
-        int64_t gps_sec = sec - GPS_UTC_OFFSET;
-        return std::floor(gps_sec/SEC_IN_WEEK);
-    }
-
-    int BeidouWeek()
-    {
-        int64_t gps_sec = sec - GPS_UTC_OFFSET + GPS_BEIDOU_OFFSET;
-        return std::floor(gps_sec/SEC_IN_WEEK);
-    }
-
-private:
-    void wrapNsec()
-    {
-        if (nsec < 0)
-        {
-            sec -= 1;
-            nsec += ONE_BILLION;
-        }
-        else if (nsec > ONE_BILLION)
-        {
-            sec += 1;
-            nsec -= ONE_BILLION;
-        }
-    }
 };
+
+std::ostream &operator<<(std::ostream &os, const UTCTime& t);

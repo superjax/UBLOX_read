@@ -136,7 +136,7 @@ bool NavConverter::decodeGPSSubframe1(const uint8_t *const buff, Ephemeris *eph)
     i += 8;
     eph->iode = getbitu(buff, i, 8);
     i += 8;
-    uint16_t toc_s = getbitu(buff, i, 16) * 16.0;
+    eph->tocs = getbitu(buff, i, 16) * 16.0;
     i += 16;
     eph->af2 = getbits(buff, i, 8) * P2_55;
     i += 8;
@@ -144,7 +144,6 @@ bool NavConverter::decodeGPSSubframe1(const uint8_t *const buff, Ephemeris *eph)
     i += 16;
     eph->af0 = getbits(buff, i, 22) * P2_31;
 
-    eph->toc.fromGPS(UTCTime::now().GpsWeek(), toc_s * 1000);
     eph->tgd[0] = tgd == -128 ? 0.0 : tgd * P2_31; /* ref [4] */
     eph->iodc = (iodc0 << 8) + eph->iode;
     eph->week = week;
@@ -174,12 +173,9 @@ bool NavConverter::decodeGPSSubframe2(const unsigned char *buff, Ephemeris *eph)
     i += 16;
     eph->sqrta = getbitu(buff, i, 32) * P2_19;
     i += 32;
-    uint16_t toe_sec;
-    toe_sec = getbitu(buff, i, 16) * 16.0;
+    eph->toes = getbitu(buff, i, 16) * 16.0;
     i += 16;
     eph->fit_interval_flag = getbitu(buff, i, 1) ? 0.0 : 4.0; /* 0:4hr,1:>4hr */
-
-    eph->toe.fromGPS(UTCTime::now().GpsWeek(), toe_sec * 1000);
 
     eph->iode2 = eph->iode;
     eph->got_subframe2 = true;
@@ -254,6 +250,10 @@ bool NavConverter::decodeGPS(const uint8_t *buf, Ephemeris *eph)
         eph->iode1 == eph->iode2 && eph->iode1 == eph->iode3 &&
         eph->iode == (eph->iodc & 0xFF))
     {
+        // Set toe and toc
+        eph->toe = UTCTime::fromGPS(eph->week, eph->toes);
+        eph->toc = UTCTime::fromGPS(eph->week, eph->tocs);
+
         for (auto &cb : eph_callbacks)
             cb(*eph);
 
@@ -263,138 +263,6 @@ bool NavConverter::decodeGPS(const uint8_t *buf, Ephemeris *eph)
     }
 
     return 0;
-}
-
-bool NavConverter::decodeGalileo(const uint8_t *const buff, Ephemeris *eph)
-{
-    double tow, toc, tt;
-    int i, time_f, week, svid, e5b_hs, e1b_hs, e5b_dvs, e1b_dvs, type[6], iod_nav[4];
-
-    i = 0; /* word type 0 */
-    type[0] = getbitu(buff, i, 6);
-    i += 6;
-    time_f = getbitu(buff, i, 2);
-    i += 2 + 88;
-    week = getbitu(buff, i, 12);
-    i += 12; /* gst-week */
-    tow = getbitu(buff, i, 20);
-
-    i = 128; /* word type 1 */
-    type[1] = getbitu(buff, i, 6);
-    i += 6;
-    iod_nav[0] = getbitu(buff, i, 10);
-    i += 10;
-    eph->toe = getbitu(buff, i, 14) * 60.0;
-    i += 14;
-    eph->m0 = getbits(buff, i, 32) * P2_31 * PI;
-    i += 32;
-    eph->ecc = getbitu(buff, i, 32) * P2_33;
-    i += 32;
-    eph->sqrta = getbitu(buff, i, 32) * P2_19;
-
-    i = 128 * 2; /* word type 2 */
-    type[2] = getbitu(buff, i, 6);
-    i += 6;
-    iod_nav[1] = getbitu(buff, i, 10);
-    i += 10;
-    eph->omega0 = getbits(buff, i, 32) * P2_31 * PI;
-    i += 32;
-    eph->i0 = getbits(buff, i, 32) * P2_31 * PI;
-    i += 32;
-    eph->w = getbits(buff, i, 32) * P2_31 * PI;
-    i += 32;
-    eph->idot = getbits(buff, i, 14) * P2_43 * PI;
-
-    i = 128 * 3; /* word type 3 */
-    type[3] = getbitu(buff, i, 6);
-    i += 6;
-    iod_nav[2] = getbitu(buff, i, 10);
-    i += 10;
-    eph->omegadot = getbits(buff, i, 24) * P2_43 * PI;
-    i += 24;
-    eph->delta_n = getbits(buff, i, 16) * P2_43 * PI;
-    i += 16;
-    eph->cuc = getbits(buff, i, 16) * P2_29;
-    i += 16;
-    eph->cus = getbits(buff, i, 16) * P2_29;
-    i += 16;
-    eph->crc = getbits(buff, i, 16) * P2_5;
-    i += 16;
-    eph->crs = getbits(buff, i, 16) * P2_5;
-    i += 16;
-    eph->ura = getbitu(buff, i, 8);
-
-    i = 128 * 4; /* word type 4 */
-    type[4] = getbitu(buff, i, 6);
-    i += 6;
-    iod_nav[3] = getbitu(buff, i, 10);
-    i += 10;
-    svid = getbitu(buff, i, 6);
-    i += 6;
-    eph->cic = getbits(buff, i, 16) * P2_29;
-    i += 16;
-    eph->cis = getbits(buff, i, 16) * P2_29;
-    i += 16;
-    toc = getbitu(buff, i, 14) * 60.0;
-    i += 14;
-    eph->af0 = getbits(buff, i, 31) * P2_34;
-    i += 31;
-    eph->af1 = getbits(buff, i, 21) * P2_46;
-    i += 21;
-    eph->af2 = getbits(buff, i, 6) * P2_59;
-
-    i = 128 * 5; /* word type 5 */
-    type[5] = getbitu(buff, i, 6);
-    i += 6 + 41;
-    eph->tgd[0] = getbits(buff, i, 10) * P2_32;
-    i += 10; /* BGD E5a/E1 */
-    eph->tgd[1] = getbits(buff, i, 10) * P2_32;
-    i += 10; /* BGD E5b/E1 */
-    e5b_hs = getbitu(buff, i, 2);
-    i += 2;
-    e1b_hs = getbitu(buff, i, 2);
-    i += 2;
-    e5b_dvs = getbitu(buff, i, 1);
-    i += 1;
-    e1b_dvs = getbitu(buff, i, 1);
-
-    /* test word types */
-    if (type[0] != 0 || type[1] != 1 || type[2] != 2 || type[3] != 3 || type[4] != 4)
-    {
-        //        trace(3,"decode_gal_inav error: type=%d %d %d %d %d\n",type[0],type[1],
-        //              type[2],type[3],type[4]);
-        return 0;
-    }
-    /* test word type 0 time field */
-    if (time_f != 2)
-    {
-        //        trace(3,"decode_gal_inav error: word0-time=%d\n",time_f);
-        return 0;
-    }
-    /* test consistency of iod_nav */
-    if (iod_nav[0] != iod_nav[1] || iod_nav[0] != iod_nav[2] || iod_nav[0] != iod_nav[3])
-    {
-        //        trace(3,"decode_gal_inav error: ionav=%d %d %d %d\n",iod_nav[0],
-        //              iod_nav[1],iod_nav[2],iod_nav[3]);
-        return 0;
-    }
-    //    if (!(eph->sat = satno(SYS_GAL,svid))) {
-    //        trace(2,"decode_gal_inav svid error: svid=%d\n",svid);
-    //        return 0;
-    //    }
-    eph->iode = eph->iodc = iod_nav[0];
-    eph->health = (e5b_hs << 7) | (e5b_dvs << 6) | (e1b_hs << 1) | e1b_dvs;
-    //    eph->ttr=gst2time(week,tow);
-    //    tt=timediff(gst2time(week,eph->toes),eph->ttr); /* week complient to toe */
-    //    if      (tt> 302400.0) week--;
-    //    else if (tt<-302400.0) week++;
-    //    eph->toe=gst2time(week,eph->toes);
-    //    eph->toc=gst2time(week,toc);
-    //    eph->week=week+1024; /* gal-week = gst-week + 1024 */
-    //    eph->code =(1<<0)|(1<<9); /* data source = i/nav e1b, af0-2,toc,sisa for e5b-e1 */
-
-    for (auto &cb : eph_callbacks)
-        cb(*eph);
 }
 
 int test_glostr(const unsigned char *buff)
@@ -516,32 +384,40 @@ bool NavConverter::decodeGlonassString(const unsigned char *buff, GlonassEphemer
         // trace(3, "decode_glostr error: frn=%d %d %d %d %d\n", frn1, frn2, frn3, frn4);
         return false;
     }
+
+    // Convert Time into UTC
+    int frame_tod_ms = (tk_h * 3600 + tk_m * 60 + tk_s)*1000;
+    geph->tof = UTCTime::fromGlonass(frame_tod_ms);
+
+    uint64_t eph_tod_ms = (tb * 60 * 15) * 1000;
+//    geph->toe = UTCTime::fromGlonass(eph_tod_ms, true);
+    
+
+
     // if (!(geph->sat = satno(SYS_GLO, slot)))
     // {
         // trace(2, "decode_glostr error: slot=%d\n", slot);
         // return 0;
     // }
-    geph->frq = 0;
-    geph->iode = tb;
-    // tow = time2gpst(gpst2utc(geph->tof), &week);
-    tod = fmod(tow, 86400.0);
-    tow -= tod;
-    tof = tk_h * 3600.0 + tk_m * 60.0 + tk_s - 10800.0; /* lt->utc */
-    if (tof < tod - 43200.0)
-        tof += 86400.0;
-    else if (tof > tod + 43200.0)
-        tof -= 86400.0;
-    // geph->tof = utc2gpst(gpst2time(week, tow + tof));
-    toe = tb * 900.0 - 10800.0; /* lt->utc */
-    if (toe < tod - 43200.0)
-        toe += 86400.0;
-    else if (toe > tod + 43200.0)
-        toe -= 86400.0;
+    // geph->frq = 0;
+    // geph->iode = tb;
+    // // tow = time2gpst(gpst2utc(geph->tof), &week);
+    // tod = fmod(tow, 86400.0);
+    // tow -= tod;
+    // tof = tk_h * 3600.0 + tk_m * 60.0 + tk_s - 10800.0; /* lt->utc */
+    // if (tof < tod - 43200.0)
+    //     tof += 86400.0;
+    // else if (tof > tod + 43200.0)
+    //     tof -= 86400.0;
+    // // geph->tof = utc2gpst(gpst2time(week, tow + tof));
+    // toe = tb * 900.0 - 10800.0; /* lt->utc */
+    // if (toe < tod - 43200.0)
+    //     toe += 86400.0;
+    // else if (toe > tod + 43200.0)
+    //     toe -= 86400.0;
     // geph->toe = utc2gpst(gpst2time(week, tow + toe)); /* utc->gpst */
     return true;
 }
-
-static unsigned char subfrm[255][380];
 
 bool NavConverter::decodeGlonass(const ublox::RXM_SFRBX_t &msg, GlonassEphemeris &geph)
 {
@@ -609,11 +485,15 @@ bool NavConverter::decodeGlonass(const ublox::RXM_SFRBX_t &msg, GlonassEphemeris
     // raw->ephsat = sat;
     for (auto& cb : geph_callbacks)
         cb(geph);
-        
+
     return true;
 }
 
 bool NavConverter::decodeBeidou(const uint8_t *const buf, Ephemeris *eph)
 {
-
+    // TODO
+}
+bool NavConverter::decodeGalileo(const uint8_t *const buf, Ephemeris *eph)
+{
+    // TODO
 }
