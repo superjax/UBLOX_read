@@ -66,6 +66,7 @@ TEST (NavConverter, ParseGPS)
 	{
 		finished = true;
 		EXPECT_EQ(eph.sat, 21);
+		EXPECT_EQ(eph.gnssID, ublox::GnssID_GPS);
 		EXPECT_EQ(eph.iode, 78);
 		EXPECT_EQ(eph.iodc, 78);
 		EXPECT_EQ(eph.ura, 0);
@@ -213,6 +214,7 @@ TEST (NavConverter, ParseGLONASS)
 	{
 		finished = true;
 		EXPECT_EQ(geph.sat, 4);
+		EXPECT_EQ(geph.gnssID, ublox::GnssID_Glonass);
 		EXPECT_EQ(geph.iode, 95);
 		EXPECT_EQ(geph.frq, 6);
 		EXPECT_EQ(geph.svh, 0);

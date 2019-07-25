@@ -494,6 +494,7 @@ bool NavConverter::decodeGlonass(const ublox::RXM_SFRBX_t &msg, GlonassEphemeris
         return 0;
     geph.frq = msg.freqId - 7;
     geph.sat = msg.svId;
+    geph.gnssID = msg.gnssId;
 
     // if (!strstr(raw->opt, "-EPHALL"))
     // {

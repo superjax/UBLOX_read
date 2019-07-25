@@ -119,8 +119,8 @@ TEST (Time, getGPSWeek)
 {
     // 21 Jul 2019 12:00:00 AM
     UTCTime t(1563667200,0);
-    EXPECT_EQ((t-(double)(UTCTime::LEAP_SECONDS)).GpsWeek(), 2063); // 20 Jul 2019 23:59:42 AM
-    EXPECT_EQ((t-(double)(UTCTime::LEAP_SECONDS+1)).GpsWeek(), 2062); // 20 Jul 2019 23:59:41 AM
+    EXPECT_EQ((t+(double)(UTCTime::LEAP_SECONDS)).GpsWeek(), 2063); // 20 Jul 2019 23:59:42 AM
+    EXPECT_EQ((t+(double)(UTCTime::LEAP_SECONDS-1)).GpsWeek(), 2062); // 20 Jul 2019 23:59:41 AM
 }
 
 TEST (Time, getGlonassWeek)
@@ -143,7 +143,7 @@ TEST (Time, GPSvsUTC)
 {
     // 21 Jul 2019 12:00:00 AM
     UTCTime t(1563667200,0);
-    t -= (double)UTCTime::LEAP_SECONDS;
+    t += (double)UTCTime::LEAP_SECONDS;
     int gps_week = 2063;
     int tow_ms = 0;
 
@@ -154,7 +154,7 @@ TEST (Time, GPSvsUTC)
 
     // 27 Jul 2019 11:59:59 PM
     UTCTime t_end(1564271999,0);
-    t_end -= (double)UTCTime::LEAP_SECONDS;
+    t_end += (double)UTCTime::LEAP_SECONDS;
 
     uint64_t tow_ms_end = (UTCTime::SEC_IN_WEEK-1)*1000;
     UTCTime gps_end = UTCTime::fromGPS(gps_week, tow_ms_end);
