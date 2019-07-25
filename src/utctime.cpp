@@ -135,12 +135,12 @@ UTCTime& UTCTime::operator-= (int sec_)
     return *this;
 }
 
-int UTCTime::week()
+int UTCTime::week() const
 {
     return std::floor(sec/SEC_IN_WEEK);
 }
 
-int UTCTime::GpsWeek()
+int UTCTime::GpsWeek() const
 {
     int64_t gps_sec = sec - GPS_UTC_OFFSET;
     return std::floor(gps_sec/SEC_IN_WEEK);
@@ -152,13 +152,13 @@ int UTCTime::GpsWeek()
 //    return std::floor(gps_sec/SEC_IN_WEEK);
 //}
 
-int UTCTime::GlonassWeek()
+int UTCTime::GlonassWeek() const
 {
     int64_t glonass_sec = sec - GLO_UTC_OFFSET;
     return std::floor(glonass_sec/SEC_IN_WEEK);
 }
 
-int UTCTime::GlonassDayOfWeek()
+int UTCTime::GlonassDayOfWeek() const
 {
     int64_t glonass_sec = sec - GLO_UTC_OFFSET;
     int32_t sec_of_week = glonass_sec % SEC_IN_WEEK;
@@ -182,6 +182,17 @@ UTCTime UTCTime::fromGPS(int week, int tow_ms)
     out.sec = week * SEC_IN_WEEK + tow_ms/1000 + GPS_UTC_OFFSET;
     out.nsec = (tow_ms % 1000)*E9;
     out.wrapNsec();
+    return out;
+}
+
+UTCTime UTCTime::fromGlonassTimeOfDay(const UTCTime& ref, int tod_ms)
+{
+    uint32_t glonass_week = ref.GlonassWeek();
+    uint32_t glonass_day = ref.GlonassDayOfWeek();
+
+    int glonass_tow_ms = (glonass_day * SEC_IN_DAY) * 1000 + tod_ms;
+
+    UTCTime out = UTCTime::fromGlonass(glonass_week, glonass_tow_ms);
     return out;
 }
 

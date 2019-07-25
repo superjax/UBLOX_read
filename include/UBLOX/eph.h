@@ -177,7 +177,10 @@ public:
     void registerCallback(eph_cb cb);
     void registerCallback(geph_cb cb);
 
-    uint8_t subfrm[255][380];
+    uint8_t subfrm_[255][380];
+    UTCTime GPS_time_ = {0, 0};
+    UTCTime prev_gal_toe = {0, 0};
+    UTCTime prev_gal_tof = {0, 0};
 };
 
 

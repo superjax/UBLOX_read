@@ -1,4 +1,7 @@
 ﻿#include <vector>
+#include <ctime>
+#include <cmath>
+#include <cstring>
 
 #include "UBLOX/eph.h"
 
@@ -58,11 +61,6 @@ bool NavConverter::convertUBX(const ublox::RXM_SFRBX_t &msg)
     }
 }
 
-#include <time.h>
-#include <ctime>
-#include <cmath>
-
-#include <cstring>
 static unsigned int U4(const unsigned char *p)
 {
     unsigned int u;
@@ -146,7 +144,7 @@ bool NavConverter::decodeGPSSubframe1(const uint8_t *const buff, Ephemeris *eph)
 
     eph->tgd[0] = tgd == -128 ? 0.0 : tgd * P2_31; /* ref [4] */
     eph->iodc = (iodc0 << 8) + eph->iode;
-    eph->week = week;
+    eph->week = week + UTCTime::GPS_WEEK_ROLLOVER;
 
     eph->iode1 = eph->iode;
     eph->got_subframe1 = true;
@@ -251,8 +249,9 @@ bool NavConverter::decodeGPS(const uint8_t *buf, Ephemeris *eph)
         eph->iode == (eph->iodc & 0xFF))
     {
         // Set toe and toc
-        eph->toe = UTCTime::fromGPS(eph->week, eph->toes);
-        eph->toc = UTCTime::fromGPS(eph->week, eph->tocs);
+        eph->toe = UTCTime::fromGPS(eph->week, eph->toes*1000);
+        eph->toc = UTCTime::fromGPS(eph->week, eph->tocs*1000);
+        GPS_time_ = eph->toe;
 
         for (auto &cb : eph_callbacks)
             cb(*eph);
@@ -385,37 +384,35 @@ bool NavConverter::decodeGlonassString(const unsigned char *buff, GlonassEphemer
         return false;
     }
 
-    // Convert Time into UTC
+    // Convert Time into UTC, using the last GPS time stamp to figure
+    // out what day it is.
     int frame_tod_ms = (tk_h * 3600 + tk_m * 60 + tk_s)*1000;
-    geph->tof = UTCTime::fromGlonass(frame_tod_ms);
-
+    geph->tof = UTCTime::fromGlonassTimeOfDay(GPS_time_, frame_tod_ms);
     uint64_t eph_tod_ms = (tb * 60 * 15) * 1000;
-//    geph->toe = UTCTime::fromGlonass(eph_tod_ms, true);
-    
+    geph->toe = UTCTime::fromGlonassTimeOfDay(GPS_time_, eph_tod_ms);
 
+    // Initialize prev_gal_...
+    if (prev_gal_tof == UTCTime{0, 0})
+        prev_gal_tof = geph->tof;
+    if (prev_gal_toe == UTCTime{0, 0})
+        prev_gal_toe = geph->toe;
 
-    // if (!(geph->sat = satno(SYS_GLO, slot)))
-    // {
-        // trace(2, "decode_glostr error: slot=%d\n", slot);
-        // return 0;
-    // }
-    // geph->frq = 0;
-    // geph->iode = tb;
-    // // tow = time2gpst(gpst2utc(geph->tof), &week);
-    // tod = fmod(tow, 86400.0);
-    // tow -= tod;
-    // tof = tk_h * 3600.0 + tk_m * 60.0 + tk_s - 10800.0; /* lt->utc */
-    // if (tof < tod - 43200.0)
-    //     tof += 86400.0;
-    // else if (tof > tod + 43200.0)
-    //     tof -= 86400.0;
-    // // geph->tof = utc2gpst(gpst2time(week, tow + tof));
-    // toe = tb * 900.0 - 10800.0; /* lt->utc */
-    // if (toe < tod - 43200.0)
-    //     toe += 86400.0;
-    // else if (toe > tod + 43200.0)
-    //     toe -= 86400.0;
-    // geph->toe = utc2gpst(gpst2time(week, tow + toe)); /* utc->gpst */
+    // Handle The day wrap, because we are comparing GPS with Gal
+    // to get the beginning of the day, we might have the wrong
+    // day.  This assumes that we get at least two GLONASS ephemeris
+    // message per day, which is probably okay
+    if ((prev_gal_toe - geph->toe).toSec() > UTCTime::SEC_IN_DAY/2)
+        geph->toe += (int)(UTCTime::SEC_IN_DAY);
+    else if ((prev_gal_toe - geph->toe).toSec() < -(UTCTime::SEC_IN_DAY/2))
+        geph->toe -= (int)(UTCTime::SEC_IN_DAY);
+
+    if ((prev_gal_tof - geph->tof).toSec() > UTCTime::SEC_IN_DAY/2)
+        geph->tof += (int)(UTCTime::SEC_IN_DAY);
+    else if ((prev_gal_tof - geph->tof).toSec() < - (UTCTime::SEC_IN_DAY)/2)
+        geph->tof -= (int)(UTCTime::SEC_IN_DAY);
+
+    prev_gal_tof = geph->tof;
+    prev_gal_toe = geph->toe;
     return true;
 }
 
@@ -427,6 +424,8 @@ bool NavConverter::decodeGlonass(const ublox::RXM_SFRBX_t &msg, GlonassEphemeris
 
     if (msg.svId == 255)
         return false; // svId==255 means UBLOX doesn't know who this data came from
+    if (GPS_time_ == UTCTime{0, 0})
+        return false; // We use the GPS week count to calculate the GLONASS time
 
     prn = msg.svId;
     int sat = msg.svId;
@@ -457,21 +456,21 @@ bool NavConverter::decodeGlonass(const ublox::RXM_SFRBX_t &msg, GlonassEphemeris
         return -1;
     }
     /* flush frame buffer if frame-id changed */
-    fid = subfrm[sat - 1] + 150;
+    fid = subfrm_[sat - 1] + 150;
     if (fid[0] != buff[12] || fid[1] != buff[13])
     {
         for (i = 0; i < 4; i++)
-            memset(subfrm[sat - 1] + i * 10, 0, 10);
+            memset(subfrm_[sat - 1] + i * 10, 0, 10);
         memcpy(fid, buff + 12, 2); /* save frame-id */
     }
-    memcpy(subfrm[sat - 1] + (m - 1) * 10, buff, 10);
+    memcpy(subfrm_[sat - 1] + (m - 1) * 10, buff, 10);
 
     if (m != 4)
         return 0;
 
     // /* decode glonass ephemeris strings */
     // geph.tof = raw->time;
-    if (!decodeGlonassString(subfrm[sat - 1], &geph))
+    if (!decodeGlonassString(subfrm_[sat - 1], &geph))
         return 0;
     geph.frq = msg.freqId - 7;
     geph.sat = msg.svId;

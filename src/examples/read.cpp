@@ -33,19 +33,22 @@ void sfrbx_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_ms
 
 void eph_callback(const Ephemeris& eph)
 {
-    std::cout << "GPS\n";
+    std::cout << "GPS sat: " << (int)eph.sat << "\n";
     std::cout << "now = " << UTCTime::now() << std::endl;
     std::cout << "toe = " << eph.toe << std::endl;
     std::cout << "tof = " << eph.toe << std::endl;
-    int debug = 1;
+    if (std::abs(eph.crc - 276.593750) < 1e-3)
+        int debug = 1;
 }
 
 void geph_callback(const GlonassEphemeris& geph)
 {
-    std::cout << "Glonass\n";
+    int rtklib_toe = 1563655518;
+    printf("diff = %d\n", rtklib_toe - geph.toe.sec);
+    std::cout << "Glonass sat:" << (int)geph.sat << "\n";
     std::cout << "now = " << UTCTime::now() << std::endl;
     std::cout << "toe = " << geph.toe << std::endl;
-    std::cout << "tof = " << geph.toe << std::endl;
+    std::cout << "tof = " << geph.tof << std::endl;
     int debug = 1;
 }
 
