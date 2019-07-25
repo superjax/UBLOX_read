@@ -3,7 +3,7 @@
 
 #include "UBLOX/ublox.h"
 
-#include "UBLOX/eph.h"
+//#include "UBLOX/eph.h"
 
 bool stop = false;
 void inthand(int signum)
@@ -24,7 +24,7 @@ void pvt_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
 
 }
 
-NavConverter conv;
+NavParser conv;
 
 void sfrbx_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
 {
@@ -34,26 +34,17 @@ void sfrbx_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_ms
 void eph_callback(const Ephemeris& eph)
 {
     std::cout << "GPS sat: " << (int)eph.sat << "\n";
-    if (eph.sat == 21)
-    {
-        int debug = 1;
-        std::cout << "now = " << UTCTime::now() << std::endl;
-        std::cout << "toe = " << eph.toe << std::endl;
-        std::cout << "tof = " << eph.toe << std::endl;
-        if (std::abs(eph.crc - 276.593750) < 1e-3)
-            int debug = 1;
-    }
+    std::cout << "now = " << UTCTime::now() << std::endl;
+    std::cout << "toe = " << eph.toe << std::endl;
+    std::cout << "tof = " << eph.toe << std::endl;
 }
 
 void geph_callback(const GlonassEphemeris& geph)
 {
-    int rtklib_toe = 1563655518;
-    printf("diff = %d\n", rtklib_toe - geph.toe.sec);
     std::cout << "Glonass sat:" << (int)geph.sat << "\n";
     std::cout << "now = " << UTCTime::now() << std::endl;
     std::cout << "toe = " << geph.toe << std::endl;
     std::cout << "tof = " << geph.tof << std::endl;
-    int debug = 1;
 }
 
 int main(int argc, char**argv)
@@ -70,17 +61,16 @@ int main(int argc, char**argv)
 
     // Connect a callback to the PVT message
     ublox.registerUBXCallback(ublox::CLASS_NAV, ublox::NAV_PVT, &pvt_callback);
-    ublox.registerUBXCallback(ublox::CLASS_RXM, ublox::RXM_SFRBX, &sfrbx_callback);
 
-    conv.registerCallback(geph_callback);
-    conv.registerCallback(eph_callback);
+    // Connect Callbacks to Satellite Ephemeris Reception
+    ublox.registerEphCallback(eph_callback);
+    ublox.registerGephCallback(geph_callback);
 
     ublox.readFile("/home/superjax/ublox_test/ublox.raw");
-    ublox.initLogFile("/tmp/ublox.raw");
+//    ublox.initLogFile("/tmp/ublox.raw");
 
 //     while (!stop)
 //     {
-//        ublox.ubx_.enable_message(ublox::CLASS_RXM, ublox::RXM_RAWX, 1);
 //        sleep(1);
 //     }
 

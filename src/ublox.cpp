@@ -25,6 +25,12 @@ UBLOX::UBLOX(const std::string& port) :
 //    ubx_.enable_message(CLASS_CFG, CFG_VALGET, 1);
     ubx_.enable_message(CLASS_RXM, RXM_RAWX, 1);
     ubx_.enable_message(CLASS_RXM, RXM_SFRBX, 1);
+
+    auto eph_cb = [this](uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
+    {
+      this->nav_.convertUBX(in_msg.RXM_SFRBX);
+    };
+    ubx_.registerCallback(ublox::CLASS_RXM, ublox::RXM_SFRBX, eph_cb);
 }
 
 void UBLOX::readFile(const std::string& filename)

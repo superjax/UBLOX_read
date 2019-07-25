@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "UBLOX/eph.h"
+#include "UBLOX/parsers/nav.h"
 
 TEST (Eph, ByteOrder)
 {
@@ -19,7 +19,7 @@ TEST (Eph, ByteOrder)
 }
 
 
-TEST (NavConverter, ParseGPS)
+TEST (NavParser, ParseGPS)
 {
 	uint32_t msgs[6][10]{
 		{
@@ -60,7 +60,7 @@ TEST (NavConverter, ParseGPS)
 		}};
 
 	Ephemeris eph;
-	NavConverter conv;
+	NavParser conv;
 	bool finished = false;
 	conv.registerCallback([&finished] (const Ephemeris& eph)
 	{
@@ -113,7 +113,7 @@ TEST (NavConverter, ParseGPS)
 	EXPECT_TRUE(finished);
 }
 
-TEST (NavConverter, ParseGLONASS)
+TEST (NavParser, ParseGLONASS)
 {
 	uint32_t msg[86][5] = {
 		{0xd000406, 0x20b04, 0x7a7d18e5, 0x29d01307, 0xac846000, },
@@ -206,7 +206,7 @@ TEST (NavConverter, ParseGLONASS)
 
 
 	GlonassEphemeris geph;
-	NavConverter conv;
+	NavParser conv;
 	conv.GPS_time_.sec = 1563660018;
 
 	bool finished = false;

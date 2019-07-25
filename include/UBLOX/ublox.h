@@ -11,6 +11,7 @@
 #include "UBLOX/parsers/ubx.h"
 #include "UBLOX/parsers/rtcm.h"
 #include "UBLOX/parsers/nmea.h"
+#include "UBLOX/parsers/nav.h"
 
 namespace ublox
 {
@@ -45,6 +46,7 @@ public:
     UBX ubx_;
     rtcm::RTCM rtcm_;
     NMEA nmea_;
+    NavParser nav_;
 
     std::ofstream log_file_;
 
@@ -52,6 +54,15 @@ public:
     {
         ubx_.registerCallback(cls, type, cb);
     }
+    inline void registerEphCallback(const NavParser::eph_cb& cb)
+    {
+        nav_.registerCallback(cb);
+    }
+    inline void registerGephCallback(const NavParser::geph_cb& cb)
+    {
+        nav_.registerCallback(cb);
+    }
+
 
     rtk_type_t type_;
 
