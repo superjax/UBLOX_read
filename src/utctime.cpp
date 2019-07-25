@@ -23,16 +23,16 @@ UTCTime::UTCTime(double _sec)
 bool UTCTime::operator>(const UTCTime& other) const
 {
     return (sec > other.sec)   ? true  :
-                                 (sec < other.sec)   ? false :
-                                                       (nsec > other.nsec) ? true  :
-                                                                             false;
+           (sec < other.sec)   ? false :
+           (nsec > other.nsec) ? true  :
+                                 false;
 }
 bool UTCTime::operator<(const UTCTime& other) const
 {
     return (sec < other.sec)   ? true  :
-                                 (sec > other.sec)   ? false :
-                                                       (nsec < other.nsec) ? true  :
-                                                                             false;
+           (sec > other.sec)   ? false :
+           (nsec < other.nsec) ? true  :
+                                 false;
 }
 
 bool UTCTime::operator==(const UTCTime& other) const

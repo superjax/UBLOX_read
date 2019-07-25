@@ -34,11 +34,15 @@ void sfrbx_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_ms
 void eph_callback(const Ephemeris& eph)
 {
     std::cout << "GPS sat: " << (int)eph.sat << "\n";
-    std::cout << "now = " << UTCTime::now() << std::endl;
-    std::cout << "toe = " << eph.toe << std::endl;
-    std::cout << "tof = " << eph.toe << std::endl;
-    if (std::abs(eph.crc - 276.593750) < 1e-3)
+    if (eph.sat == 21)
+    {
         int debug = 1;
+        std::cout << "now = " << UTCTime::now() << std::endl;
+        std::cout << "toe = " << eph.toe << std::endl;
+        std::cout << "tof = " << eph.toe << std::endl;
+        if (std::abs(eph.crc - 276.593750) < 1e-3)
+            int debug = 1;
+    }
 }
 
 void geph_callback(const GlonassEphemeris& geph)
@@ -61,7 +65,7 @@ int main(int argc, char**argv)
         port = argv[1];
     ublox::UBLOX ublox(port);
 
-    // look for Ctrl+C and quit
+    // look for Ctrl+c and quit
     signal(SIGINT, inthand);
 
     // Connect a callback to the PVT message
@@ -72,13 +76,13 @@ int main(int argc, char**argv)
     conv.registerCallback(eph_callback);
 
     ublox.readFile("/home/superjax/ublox_test/ublox.raw");
-//    ublox.initLogFile("/tmp/ublox.raw");
+    ublox.initLogFile("/tmp/ublox.raw");
 
-    // while (!stop)
-    // {
+//     while (!stop)
+//     {
 //        ublox.ubx_.enable_message(ublox::CLASS_RXM, ublox::RXM_RAWX, 1);
 //        sleep(1);
-    // }
+//     }
 
     std::cout << "\nquitting" << std::endl;
     return 0;
