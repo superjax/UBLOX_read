@@ -233,7 +233,7 @@ bool UBX::decode_message()
         }
         break;
       case CLASS_RXM:
-        DBG("NAV_");
+        DBG("RXM_");
         switch(message_type_)
         {
         case RXM_RAWX:

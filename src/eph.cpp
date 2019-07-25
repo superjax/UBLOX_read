@@ -333,6 +333,7 @@ bool NavConverter::decodeGlonassString(const unsigned char *buff, GlonassEphemer
     P2 = getbitu(buff, i, 1);
     i += 1;
     tb = getbitu(buff, i, 7);
+    geph->iode = tb;
     i += 7 + 5;
     geph->vel[1] = getbitg(buff, i, 24) * P2_20 * 1E3;
     i += 24;
@@ -387,37 +388,56 @@ bool NavConverter::decodeGlonassString(const unsigned char *buff, GlonassEphemer
     // Convert Time into UTC, using the last GPS time stamp to figure
     // out what day it is.
     int frame_tod_ms = (tk_h * 3600 + tk_m * 60 + tk_s)*1000;
+    int dbg = frame_tod_ms / UTCTime::SEC_IN_DAY;
     geph->tof = UTCTime::fromGlonassTimeOfDay(GPS_time_, frame_tod_ms);
     uint64_t eph_tod_ms = (tb * 60 * 15) * 1000;
     geph->toe = UTCTime::fromGlonassTimeOfDay(GPS_time_, eph_tod_ms);
 
     // Initialize prev_gal_...
-    if (prev_gal_tof == UTCTime{0, 0})
-        prev_gal_tof = geph->tof;
-    if (prev_gal_toe == UTCTime{0, 0})
-        prev_gal_toe = geph->toe;
+//    if (prev_gal_tof == UTCTime{0, 0})
+//        prev_gal_tof = geph->tof;
+//    if (prev_gal_toe == UTCTime{0, 0})
+//        prev_gal_toe = geph->toe;
 
     // Handle The day wrap, because we are comparing GPS with Gal
     // to get the beginning of the day, we might have the wrong
     // day.  This assumes that we get at least two GLONASS ephemeris
     // message per day, which is probably okay
-    if ((prev_gal_toe - geph->toe).toSec() > UTCTime::SEC_IN_DAY/2)
+    if ((GPS_time_ - geph->toe).toSec() > UTCTime::SEC_IN_DAY/2)
         geph->toe += (int)(UTCTime::SEC_IN_DAY);
-    else if ((prev_gal_toe - geph->toe).toSec() < -(UTCTime::SEC_IN_DAY/2))
+    else if ((GPS_time_ - geph->toe).toSec() < -(UTCTime::SEC_IN_DAY/2))
         geph->toe -= (int)(UTCTime::SEC_IN_DAY);
 
-    if ((prev_gal_tof - geph->tof).toSec() > UTCTime::SEC_IN_DAY/2)
+    if ((GPS_time_ - geph->tof).toSec() > UTCTime::SEC_IN_DAY/2)
         geph->tof += (int)(UTCTime::SEC_IN_DAY);
-    else if ((prev_gal_tof - geph->tof).toSec() < - (UTCTime::SEC_IN_DAY)/2)
+    else if ((GPS_time_ - geph->tof).toSec() < - (UTCTime::SEC_IN_DAY/2))
         geph->tof -= (int)(UTCTime::SEC_IN_DAY);
 
-    prev_gal_tof = geph->tof;
-    prev_gal_toe = geph->toe;
+//    prev_gal_tof = geph->tof;
+//    prev_gal_toe = geph->toe;
     return true;
 }
 
+#include <fstream>
+
+
 bool NavConverter::decodeGlonass(const ublox::RXM_SFRBX_t &msg, GlonassEphemeris &geph)
 {
+    if (msg.svId == 4)
+    {
+        static std::ofstream file("geph.txt");
+
+        const uint32_t* p = (const uint32_t*)&msg;
+        file << "{";
+        for (int i = 0; i < 1+msg.numWords; i++)
+        {
+            file << "0x" << std::hex << *p << ", ";
+            p++;
+        }
+        file << "},\n";
+        file.flush();
+        int debug = 1;
+    }
     int i, j, k, m, prn;
     unsigned char *p = (uint8_t*)msg.dwrd, *fid;
     unsigned char buff[64];

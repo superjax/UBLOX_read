@@ -24,7 +24,7 @@ public:
     static constexpr int GPS_WEEK_ROLLOVER = 2048; // 10-bit week counter only goes to 1024.  As of Jul 2019, this has rolled over twice /// TODO: Make this automatic
 
     // T_UTC = T_G + G_UTC_OFFSET
-    static constexpr int64_t GPS_UTC_OFFSET = 315964800 - LEAP_SECONDS; // GPS time started on 6/1/1980 while UNIX time started 1/1/1970 this is the difference between those in seconds
+    static constexpr int64_t GPS_UTC_OFFSET = 315964800 + LEAP_SECONDS; // GPS time started on 6/1/1980 while UNIX time started 1/1/1970 this is the difference between those in seconds
     static constexpr int64_t GLO_UTC_OFFSET = -3*3600; // GLONASS is exactly 3 hours ahead of UTC (including leap seconds)
     static constexpr int BD_UTC_OFFSET = GPS_UTC_OFFSET + 14;
 

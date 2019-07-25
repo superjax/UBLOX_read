@@ -37,9 +37,9 @@ if (${BUILD_TESTS})
     find_package(GTest REQUIRED)
     find_package(Threads REQUIRED)
     add_executable(ublox_test
-        src/test/rtcm.cpp
-        src/test/time.cpp
-        src/test/eph.cpp)
+        src/test/test_rtcm.cpp
+        src/test/test_time.cpp
+        src/test/test_eph.cpp)
     target_link_libraries(ublox_test gtest gtest_main pthread UBLOX)
 endif()
 
@@ -58,7 +58,7 @@ endif()
 
 option(BUILD_ROS "Build ROS Node" ON)
 if (${BUILD_ROS})
-    message(STATUS "BUILDING UBLOX ROS NODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    message(STATUS "BUILDING UBLOX ROS PACKAGE")
 	find_package(catkin REQUIRED COMPONENTS
 		rosbag
 		roscpp
@@ -71,7 +71,7 @@ if (${BUILD_ROS})
 		GNSS.msg
 		PositionVelocityTime.msg
 		RelPos.msg
-		SVIN.msg)
+		SVIN.msg) # Survey Status
 	generate_messages(
   		DEPENDENCIES
   		std_msgs)
