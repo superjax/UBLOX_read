@@ -188,3 +188,21 @@ TEST (Time, GlonassvsUTC)
     EXPECT_EQ(glo_end, t2_end);
 }
 
+TEST (Time, GlonassFromTOD)
+{
+    UTCTime t = UTCTime(1564012800,0); // 25 Jul 2019 00:00:00
+    UTCTime t2 = t - 3*3600; // 24 Jul 2019 21:00:00
+
+    int glo_tod_ms = 24*3600*1000;
+    UTCTime glo = UTCTime::fromGlonassTimeOfDay(t2, glo_tod_ms);
+
+    EXPECT_EQ(glo, t2);
+
+
+    UTCTime t_end(1564012799,0); // 24 Jul 2019 23:59:59
+    UTCTime t2_end = t_end - 3*3600; // 24 Jul 2019 20:59:59
+
+    glo_tod_ms = (24*3600 - 1)*1000;
+    glo = UTCTime::fromGlonassTimeOfDay(t2_end, glo_tod_ms);
+}
+
