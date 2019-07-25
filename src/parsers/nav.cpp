@@ -3,19 +3,19 @@
 #include <cmath>
 #include <cstring>
 
-#include "UBLOX/eph.h"
+#include "UBLOX/parsers/nav.h"
 
-void NavConverter::registerCallback(eph_cb cb)
+void NavParser::registerCallback(eph_cb cb)
 {
     eph_callbacks.push_back(cb);
 }
 
-void NavConverter::registerCallback(geph_cb cb)
+void NavParser::registerCallback(geph_cb cb)
 {
     geph_callbacks.push_back(cb);
 }
 
-bool NavConverter::convertUBX(const ublox::RXM_SFRBX_t &msg)
+bool NavParser::convertUBX(const ublox::RXM_SFRBX_t &msg)
 {
     using namespace ublox;
     if (msg.gnssId == GnssID_Glonass)
@@ -113,7 +113,7 @@ static double getbitg(const unsigned char *buff, int pos, int len)
     return getbitu(buff, pos, 1) ? -value : value;
 }
 
-bool NavConverter::decodeGPSSubframe1(const uint8_t *const buff, Ephemeris *eph)
+bool NavParser::decodeGPSSubframe1(const uint8_t *const buff, Ephemeris *eph)
 {
     double tow;
     int i = 48, week, tgd;
@@ -152,7 +152,7 @@ bool NavConverter::decodeGPSSubframe1(const uint8_t *const buff, Ephemeris *eph)
     return true;
 }
 
-bool NavConverter::decodeGPSSubframe2(const unsigned char *buff, Ephemeris *eph)
+bool NavParser::decodeGPSSubframe2(const unsigned char *buff, Ephemeris *eph)
 {
     int i = 48;
     eph->iode = getbitu(buff, i, 8);
@@ -181,7 +181,7 @@ bool NavConverter::decodeGPSSubframe2(const unsigned char *buff, Ephemeris *eph)
     return true;
 }
 
-bool NavConverter::decodeGPSSubframe3(const unsigned char *buff, Ephemeris *eph)
+bool NavParser::decodeGPSSubframe3(const unsigned char *buff, Ephemeris *eph)
 {
     int i = 48;
     eph->cic = getbits(buff, i, 16) * P2_29;
@@ -208,7 +208,7 @@ bool NavConverter::decodeGPSSubframe3(const unsigned char *buff, Ephemeris *eph)
     return true;
 }
 
-bool NavConverter::decodeGPS(const uint8_t *buf, Ephemeris *eph)
+bool NavParser::decodeGPS(const uint8_t *buf, Ephemeris *eph)
 {
     unsigned int words[10];
     int i, id;
@@ -299,7 +299,7 @@ int test_glostr(const unsigned char *buff)
     return n == 0 || (n == 2 && cs);
 }
 
-bool NavConverter::decodeGlonassString(const unsigned char *buff, GlonassEphemeris *geph)
+bool NavParser::decodeGlonassString(const unsigned char *buff, GlonassEphemeris *geph)
 {
     double tow, tod, tof, toe;
     int P, P1, P2, P3, P4, tk_h, tk_m, tk_s, tb, ln, NT, slot, M, week;
@@ -421,7 +421,7 @@ bool NavConverter::decodeGlonassString(const unsigned char *buff, GlonassEphemer
 #include <fstream>
 
 
-bool NavConverter::decodeGlonass(const ublox::RXM_SFRBX_t &msg, GlonassEphemeris &geph)
+bool NavParser::decodeGlonass(const ublox::RXM_SFRBX_t &msg, GlonassEphemeris &geph)
 {
     if (msg.svId == 4)
     {
@@ -509,11 +509,11 @@ bool NavConverter::decodeGlonass(const ublox::RXM_SFRBX_t &msg, GlonassEphemeris
     return true;
 }
 
-bool NavConverter::decodeBeidou(const uint8_t *const buf, Ephemeris *eph)
+bool NavParser::decodeBeidou(const uint8_t *const buf, Ephemeris *eph)
 {
     // TODO
 }
-bool NavConverter::decodeGalileo(const uint8_t *const buf, Ephemeris *eph)
+bool NavParser::decodeGalileo(const uint8_t *const buf, Ephemeris *eph)
 {
     // TODO
 }

@@ -126,7 +126,7 @@ public:
 };
 
 
-class NavConverter
+class NavParser
 {
     std::vector<Ephemeris> eph_;
     std::vector<GlonassEphemeris> geph_;
