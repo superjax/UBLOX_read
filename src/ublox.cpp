@@ -38,7 +38,15 @@ void UBLOX::readFile(const std::string& filename)
     file.read(buffer, len);
     std::cerr << "buffer = " << *buffer << "\n";
     std::cerr << "len = " << len << "\n";
-    serial_read_cb((const uint8_t*)buffer, len);
+    int idx = 0;
+    while(idx < len)
+    {
+        int chunk_size = ((len - idx) >= 14)?14:len-idx;
+        serial_read_cb(((const uint8_t*)buffer)+idx, chunk_size);
+        idx = idx+chunk_size;
+        usleep(1000);
+    }
+    // serial_read_cb((const uint8_t*)buffer, len);
 }
 
 void UBLOX::initLogFile(const std::string& filename)
