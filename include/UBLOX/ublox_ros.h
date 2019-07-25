@@ -35,10 +35,10 @@ private:
     ros::Publisher nav_sat_status_pub_;
 
     void pvtCB(const UBX::NAV_PVT_t& msg);
+    void svinCB(const UBX::NAV_SVIN_t& msg);
     void relposCB(const UBX::NAV_RELPOSNED_t& msg);
     void posECEFCB(const UBX::NAV_POSECEF_t& msg);
     void velECEFCB(const UBX::NAV_VELECEF_t& msg);
-    void svinCB(const UBX::NAV_SVIN_t& msg);
 
     uint32_t pos_tow_;
     uint32_t vel_tow_;
