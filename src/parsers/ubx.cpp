@@ -326,7 +326,7 @@ void UBX::turnOnRTCM()
     memset(&out_message_, 0, CFG_VALSET_t::LEN_BYTE);
     out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData.bytes[0] = CFG_VALSET_t::DYNMODE_AIRBORNE_1G; 
+    out_message_.CFG_VALSET.cfgData.bytes[0] = CFG_VALSET_t::DYNMODE_AIRBORNE_1G;
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_DYNMODEL;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 
@@ -421,7 +421,7 @@ void UBX::poll_value()
        memset(&out_message_, 0, sizeof(CFG_VALGET_t));
        out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
        out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
-       out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::VALGET_MSGOUT_RELPOSNED;
+       out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::SIGNAL_BDS_B2;
        send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
 }
 }
