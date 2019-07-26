@@ -9,7 +9,11 @@ using namespace std::chrono;
 using namespace std;
 
 #define DEG2RAD (3.14159 / 180.0)
+#ifndef NDEBUG
 #define DBG(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define DBG(...)
+#endif
 
 namespace ublox
 {
