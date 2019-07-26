@@ -1,0 +1,38 @@
+dist: "bionic"
+language: cpp
+
+git:
+  submodules: false
+
+addons:
+  apt:
+    packages:
+      - build-essential
+      - cmake
+      - libgtest-dev
+      - libeigen3-dev
+      - libyaml-cpp-dev
+    update: true
+
+before_install:
+  - sudo apt update
+  - sudo apt install -y cmake build-essential libgtest-dev libeigen3-dev libyaml-cpp-dev
+  - sudo apt install -y libopenblas-dev libboost-thread-dev
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  - git submodule update --init --recursive
+
+install:
+  - cd /usr/src/gtest
+  - sudo cmake CMakeLists.txt
+  - sudo make
+  - sudo cp *.a /usr/lib
+  - cd "${TRAVIS_BUILD_DIR}"
+  - gcc --version
+
+script:
+  - mkdir build
+  - cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -DBUILD_EXAMPLES=ON -DBUILD_ROS=OFF
+  - make
+  - ./ublox_test
+
