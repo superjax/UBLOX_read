@@ -66,10 +66,14 @@ if (${BUILD_ROS})
 	add_message_files(
 		DIRECTORY msg
 		FILES
-		GNSS.msg
+		PosVelEcef.msg
 		PositionVelocityTime.msg
 		RelPos.msg
-		SVIN.msg) # Survey Status
+		SurveyStatus.msg
+		Ephemeris.msg
+		GlonassEphemeris.msg
+		Observation.msg
+		ObsVec.msg)
 	generate_messages(
   		DEPENDENCIES
   		std_msgs)
