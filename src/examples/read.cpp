@@ -21,7 +21,6 @@ void pvt_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
            msg.velN*1e-3, msg.velE*1e-3, msg.velD*1e-3);
     printf("tow: %d\n", msg.iTOW);
     fflush(stdout); // Will now print everything in the stdout buffer
-
 }
 
 NavParser conv;

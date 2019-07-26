@@ -39,8 +39,11 @@ UBLOX_ROS::UBLOX_ROS() :
     // Connect ROS topics
     pvt_pub_ = nh_.advertise<ublox::PositionVelocityTime>("PosVelTime", 10);
     relpos_pub_ = nh_.advertise<ublox::RelPos>("RelPos", 10);
-    gnss_pub_ = nh_.advertise<ublox::GNSS>("ECEF", 10);
-    svin_pub_ = nh_.advertise<ublox::SVIN>("SVIN", 10);
+    ecef_pub_ = nh_.advertise<ublox::PosVelEcef>("PosVelEcef", 10);
+    survey_status_pub_ = nh_.advertise<ublox::SurveyStatus>("SurveyStatus", 10);
+    eph_pub_ = nh_.advertise<ublox::Ephemeris>("Ephemeris", 10);
+    geph_pub_ = nh_.advertise<ublox::GlonassEphemeris>("GlonassEphemeris", 10);
+    obs_pub_ = nh_.advertise<ublox::ObsVec>("Obs", 10);
 //    nav_sat_fix_pub_ = nh_.advertise<sensor_msgs::NavSatFix>("NavSatFix");
 //    nav_sat_status_pub_ = nh_.advertise<sensor_msgs::NavSatStatus>("NavSatStatus");
 
@@ -62,6 +65,7 @@ UBLOX_ROS::UBLOX_ROS() :
     createCallback(ublox::CLASS_NAV, ublox::NAV_POSECEF, posECEFCB, NAV_POSECEF);
     createCallback(ublox::CLASS_NAV, ublox::NAV_VELECEF, velECEFCB, NAV_VELECEF);
     createCallback(ublox::CLASS_NAV, ublox::NAV_SVIN, svinCB, NAV_SVIN);
+    createCallback(ublox::CLASS_RXM, ublox::RXM_RAWX, obsCB, RXM_RAWX);
    
 }
 
@@ -114,7 +118,7 @@ void UBLOX_ROS::pvtCB(const ublox::NAV_PVT_t& msg)
     ecef_msg_.vertical_accuracy = out.vAcc;
     ecef_msg_.speed_accuracy = out.sAcc;
     if (pos_tow_ == pvt_tow_ && pos_tow_ == vel_tow_)
-        gnss_pub_.publish(ecef_msg_);
+        ecef_pub_.publish(ecef_msg_);
 }
 
 
@@ -161,7 +165,7 @@ void UBLOX_ROS::svinCB(const ublox::NAV_SVIN_t& msg)
     out.valid = msg.valid;
     out.active = msg.active;
 
-    svin_pub_.publish(out);
+    survey_status_pub_.publish(out);
 
 }
 
@@ -173,7 +177,7 @@ void UBLOX_ROS::posECEFCB(const ublox::NAV_POSECEF_t& msg)
     ecef_msg_.position[1] = msg.ecefY;
     ecef_msg_.position[2] = msg.ecefZ;
     if (pos_tow_ == pvt_tow_ && pos_tow_ == vel_tow_)
-        gnss_pub_.publish(ecef_msg_);
+        ecef_pub_.publish(ecef_msg_);
 }
 
 void UBLOX_ROS::velECEFCB(const ublox::NAV_VELECEF_t& msg)
@@ -185,7 +189,22 @@ void UBLOX_ROS::velECEFCB(const ublox::NAV_VELECEF_t& msg)
     ecef_msg_.velocity[0] = msg.ecefVZ;
 
     if (pos_tow_ == pvt_tow_ && pos_tow_ == vel_tow_)
-        gnss_pub_.publish(ecef_msg_);
+        ecef_pub_.publish(ecef_msg_);
+}
+
+void UBLOX_ROS::obsCB(const ublox::RXM_RAWX_t &msg)
+{
+
+}
+
+void UBLOX_ROS::ephCB(const Ephemeris &eph)
+{
+
+}
+
+void UBLOX_ROS::gephCB(const GlonassEphemeris &eph)
+{
+
 }
 
 }
