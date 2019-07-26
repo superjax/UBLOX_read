@@ -151,7 +151,7 @@ void UBLOX_ROS::relposCB(const ublox::NAV_RELPOSNED_t& msg)
 
 void UBLOX_ROS::svinCB(const ublox::NAV_SVIN_t& msg)
 {
-    ublox::SVIN out;
+    ublox::SurveyStatus out;
     out.header.stamp = ros::Time::now(); /// TODO: do this right
     out.dur = msg.dur;
     out.meanXYZ[0] = msg.meanX*1e-2;
@@ -194,17 +194,157 @@ void UBLOX_ROS::velECEFCB(const ublox::NAV_VELECEF_t& msg)
 
 void UBLOX_ROS::obsCB(const ublox::RXM_RAWX_t &msg)
 {
+    ublox::ObsVec out;
+    UTCTime utc =UTCTime::fromGPS(msg.week, msg.rcvTow*1e3);
+    out.header.stamp.sec = utc.sec;
+    out.header.stamp.nsec = utc.nsec;
+    for (int i = 0; i < msg.numMeas; i++)
+    {
+        out.obs[i].sat = msg.meas[i].svId;
+        out.obs[i].gnssID = msg.meas[i].gnssId;
+        out.obs[i].signal = ublox::sigId(msg.meas[i].gnssId, msg.meas[i].sigId);
+        switch (out.obs[i].signal)
+        {
+        case ublox::Observation::GPS_L1_CA:
+        case ublox::Observation::GALILEO_E1_B:
+        case ublox::Observation::GALILEO_E1_C:
+        case ublox::Observation::QZSS_L1_CA:
+            out.obs[i].freq = Ephemeris::GPS_FREQL1;
+            break;
+        case ublox::Observation::GPS_L2_CL:
+        case ublox::Observation::GPS_L2_CM:
+            out.obs[i].freq = Ephemeris::GPS_FREQL2;
+            break;
+        case ublox::Observation::GLONASS_L1:
+            out.obs[i].freq = GlonassEphemeris::FREQ1_GLO + msg.meas[i].freqId * GlonassEphemeris::DFRQ1_GLO;
+            break;
+        case ublox::Observation::GLONASS_L2:
+            out.obs[i].freq = GlonassEphemeris::FREQ2_GLO + msg.meas[i].freqId * GlonassEphemeris::DFRQ2_GLO;
+            break;
+            // These may not be right
+//        case ublox::Observation::GALILEO_E5_BI:
+//        case ublox::Observation::GALILEO_E5_BQ:
+//            out.obs[i].freq = Ephemeris::GALILEO_FREQL5b;
+//            break;
+//        case ublox::Observation::BEIDOU_B1I_D1:
+//        case ublox::Observation::BEIDOU_B1I_D2:
+//            out.obs[i].freq = Ephemeris::BEIDOU_FREQ_B1;
+//            break;
+//        case ublox::Observation::BEIDOU_B2I_D1:
+//        case ublox::Observation::BEIDOU_B2I_D2:
+//            out.obs[i].freq = Ephemeris::BEIDOU_FREQ_B2;
+//            break;
+        default:
+            out.obs[i].freq = 0;
+            break;
+        }
+        out.obs[i].cno = msg.meas[i].cno;
+        out.obs[i].locktime = msg.meas[i].locktime;
+        out.obs[i].P = msg.meas[i].prMeas;
+        out.obs[i].L = msg.meas[i].cpMeas;
+        out.obs[i].D = msg.meas[i].doMeas;
+        out.obs[i].stdevP = 0.01 * pow(2, msg.meas[i].prStdev);
+        out.obs[i].stdevL = 0.004 * msg.meas[i].cpStdev;
+        out.obs[i].stdevD = 0.002 * pow(2, msg.meas[i].doStdev);
 
+        // indicate cycle slip
+        if (msg.meas[i].cpMeas != 0.0
+            && (msg.meas[i].trkStat & ublox::RXM_RAWX_t::trkStat_HalfCyc | ublox::RXM_RAWX_t::trkStat_subHalfCyc))
+        {
+            out.obs[i].LLI =  ublox::Observation::LLI_HALF_CYCLE_AMB;
+        }
+        else
+        {
+            out.obs[i].LLI = 0;
+        }
+    }
+    obs_pub_.publish(out);
 }
 
 void UBLOX_ROS::ephCB(const Ephemeris &eph)
 {
+    ublox::Ephemeris out;
+    out.header.stamp = ros::Time::now();
 
+    out.sat = eph.sat;
+    out.gnssID = eph.gnssID;
+    out.toe.sec = eph.toe.sec;
+    out.toe.nsec = eph.toe.nsec;
+    out.toc.sec = eph.toc.sec;
+    out.toc.nsec = eph.toc.nsec;
+
+    out.tow = eph.tow;
+    out.iodc = eph.iodc;
+    out.iode = eph.iode;
+    out.week = eph.week;
+    out.toes = eph.toes;
+    out.tocs = eph.tocs;
+    out.health = eph.health;
+    out.alert_flag = eph.alert_flag;
+    out.anti_spoof = eph.anti_spoof;
+    out.code_on_L2 = eph.code_on_L2;
+    out.ura = eph.ura;
+    out.L2_P_data_flag = eph.L2_P_data_flag;
+    out.fit_interval_flag = eph.fit_interval_flag;
+    out.age_of_data_offset = eph.age_of_data_offset;
+    out.tgd[0] = eph.tgd[0];
+    out.tgd[1] = eph.tgd[1];
+    out.tgd[2] = eph.tgd[2];
+    out.tgd[3] = eph.tgd[3];
+    out.af2 = eph.af2;
+    out.af1 = eph.af1;
+    out.af0 = eph.af0;
+    out.m0 = eph.m0;
+    out.delta_n = eph.delta_n;
+    out.ecc = eph.ecc;
+    out.sqrta = eph.sqrta;
+    out.omega0 = eph.omega0;
+    out.i0 = eph.i0;
+    out.w = eph.w;
+    out.omegadot = eph.omegadot;
+    out.idot = eph.idot;
+    out.cuc = eph.cuc;
+    out.cus = eph.cus;
+    out.crc = eph.crc;
+    out.crs = eph.crs;
+    out.cic = eph.cic;
+    out.cis = eph.cis;
+
+    eph_pub_.publish(out);
 }
 
 void UBLOX_ROS::gephCB(const GlonassEphemeris &eph)
 {
+    ublox::GlonassEphemeris out;
+    out.header.stamp = ros::Time::now();
 
+    out.sat = eph.sat;
+    out.gnssID = eph.gnssID;
+
+    out.toe.sec = eph.toe.sec;
+    out.toe.nsec = eph.toe.nsec;
+    out.tof.sec = eph.tof.sec;
+    out.tof.nsec = eph.tof.nsec;
+
+    out.iode = eph.iode;
+    out.frq = eph.frq;
+    out.svh = eph.svh;
+    out.sva = eph.sva;
+    out.age = eph.age;
+    out.pos[0] = eph.pos[0];
+    out.pos[1] = eph.pos[1];
+    out.pos[2] = eph.pos[2];
+    out.vel[0] = eph.vel[0];
+    out.vel[1] = eph.vel[1];
+    out.vel[2] = eph.vel[2];
+    out.acc[0] = eph.acc[0];
+    out.acc[1] = eph.acc[1];
+    out.acc[2] = eph.acc[2];
+    out.taun = eph.taun;
+    out.gamn = eph.gamn;
+    out.dtaun = eph.dtaun;
+
+    geph_pub_.publish(out);
 }
 
 }

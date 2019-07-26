@@ -57,6 +57,15 @@ public:
 class Ephemeris : public EphBase
 {
 public:
+    static constexpr double GPS_FREQL1  =  1.57542e9;           // (Hz)
+    static constexpr double GPS_FREQL2  =  1.22760e9;           // (Hz)
+    static constexpr double GALILEO_FREQL5a  =  1.17645e9;      // (Hz)
+    static constexpr double GALILEO_FREQL5b  =  1.20714e9;      // (Hz)
+    static constexpr double BEIDOU_FREQ_B1 = 1.561098e9;        // (Hz)
+    static constexpr double BEIDOU_FREQ_B1_2 = 1.589742e9;        // (Hz)
+    static constexpr double BEIDOU_FREQ_B2 = 1.20714e9;        // (Hz)
+
+
     UTCTime  toe;                //!< reference time ephemeris (UTC Time)                                           [s]
     UTCTime  toc;                //!< reference time (clock)   (UTC Time)                                           [s]
 
@@ -108,6 +117,11 @@ public:
 class GlonassEphemeris : public EphBase
 {        
 public:
+    static constexpr double FREQ1_GLO = 1.60200E9;           /* GLONASS G1 base frequency (Hz) */
+    static constexpr double DFRQ1_GLO = 0.56250E6;           /* GLONASS G1 bias frequency (Hz/n) */
+    static constexpr double FREQ2_GLO = 1.24600E9;           /* GLONASS G2 base frequency (Hz) */
+    static constexpr double DFRQ2_GLO = 0.43750E6;           /* GLONASS G2 bias frequency (Hz/n) */
+    static constexpr double FREQ3_GLO = 1.202025E9;          /* GLONASS G3 frequency (Hz) */
     int iode;           /* IODE (0-6 bit of tb field) */
     int frq;            /* satellite frequency number */
     int svh,sva,age;    /* satellite health, accuracy, age of operation */

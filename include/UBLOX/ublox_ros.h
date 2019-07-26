@@ -54,6 +54,7 @@ private:
     uint32_t pos_tow_;
     uint32_t vel_tow_;
     uint32_t pvt_tow_;
+    uint32_t pvt_week_;
     ublox::PosVelEcef ecef_msg_;
 };
 

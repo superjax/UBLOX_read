@@ -29,3 +29,19 @@ uint8 LLI_HALF_CYCLE_AMB = 2
 uint8 code 			# code indicator
 uint8 CODE_L1C = 1
 uint8 BEIDOU_CODE_L1I = 2
+
+uint8 signal 		# signal identifier
+uint8 GPS_L1_CA = 1
+uint8 GPS_L2_CL = 2
+uint8 GPS_L2_CM = 3
+uint8 GALILEO_E1_C = 4
+uint8 GALILEO_E1_B = 5
+uint8 GALILEO_E5_BI = 6
+uint8 GALILEO_E5_BQ = 7
+uint8 BEIDOU_B1I_D1 = 8
+uint8 BEIDOU_B1I_D2 = 9
+uint8 BEIDOU_B2I_D1 = 10
+uint8 BEIDOU_B2I_D2 = 11
+uint8 QZSS_L1_CA = 12
+uint8 GLONASS_L1 = 13
+uint8 GLONASS_L2 = 14
