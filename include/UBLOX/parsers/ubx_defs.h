@@ -311,6 +311,14 @@ typedef struct {
 
     };
 
+    enum {
+        NAV_PVT = 0x20910009, //Output rate of the UBX-NAV-PVT message on port USB
+        RXM_RAWX = 0x209102a7, //Output rate of the UBX-RXM-RAWX message on port USB
+        NAV_POSECEF = 0x20910027, //Output rate of the UBX-NAV POSECEF message on port USB
+        NAV_VELECEF = 0x20910040, //Output rate of the UBX-NAV-VELECEF message on port USB
+        RXM_SFRBX = 0x20910234, //Output rate of the UBX-RXM- SFRBX message on port USB
+    };
+
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
     uint8_t layer;
     uint8_t reserved1[2];
@@ -477,7 +485,7 @@ typedef struct  {
     uint32_t sAcc; // mm/s Speed accuracy estimate
     uint32_t headAcc; // 1e-5 deg Heading accuracy estimate (both motion and vehicle)
     uint16_t pDOP; // 0.01  - Position DOP
-    uint8_t reserved1; //[6] - Reserved
+    uint8_t reserved1[6]; // - Reserved
     int32_t headVeh; // 1e-5 deg Heading of vehicle (2-D)
     int16_t magDec; // 1e-2 deg Magnetic declination
     uint16_t magAcc; // 1e-2 deg Magnetic declination accuracy
@@ -499,16 +507,16 @@ typedef struct  {
     uint8_t reserved1; //Reserved
     uint16_t refStationId; //Reference Station ID. Must be in the range 0..4095
     uint32_t iTow; //GPS time of week ms of the navigation epoch. See the description of iTOW for details.
-    uint32_t relPosN; // North component cm of relative position vector
-    uint32_t relPosE; // East component cm of relative position vector
-    uint32_t relPosD; // Down component cm of relative position vector
-    uint32_t relPosLength; // Length cm of relative position vector
-    uint32_t relPosHeading; //Heading deg of the relative position vector. Scaled 1e-5
+    int32_t relPosN; // North component cm of relative position vector
+    int32_t relPosE; // East component cm of relative position vector
+    int32_t relPosD; // Down component cm of relative position vector
+    int32_t relPosLength; // Length cm of relative position vector
+    int32_t relPosHeading; //Heading deg of the relative position vector. Scaled 1e-5
     uint8_t reserved2[4]; //reserved
-    uint8_t relPosHPN; //See Interface Description pg 157
-    uint8_t relPosHPE; //See Interface Description pg 157
-    uint8_t relPosHPD; //See Interface Description pg 157
-    uint8_t relPosHPLength; //See Interface Description pg 157
+    int8_t relPosHPN; //See Interface Description pg 157
+    int8_t relPosHPE; //See Interface Description pg 157
+    int8_t relPosHPD; //See Interface Description pg 157
+    int8_t relPosHPLength; //See Interface Description pg 157
     uint32_t accN; //Accuracy mm of relative position North component
     uint32_t accE; //Accuracy mm of relative position East component
     uint32_t accD; //Accuracy mm of relative position Down component

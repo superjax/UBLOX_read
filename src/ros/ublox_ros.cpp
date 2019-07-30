@@ -50,9 +50,6 @@ UBLOX_ROS::UBLOX_ROS() :
     // create the parser
     ublox_ = new ublox::UBLOX(serial_port);
 
-    if (!log_filename.empty())
-        ublox_->initLogFile(log_filename);
-
     // set up RTK
     if (rtk_type == ublox::UBLOX::ROVER)
         ublox_->initRover(local_host, local_port, remote_host, remote_port);
@@ -66,7 +63,13 @@ UBLOX_ROS::UBLOX_ROS() :
     createCallback(ublox::CLASS_NAV, ublox::NAV_VELECEF, velECEFCB, NAV_VELECEF);
     createCallback(ublox::CLASS_NAV, ublox::NAV_SVIN, svinCB, NAV_SVIN);
     createCallback(ublox::CLASS_RXM, ublox::RXM_RAWX, obsCB, RXM_RAWX);
-   
+
+    if (!log_filename.empty())
+    {
+        //ublox_->initLogFile(log_filename);
+        ublox_->readFile(log_filename);
+
+    }
 }
 
 UBLOX_ROS::~UBLOX_ROS()
@@ -79,6 +82,7 @@ void UBLOX_ROS::pvtCB(const ublox::NAV_PVT_t& msg)
 {
     pos_tow_ = msg.iTOW;
     ublox::PositionVelocityTime out;
+    // out.iTOW = msg.iTow;
     out.header.stamp = ros::Time::now(); ///TODO: Do this right
     out.year = msg.year;
     out.month = msg.month;
@@ -125,6 +129,7 @@ void UBLOX_ROS::pvtCB(const ublox::NAV_PVT_t& msg)
 void UBLOX_ROS::relposCB(const ublox::NAV_RELPOSNED_t& msg)
 {
     ublox::RelPos out;
+    // out.iTOW = msg.iTow*1e-3;
     out.header.stamp = ros::Time::now(); /// TODO: do this right
     out.refStationId = msg.refStationId;
     out.relPosNED[0] = msg.relPosN*1e-2;
@@ -132,20 +137,16 @@ void UBLOX_ROS::relposCB(const ublox::NAV_RELPOSNED_t& msg)
     out.relPosNED[2] = msg.relPosD*1e-2;
     out.relPosLength = msg.relPosLength*1e-2;
     out.relPosHeading = deg2rad(msg.relPosHeading*1e-5);
-    out.accNED[0] = msg.accN;
-    out.accNED[1] = msg.accE;
-    out.accNED[2] = msg.accD;
-    out.accLength = msg.accLength*1e-3;
+    out.relPosHPNED[0] = msg.relPosHPN*1e-3*.1;
+    out.relPosHPNED[1] = msg.relPosHPE*1e-3*.1;
+    out.relPosHPNED[2] = msg.relPosHPD*1e-3*.1;
+    out.relPosHPLength = msg.relPosHPLength*1e-3*.1;
+    out.accNED[0] = msg.accN*1e-3*.1;
+    out.accNED[1] = msg.accE*1e-3*.1;
+    out.accNED[2] = msg.accD*1e-3*.1;
+    out.accLength = msg.accLength*1e-3*.1;
     out.accHeading = deg2rad(msg.accHeading*1e-5);
     out.flags = msg.flags;
-
-    // ofstream myfile;
-    // myfile.open ("../ws/src/ublox/textfiles/10 8ft Pivot/data.txt", ios::app);
-    // myfile << out.header.stamp
-    //        << " " << out.relPosNED[0] << " " << out.relPosNED[1] << " " << out.relPosNED[2]
-    //        << " " << out.relPosLength << " " << out.flags << " \n";
-    // myfile.close();
-
     relpos_pub_.publish(out);
 }
 
@@ -164,7 +165,6 @@ void UBLOX_ROS::svinCB(const ublox::NAV_SVIN_t& msg)
     out.obs = msg.obs;
     out.valid = msg.valid;
     out.active = msg.active;
-
     survey_status_pub_.publish(out);
 
 }
@@ -178,6 +178,8 @@ void UBLOX_ROS::posECEFCB(const ublox::NAV_POSECEF_t& msg)
     ecef_msg_.position[2] = msg.ecefZ;
     if (pos_tow_ == pvt_tow_ && pos_tow_ == vel_tow_)
         ecef_pub_.publish(ecef_msg_);
+    ecef_pub_.publish(ecef_msg_);
+
 }
 
 void UBLOX_ROS::velECEFCB(const ublox::NAV_VELECEF_t& msg)
@@ -190,6 +192,7 @@ void UBLOX_ROS::velECEFCB(const ublox::NAV_VELECEF_t& msg)
 
     if (pos_tow_ == pvt_tow_ && pos_tow_ == vel_tow_)
         ecef_pub_.publish(ecef_msg_);
+    ecef_pub_.publish(ecef_msg_);
 }
 
 void UBLOX_ROS::obsCB(const ublox::RXM_RAWX_t &msg)
@@ -263,6 +266,7 @@ void UBLOX_ROS::obsCB(const ublox::RXM_RAWX_t &msg)
 
 void UBLOX_ROS::ephCB(const Ephemeris &eph)
 {
+    std::cerr << "Ephemeris!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
     ublox::Ephemeris out;
     out.header.stamp = ros::Time::now();
 
@@ -315,6 +319,7 @@ void UBLOX_ROS::ephCB(const Ephemeris &eph)
 
 void UBLOX_ROS::gephCB(const GlonassEphemeris &eph)
 {
+    std::cerr << "Glonas Ephemeris!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
     ublox::GlonassEphemeris out;
     out.header.stamp = ros::Time::now();
 
@@ -358,4 +363,3 @@ int main(int argc, char** argv)
 
     ros::spin();
 }
-

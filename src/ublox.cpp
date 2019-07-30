@@ -22,7 +22,7 @@ UBLOX::UBLOX(const std::string& port) :
     ubx_.enable_message(CLASS_NAV, NAV_PVT, 1);
     ubx_.enable_message(CLASS_NAV, NAV_POSECEF, 1);
     ubx_.enable_message(CLASS_NAV, NAV_VELECEF, 1);
-//    ubx_.enable_message(CLASS_CFG, CFG_VALGET, 1);
+    ubx_.enable_message(CLASS_CFG, CFG_VALGET, 1);
     ubx_.enable_message(CLASS_RXM, RXM_RAWX, 1);
     ubx_.enable_message(CLASS_RXM, RXM_SFRBX, 1);
 
@@ -41,8 +41,15 @@ void UBLOX::readFile(const std::string& filename)
     file.seekg (0, file.beg);
     char* buffer = new char [len];
     file.read(buffer, len);
-
-    serial_read_cb((const uint8_t*)buffer, len);
+    int idx = 0;
+    while(idx < len)
+    {
+        int chunk_size = ((len - idx) >= 14)?14:len-idx;
+        serial_read_cb(((const uint8_t*)buffer)+idx, chunk_size);
+        idx = idx+chunk_size;
+        usleep(1000);
+    }
+    // serial_read_cb((const uint8_t*)buffer, len);
 }
 
 void UBLOX::initLogFile(const std::string& filename)
@@ -117,7 +124,6 @@ void UBLOX::udp_read_cb(const uint8_t* buf, size_t size)
 {
 
     assert(type_ == ROVER);
-
     for (int i = 0; i < size; i++)
     {
         rtcm_.read_cb(buf[i]);
@@ -149,6 +155,7 @@ void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
             nmea_.read_cb(buf[i]);
         }
     }
+
     if (log_file_.is_open())
     {
         log_file_.write((const char*)buf, size);
