@@ -134,7 +134,7 @@ bool UBX::read_cb(uint8_t byte)
     case GOT_MSG_ID:
         length_ = byte;
         parse_state_ = GOT_LENGTH1;
-        DBG("Started %x-%x\n", message_class_, message_type_);
+        //DBG("Started %x-%x\n", message_class_, message_type_);
         break;
     case GOT_LENGTH1:
         length_ |= (uint16_t) byte << 8;
@@ -236,17 +236,17 @@ bool UBX::decode_message()
             break;
         }
         break;
-      case CLASS_RXM:
-        DBG("RXM_");
-        switch(message_type_)
-        {
-        case RXM_RAWX:
-            DBG("RAWX\n");
-            break;
-        case RXM_SFRBX:
-            DBG("SFRBX\n");
-            break;
-        }
+      // case CLASS_RXM:
+      //   DBG("RXM_");
+      //   switch(message_type_)
+      //   {
+      //   case RXM_RAWX:
+      //       DBG("RAWX\n");
+      //       break;
+      //   case RXM_SFRBX:
+      //       DBG("SFRBX\n");
+      //       break;
+      //   }
 //    case CLASS_NAV:
 //        DBG("NAV_");
 //        switch (message_type_)
@@ -421,7 +421,7 @@ void UBX::poll_value()
        memset(&out_message_, 0, sizeof(CFG_VALGET_t));
        out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
        out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
-       out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::SIGNAL_BDS_B2;
+       out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::RXM_SFRBX;
        send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
 }
 }
