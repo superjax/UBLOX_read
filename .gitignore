@@ -1,2 +1,7 @@
 build*
 *.user
+*.fig
+*.mat
+*.txt
+*.m
+*.vscode
