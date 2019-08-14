@@ -234,3 +234,88 @@ TEST(NavParser, ParseGLONASS)
     }
     EXPECT_TRUE(finished);
 }
+
+TEST(NavParser, Galileo)
+{
+    // clang-format off
+    std::array<std::array<uint32_t, 9>, 23> buffer = {{
+        {0x050da0ec, 0x08907cff, 0x30083c86, 0xc84a8000, 0xaaaa8000, 0x0000002a, 0xaaaabe26, 0x99ff4000, 0x00000001},
+        {0x06000000, 0x01ffffff, 0x12481e89, 0xe2484000, 0xac868000, 0x0000002a, 0xaaaa7377, 0xc83f4000, 0xbfe93aa9},
+        {0x09a9ca55, 0x55555555, 0x551e0060, 0x254f8000, 0xb60f8000, 0x0000002a, 0xaaaa9517, 0x66ff4000, 0x00000001},
+        {0x09a9ca55, 0x55555555, 0x55420040, 0x1d5e0000, 0xa20f8000, 0x0000002a, 0xaaaa7b85, 0x273f4000, 0xbfe93aa9},
+        {0x0aa03c4f, 0xe2f98403, 0xa40000ff, 0xeb008000, 0xb4878000, 0x0000002a, 0xaaaaad73, 0x72bf4000, 0x00000001},
+        {0x0aa03c4f, 0xe22b2dfe, 0x120000ff, 0xeb008000, 0xb4878000, 0x0000002a, 0xaaaa7c86, 0x49ff4000, 0xbfe93aa9},
+        {0x00955555, 0x55555555, 0x55555555, 0x50790000, 0x8d920000, 0x0000002a, 0xaaaa88af, 0x2aff4000, 0x00000001},
+        {0x00955555, 0x55555555, 0x55555555, 0x50790000, 0x8d924000, 0x0000002a, 0xaaaa74d6, 0xd47f4000, 0xbfe93aa9},
+        {0x00955555, 0x55555555, 0x55555555, 0x50790000, 0x8d928000, 0x0000002a, 0xaaaa9783, 0x123f4000, 0x00000001},
+        {0x00955555, 0x55555555, 0x55555555, 0x50790000, 0x8d92c000, 0x0000002a, 0xaaaa6bfa, 0xecbf4000, 0xbfe93aa9},
+        {0x00955555, 0x55555555, 0x55555555, 0x50790000, 0x8d930000, 0x0000002a, 0xaaaab6f7, 0x5b7f4000, 0x00000001},
+        {0x00955555, 0x55555555, 0x55555555, 0x50790000, 0x8d934000, 0x0000002a, 0xaaaa4a8e, 0xa5ff4000, 0xbfe93aa9},
+        {0x00955555, 0x55555555, 0x55555555, 0x50790000, 0x8d938000, 0x0000002a, 0xaaaaa9db, 0x63bf4000, 0x00000001},
+        {0x00955555, 0x55555555, 0x55555555, 0x50790000, 0x8d93c000, 0x0000002a, 0xaaaa55a2, 0x9d3f4000, 0xbfe93aa9},
+        {0x00955555, 0x55555555, 0x55555555, 0x50790000, 0x8d940000, 0x0000002a, 0xaaaaafcb, 0x4cbf4000, 0x00000001},
+        {0x00955555, 0x55555555, 0x55555555, 0x50790000, 0x8d944000, 0x0000002a, 0xaaaa53b2, 0xb23f4000, 0xbfe93aa9},
+        {0x02129669, 0xae0bc9c4, 0x5dd9d3ba, 0xbdf34000, 0x80ff4000, 0x0000002a, 0xaaaaa8ce, 0xe73f4000, 0x00000001},
+        {0x011291e4, 0x22f62ac5, 0x000a6328, 0xaa04c000, 0xb613c000, 0x0000002a, 0xaaaa7516, 0xd8bf4000, 0xbfe93aa9},
+        {0x04129300, 0x08001b47, 0x93fff99d, 0x08000000, 0x83804000, 0x0000002a, 0xaaaabbfe, 0x02ff4000, 0x00000001},
+        {0x0312bff1, 0x0f48273e, 0xe3465882, 0x703e8000, 0x88dac000, 0x0000002a, 0xaaaa6e90, 0x377f4000, 0xbfe93aa9},
+        {0x06000000, 0x01ffffff, 0x12481e89, 0xe2484000, 0xacac8000, 0x0000002a, 0xaaaa8d8c, 0x387f4000, 0x00000001},
+        {0x050da0ec, 0x08907cff, 0x30083c86, 0xcaea8000, 0xaaaa8000, 0x0000002a, 0xaaaa7e1f, 0x5f7f4000, 0xbfe93aa9},
+        {0x00955555, 0x55555555, 0x55555555, 0x50790000, 0x8d960000, 0x0000002a, 0xaaaab2e8, 0x917f4000, 0x00000001}
+    }};
+    // clang-format on
+
+    Ephemeris eph;
+    eph.gnssID = ublox::GnssID_Galileo;
+    eph.sat = 19;
+    NavParser parser;
+    for (const auto& buf : buffer)
+    {
+        parser.decodeGalileo((uint8_t*)buf.data(), &eph);
+    }
+
+    EXPECT_EQ(eph.gnssID, ublox::GnssID_Galileo);
+    EXPECT_EQ(eph.sat, 19);
+
+    EXPECT_EQ(eph.toe.sec, 1573014018);  // toe 2019/11/6 4:20:18
+    EXPECT_EQ(eph.toc.sec, 1573014018);  // toc 2019/11/6 4:20:18
+
+    EXPECT_EQ(eph.toe.nsec, 0);
+    EXPECT_EQ(eph.toc.nsec, 0);
+
+    EXPECT_EQ(eph.iodc, 74);
+    EXPECT_EQ(eph.iode, 74);
+    EXPECT_EQ(eph.week, 2078);
+    EXPECT_EQ(eph.toes, 274800);
+    EXPECT_EQ(eph.tocs, 0);
+    EXPECT_EQ(eph.health, 0);
+    EXPECT_EQ(eph.alert_flag, 0);
+    EXPECT_EQ(eph.anti_spoof, 0);
+    EXPECT_EQ(eph.code_on_L2, 0);
+    EXPECT_EQ(eph.ura, 0);
+    EXPECT_EQ(eph.L2_P_data_flag, 0);
+    EXPECT_EQ(eph.fit_interval_flag, 0);
+    EXPECT_EQ(eph.age_of_data_offset, 0);
+    EXPECT_NEAR(eph.tgd[0], -5.82077e-09, 1e-15);
+    EXPECT_NEAR(eph.tgd[1], -6.0536e-09, 1e-15);
+    EXPECT_NEAR(eph.tgd[2], 0, 1e-15);
+    EXPECT_NEAR(eph.tgd[3], 0, 1e-15);
+    EXPECT_NEAR(eph.af2, 0, 1e-9);
+    EXPECT_NEAR(eph.af1, 1.98952e-13, 1e-17);
+    EXPECT_NEAR(eph.af0, -3.04537e-06, 1e-12);
+    EXPECT_NEAR(eph.m0, 0.858087, 1e-6);
+    EXPECT_NEAR(eph.delta_n, 2.98155e-09, 1e-15);
+    EXPECT_NEAR(eph.ecc, 7.9249e-05, 1e-9);
+    EXPECT_NEAR(eph.sqrta, 5440.62, 1e-2);
+    EXPECT_NEAR(eph.omega0, 2.20037, 1e-5);
+    EXPECT_NEAR(eph.i0, 0.958879, 1e-6);
+    EXPECT_NEAR(eph.w, 1.93694, 1e-6);
+    EXPECT_NEAR(eph.omegadot, -5.46416e-09, 1e-15);
+    EXPECT_NEAR(eph.idot, 9.10752e-11, 1e-17);
+    EXPECT_NEAR(eph.cuc, -2.12155e-06, 1e-12);
+    EXPECT_NEAR(eph.cus, 1.21035e-05, 1e-11);
+    EXPECT_NEAR(eph.crc, 78, 1e-4);
+    EXPECT_NEAR(eph.crs, -46.9062, 1e-4);
+    EXPECT_NEAR(eph.cic, 1.49012e-08, 1e-14);
+    EXPECT_NEAR(eph.cis, 5.02914e-08, 1e-14);
+}

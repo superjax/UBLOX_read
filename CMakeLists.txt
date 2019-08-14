@@ -26,11 +26,11 @@ set(CMAKE_CXX_FLAGS "-std=c++17")
 
 find_package(Eigen3 REQUIRED)
 find_package(async_comm REQUIRED)
-# # if (NOT ${async_comm_FOUND})
-# 	add_subdirectory(lib/async_comm)
-# 	set(async_comm_LIBRARIES async_comm)
-# 	set(async_comm_INCLUDE_DIRS lib/async_comm/include)
-# # endif()
+if (NOT ${async_comm_FOUND})
+	add_subdirectory(lib/async_comm)
+	set(async_comm_LIBRARIES async_comm)
+	set(async_comm_INCLUDE_DIRS lib/async_comm/include)
+endif()
 
 add_library(UBLOX
     src/ublox.cpp
@@ -38,7 +38,8 @@ add_library(UBLOX
     src/parsers/rtcm.cpp
     src/parsers/nav.cpp
 	src/bit_tools.cpp
-    src/utctime.cpp
+	src/utctime.cpp
+	src/crc.cpp
 )
 target_include_directories(UBLOX PUBLIC include)
 

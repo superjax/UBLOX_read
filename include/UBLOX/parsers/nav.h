@@ -32,24 +32,26 @@
 
 class EphBase
 {
-   public:
-    uint8_t gnssID;  //!< GNSS ID
-    uint8_t sat;     //!< Sat ID
+public:
+    uint8_t gnssID;
+    uint8_t sat;
 
-    std::string Type()
+    std::string Type() const
     {
         switch (gnssID)
         {
-            case ublox::GnssID_GPS:
-                return "GPS";
-            case ublox::GnssID_Galileo:
-                return "Galileo";
-            case ublox::GnssID_Glonass:
-                return "Glonass";
-            case ublox::GnssID_Qzss:
-                return "Qzss";
-            case ublox::GnssID_Beidou:
-                return "Beidou";
+        case ublox::GnssID_GPS:
+            return "GPS";
+        case ublox::GnssID_Galileo:
+            return "Galileo";
+        case ublox::GnssID_Glonass:
+            return "Glonass";
+        case ublox::GnssID_Qzss:
+            return "Qzss";
+        case ublox::GnssID_Beidou:
+            return "Beidou";
+        default:
+            return "Unknown";
         }
     }
 };
@@ -57,11 +59,10 @@ class EphBase
 /* GPS, Galileo, QZSS, Beidou broadcast ephemeris type */
 class Ephemeris : public EphBase
 {
-   public:
+public:
     static constexpr double GPS_FREQL1 = 1.57542e9;         // (Hz)
     static constexpr double GPS_FREQL2 = 1.22760e9;         // (Hz)
     static constexpr double GALILEO_FREQL5a = 1.17645e9;    // (Hz)
-    static constexpr double GALILEO_FREQL5b = 1.20714e9;    // (Hz)
     static constexpr double BEIDOU_FREQ_B1 = 1.561098e9;    // (Hz)
     static constexpr double BEIDOU_FREQ_B1_2 = 1.589742e9;  // (Hz)
     static constexpr double BEIDOU_FREQ_B2 = 1.20714e9;     // (Hz)
@@ -119,7 +120,7 @@ class Ephemeris : public EphBase
 /* GLONASS broadcast ephemeris type */
 class GlonassEphemeris : public EphBase
 {
-   public:
+public:
     static constexpr double FREQ1_GLO = 1.60200E9;   // GLONASS G1 base frequency (Hz)
     static constexpr double DFRQ1_GLO = 0.56250E6;   // GLONASS G1 bias frequency (Hz/n)
     static constexpr double FREQ2_GLO = 1.24600E9;   // GLONASS G2 base frequency (Hz)
@@ -146,7 +147,7 @@ class GlonassEphemeris : public EphBase
 
 class NavParser : public ublox::UBXListener
 {
-   public:
+public:
     static constexpr double PI = 3.1415926535897932;
     static constexpr double P2_5 = 0.03125;                 // 2^-5
     static constexpr double P2_11 = 4.882812500000000E-04;  // 2^-11
@@ -192,7 +193,7 @@ class NavParser : public ublox::UBXListener
     // not GPS messages are being received, but GLONASS is.
     void setGPSTime(const UTCTime &t) { GPS_time_ = t; }
 
-   private:
+private:
     bool decodeGPSSubframe1(const uint8_t *const buf, Ephemeris *eph);
     bool decodeGPSSubframe2(const uint8_t *const buf, Ephemeris *eph);
     bool decodeGPSSubframe3(const uint8_t *const buf, Ephemeris *eph);
@@ -206,6 +207,14 @@ class NavParser : public ublox::UBXListener
     bool decodeGlonassFrame4(const unsigned char *buff, GlonassEphemeris *geph);
     bool decodeGlonassFrame5(const unsigned char *buff, GlonassEphemeris *geph);
 
+    bool decode_gal_inav(const unsigned char *buff, Ephemeris *eph);
+    bool decodeGalileoSubframe0(const uint8_t *const buf, Ephemeris *eph);
+    bool decodeGalileoSubframe1(const uint8_t *const buf, Ephemeris *eph);
+    bool decodeGalileoSubframe2(const uint8_t *const buf, Ephemeris *eph);
+    bool decodeGalileoSubframe3(const uint8_t *const buf, Ephemeris *eph);
+    bool decodeGalileoSubframe4(const uint8_t *const buf, Ephemeris *eph);
+    bool decodeGalileoSubframe5(const uint8_t *const buf, Ephemeris *eph);
+
     std::vector<eph_cb> eph_callbacks;
     std::vector<geph_cb> geph_callbacks;
 
@@ -216,3 +225,49 @@ class NavParser : public ublox::UBXListener
     UTCTime prev_gal_toe = {0, 0};
     UTCTime prev_gal_tof = {0, 0};
 };
+
+#include <iostream>
+
+inline std::ostream &operator<<(std::ostream &os, const Ephemeris &eph)
+{
+    os << "Constellation: " << eph.Type() << "\n";
+    os << "Sat ID: " << (int)eph.sat << "\n\n";
+    os << "toe " << eph.toe << " (" << eph.toe.sec << ", " << eph.toe.nsec << ")" << "\n";
+    os << "toc " << eph.toc << " (" << eph.toc.sec << ", " << eph.toc.nsec << ")" << "\n";
+    os << "tow " << (int)eph.tow << "\n";
+    os << "iodc " << (int)eph.iodc << "\n";
+    os << "iode " << (int)eph.iode << "\n";
+    os << "week " << (int)eph.week << "\n";
+    os << "toes " << (int)eph.toes << "\n";
+    os << "tocs " << (int)eph.tocs << "\n";
+    os << "health " << (int)eph.health << "\n";
+    os << "alert_flag " << (int)eph.alert_flag << "\n";
+    os << "anti_spoof " << (int)eph.anti_spoof << "\n";
+    os << "code_on_L2 " << (int)eph.code_on_L2 << "\n";
+    os << "ura " << (int)eph.ura << "\n";
+    os << "L2_P_data_flag " << (int)eph.L2_P_data_flag << "\n";
+    os << "fit_interval_flag " << (int)eph.fit_interval_flag << "\n";
+    os << "age_of_data_offset " << (int)eph.age_of_data_offset << "\n";
+    os << "tgd[0] " << eph.tgd[0] << "\n";
+    os << "tgd[1] " << eph.tgd[1] << "\n";
+    os << "tgd[2] " << eph.tgd[2] << "\n";
+    os << "tgd[3] " << eph.tgd[3] << "\n";
+    os << "af2 " << eph.af2 << "\n";
+    os << "af1 " << eph.af1 << "\n";
+    os << "af0 " << eph.af0 << "\n";
+    os << "m0 " << eph.m0 << "\n";
+    os << "delta_n " << eph.delta_n << "\n";
+    os << "ecc " << eph.ecc << "\n";
+    os << "sqrta " << eph.sqrta << "\n";
+    os << "omega0 " << eph.omega0 << "\n";
+    os << "i0 " << eph.i0 << "\n";
+    os << "w " << eph.w << "\n";
+    os << "omegadot " << eph.omegadot << "\n";
+    os << "idot " << eph.idot << "\n";
+    os << "cuc " << eph.cuc << "\n";
+    os << "cus " << eph.cus << "\n";
+    os << "crc " << eph.crc << "\n";
+    os << "crs " << eph.crs << "\n";
+    os << "cic " << eph.cic << "\n";
+    os << "cis " << eph.cis << "\n";
+}

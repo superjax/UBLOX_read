@@ -21,13 +21,27 @@
 
 #include "UBLOX/utctime.h"
 
+constexpr uint64_t UTCTime::E9;
+constexpr uint64_t UTCTime::E6;
+constexpr int UTCTime::SEC_IN_WEEK;
+constexpr int UTCTime::SEC_IN_DAY;
+constexpr int64_t UTCTime::LEAP_SECONDS;
+constexpr int UTCTime::GPS_BEIDOU_OFFSET;
+constexpr int UTCTime::GPS_WEEK_ROLLOVER;
+constexpr int64_t UTCTime::GPS_UTC_OFFSET;
+constexpr int64_t UTCTime::GLO_UTC_OFFSET;
+constexpr int UTCTime::BD_UTC_OFFSET;
+
 UTCTime::UTCTime()
 {
     sec = 0;
     nsec = 0;
 }
 
-UTCTime::UTCTime(int _sec, int _nsec) : sec(_sec), nsec(_nsec) { wrapNsec(); }
+UTCTime::UTCTime(int _sec, int _nsec) : sec(_sec), nsec(_nsec)
+{
+    wrapNsec();
+}
 
 UTCTime::UTCTime(double _sec)
 {
@@ -86,7 +100,10 @@ UTCTime& UTCTime::operator+=(const UTCTime& other)
     return (*this);
 }
 
-double UTCTime::toSec() { return (double)sec + (double)nsec * 1e-9; }
+double UTCTime::toSec()
+{
+    return (double)sec + (double)nsec * 1e-9;
+}
 
 UTCTime UTCTime::operator+(double sec_) const
 {
@@ -144,7 +161,10 @@ UTCTime& UTCTime::operator-=(int sec_)
     return *this;
 }
 
-int UTCTime::week() const { return std::floor(sec / SEC_IN_WEEK); }
+int UTCTime::week() const
+{
+    return std::floor(sec / SEC_IN_WEEK);
+}
 
 int UTCTime::GpsWeek() const
 {
@@ -202,11 +222,11 @@ UTCTime UTCTime::fromGlonassTimeOfDay(const UTCTime& ref, int tod_ms)
     return out;
 }
 
-// UTCTime UTCTime::fromGalileo(int week, int tow_ms)
-//{
-//    // Galileo and GPS use the same time system
-//    return fromGPS(week, tow_ms);
-//}
+UTCTime UTCTime::fromGalileo(int week, int tow_ms)
+{
+    // Galileo and GPS use the same time system
+    return fromGPS(week, tow_ms);
+}
 
 // UTCTime UTCTime::fromBeidou(int week, int tow_ms)
 //{

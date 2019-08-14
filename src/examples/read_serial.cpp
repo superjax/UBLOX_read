@@ -36,6 +36,7 @@ void inthand(int signum)
 }
 
 std::set<int> found_gps_sats;
+std::set<int> found_gal_sats;
 std::set<int> found_glo_sats;
 
 struct UBX_Callback_Handler : public ublox::UBXListener
@@ -47,10 +48,10 @@ struct UBX_Callback_Handler : public ublox::UBXListener
     }
     void got_ubx(const uint8_t cls, const uint8_t id, const ublox::UBX_message_t& msg)
     {
-        if (cls == ublox::CLASS_NAV && id == ublox::NAV_PVT)
-            pvt_callback(msg.NAV_PVT);
-        else if (cls == ublox::CLASS_RXM && id == ublox::RXM_RAWX)
-            rawx_callback(msg.RXM_RAWX);
+        // if (cls == ublox::CLASS_NAV && id == ublox::NAV_PVT)
+        //     pvt_callback(msg.NAV_PVT);
+        // else if (cls == ublox::CLASS_RXM && id == ublox::RXM_RAWX)
+        //     rawx_callback(msg.RXM_RAWX);
     }
 
     void pvt_callback(const ublox::NAV_PVT_t& msg)
@@ -78,16 +79,28 @@ struct UBX_Callback_Handler : public ublox::UBXListener
 void eph_callback(const Ephemeris& eph)
 {
     std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-    std::cout << "GPS sat: " << (int)eph.sat;
+    std::cout << eph.Type() << " sat: " << (int)eph.sat;
     std::cout << ", now = " << UTCTime::now();
     std::cout << ", toe = " << eph.toe;
     std::cout << ", tof = " << eph.toe << std::endl;
     std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-    found_gps_sats.insert(eph.sat);
 
-    std::cout << "Total GPS: " << found_gps_sats.size() << ": ";
-    for (auto& gps : found_gps_sats) std::cout << gps << ", ";
-    std::cout << std::endl;
+    if (eph.gnssID == ublox::GnssID_GPS)
+    {
+        found_gps_sats.insert(eph.sat);
+
+        std::cout << "Total GPS: " << found_gps_sats.size() << ": ";
+        for (auto& gps : found_gps_sats) std::cout << gps << ", ";
+        std::cout << std::endl;
+    }
+    else if (eph.gnssID == ublox::GnssID_Galileo)
+    {
+        found_gal_sats.insert(eph.sat);
+
+        std::cout << "Total GAL: " << found_gal_sats.size() << ": ";
+        for (auto& gal : found_gal_sats) std::cout << gal << ", ";
+        std::cout << std::endl;
+    }
 }
 
 void geph_callback(const GlonassEphemeris& geph)
