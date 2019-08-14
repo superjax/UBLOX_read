@@ -348,7 +348,7 @@ void UBX::config_rover()
 
 void UBX::config_base()
 {
-    bool mobile = false;
+    bool mobile = true;
     if(mobile == true)
         config_base_mobile();
     else
@@ -400,17 +400,17 @@ void UBX::config_base_mobile()
     out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
     out_message_.CFG_VALSET.cfgData.bytes[0] = 1;
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_0USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_1USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1077USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1087USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1097USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1127USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, CFG_VALSET_t::LEN_BYTE);
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1230USB;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 }
