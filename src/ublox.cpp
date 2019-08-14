@@ -144,15 +144,10 @@ void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
         {
             rtcm_.read_cb(buf[i]);
         }
-        else if (nmea_.parsing_message())
-        {
-            nmea_.read_cb(buf[i]);
-        }
         else
         {
             ubx_.read_cb(buf[i]);
             rtcm_.read_cb(buf[i]);
-            nmea_.read_cb(buf[i]);
         }
     }
 

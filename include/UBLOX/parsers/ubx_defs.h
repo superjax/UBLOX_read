@@ -294,6 +294,15 @@ typedef struct {
     };
 
     enum {
+        USB_INPROT_UBX = 0x10770001, //Flag to indicate if UBX should be an input protocol on USB
+        USB_INPROT_NMEA = 0x10770002, //Flag to indicate if NMEA should be an input protocol on USB
+        USB_INPROT_RTCM3X = 0x10770004, //Flag to indicate if RTCM3X should be an input protocol on USB
+        USB_OUTPROT_UBX = 0x10780001, //Flag to indicate if UBX should bean output protocol on USB
+        USB_OUTPROT_NMEA = 0x10780002, //Flag to indicate if NMEA should bean output protocol on USB
+        USB_OUTPROT_RTCM3X = 0x10780004, //Flag to indicate if RTCM3X should bean output protocol on USB
+    };
+
+    enum {
         VALGET_DYNMODEL = 0x20110021, //Dynamic platform model
     };
 
@@ -363,6 +372,15 @@ typedef struct {
         //!!!!also use RTCM_1230USB above!!!///
 
         UBX_RAWX_USB   = 0x209102a7,
+    };
+
+    enum {
+        USB_INPROT_UBX = 0x10770001, //Flag to indicate if UBX should be an input protocol on USB
+        USB_INPROT_NMEA = 0x10770002, //Flag to indicate if NMEA should be an input protocol on USB
+        USB_INPROT_RTCM3X = 0x10770004, //Flag to indicate if RTCM3X should be an input protocol on USB
+        USB_OUTPROT_UBX = 0x10780001, //Flag to indicate if UBX should bean output protocol on USB
+        USB_OUTPROT_NMEA = 0x10780002, //Flag to indicate if NMEA should bean output protocol on USB
+        USB_OUTPROT_RTCM3X = 0x10780004, //Flag to indicate if RTCM3X should bean output protocol on USB
     };
 
     enum {

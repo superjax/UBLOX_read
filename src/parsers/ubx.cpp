@@ -329,6 +329,11 @@ void UBX::turnOnRTCM()
     out_message_.CFG_VALSET.cfgData.bytes[0] = CFG_VALSET_t::DYNMODE_AIRBORNE_1G;
     out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_DYNMODEL;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.cfgData.bytes[0] = 0; 
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::USB_INPROT_NMEA;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::USB_OUTPROT_NMEA;
+    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
 
     bool poll = true;
     if(poll == true)
