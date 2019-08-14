@@ -22,7 +22,6 @@ add_library(UBLOX
     src/ublox.cpp
     src/parsers/ubx.cpp
     src/parsers/rtcm.cpp
-    src/parsers/nmea.cpp
     src/parsers/nav.cpp
     src/utctime.cpp
 )

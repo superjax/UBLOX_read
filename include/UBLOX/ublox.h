@@ -10,7 +10,6 @@
 
 #include "UBLOX/parsers/ubx.h"
 #include "UBLOX/parsers/rtcm.h"
-#include "UBLOX/parsers/nmea.h"
 #include "UBLOX/parsers/nav.h"
 
 namespace ublox
@@ -45,7 +44,6 @@ public:
 
     UBX ubx_;
     rtcm::RTCM rtcm_;
-    NMEA nmea_;
     NavParser nav_;
 
     std::ofstream log_file_;
