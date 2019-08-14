@@ -1,10 +1,31 @@
+/* Copyright (c) 2019 James Jackson
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 //#pragma once
 //#include "UBLOX/bitfield.h"
 
-//namespace rtcm
+// namespace rtcm
 //{
 
-//union RTCM1001x4_HDR
+// union RTCM1001x4_HDR
 //{
 //    BitField<36,12> staid;
 //    BitField<48,30> tow; // 1e-3 sec
@@ -15,7 +36,7 @@
 //};
 
 //// GPS RTK L1-only
-//union RTCM1001
+// union RTCM1001
 //{
 //    RTCM1001x4_HDR hdr;
 //    BitField<88, 6> sat_id;
@@ -26,7 +47,7 @@
 //};
 
 //// GPS Extended RTK, L1-only
-//union RTCM1002
+// union RTCM1002
 //{
 //    RTCM1001x4_HDR hdr;
 //    BitField<88, 6> sat_id;
@@ -39,7 +60,7 @@
 //};
 
 //// GPS Basic RTK, L1/L2
-//union RTCM1003
+// union RTCM1003
 //{
 //    RTCM1001x4_HDR hdr;
 //    BitField<88, 6> sat_id;
@@ -54,7 +75,7 @@
 //};
 
 //// GPS Extended RTK, L1/L2
-//union RTCM1004
+// union RTCM1004
 //{
 //    RTCM1001x4_HDR hdr;
 //    BitField<88, 6> sat_id;
@@ -72,7 +93,7 @@
 //};
 
 //// Stationary Antenna Reference w/o Height
-//union RTCM1005
+// union RTCM1005
 //{
 //    BitField<36,12> staid;
 //    BitField<48,6> res;
@@ -89,7 +110,7 @@
 //};
 
 //// Stationary Antenna Ref w/ Height
-//union RTCM1006
+// union RTCM1006
 //{
 //    BitField<36,12> staid;
 //    BitField<48,6> res;
@@ -109,7 +130,7 @@
 //// 1007 Antenna Descriptor (not supported)
 //// 1008 Antenna Descriptor & Serial Number (not supported)
 
-//union RTCM1009x12_HDR
+// union RTCM1009x12_HDR
 //{
 //    BitField<36,12> staid;
 //    BitField<48,27> GLONASS_epoch_time;
@@ -120,7 +141,7 @@
 //};
 
 //// Glonass RTK Basic RTK L1-only
-//union RTCM1009
+// union RTCM1009
 //{
 //    RTCM1009x12_HDR hdr;
 //    BitField<85,6> sat_id;
@@ -132,7 +153,7 @@
 //};
 
 //// Glonass RTK Extended RTK L1-only
-//union RTCM1010
+// union RTCM1010
 //{
 //    RTCM1009x12_HDR hdr;
 //    BitField<85,6> sat_id;
@@ -146,7 +167,7 @@
 //};
 
 //// GLONASS Basic RTK L1/L2
-//union RTCM1011
+// union RTCM1011
 //{
 //    RTCM1009x12_HDR hdr;
 //    BitField<85,6> sat_id;
@@ -162,7 +183,7 @@
 //};
 
 //// GLONASS Extended RTK L1/L2
-//union RTCM1012
+// union RTCM1012
 //{
 //    RTCM1009x12_HDR hdr;
 //    BitField<85,6> sat_id;
@@ -188,7 +209,7 @@
 
 //// GPS Ephemerides
 //// See GPS SPS 2.4.3 for descriptions
-//union RTCM1019
+// union RTCM1019
 //{
 //    BitField<36,6> sat_id;
 //    BitField<42,10> week;
@@ -224,7 +245,7 @@
 
 //// GLONASS Ephemerides
 //// See GLONASS ICD Version 5.0 for descriptions
-//union RTCM1020
+// union RTCM1020
 //{
 //    BitField<36,6> sat_id;
 //    BitField<42,5> freq_chan;

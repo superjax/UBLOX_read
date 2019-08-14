@@ -1,9 +1,28 @@
-﻿#include <vector>
-#include <ctime>
-#include <cmath>
-#include <cstring>
+﻿/* Copyright (c) 2019 James Jackson
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 #include "UBLOX/parsers/nav.h"
+#include "UBLOX/bit_tools.h"
+
+#define DBG(...) fprintf(stderr, __VA_ARGS__)
 
 void NavParser::registerCallback(eph_cb cb)
 {
@@ -13,6 +32,11 @@ void NavParser::registerCallback(eph_cb cb)
 void NavParser::registerCallback(geph_cb cb)
 {
     geph_callbacks.push_back(cb);
+}
+
+NavParser::NavParser()
+{
+    subscribe(ublox::CLASS_RXM, ublox::RXM_SFRBX);
 }
 
 bool NavParser::convertUBX(const ublox::RXM_SFRBX_t &msg)
@@ -29,8 +53,10 @@ bool NavParser::convertUBX(const ublox::RXM_SFRBX_t &msg)
         if (!geph)
         {
             geph_.emplace_back();
+            geph_.back().sat = msg.svId;
             geph = &geph_.back();
         }
+        // DBG("glonass\n");
         return decodeGlonass(msg, *geph);
     }
     else
@@ -52,97 +78,38 @@ bool NavParser::convertUBX(const ublox::RXM_SFRBX_t &msg)
         switch (msg.gnssId)
         {
         case GnssID_GPS:
+            // DBG("GPS\n");
             return decodeGPS((uint8_t *)msg.dwrd, eph);
         case GnssID_Galileo:
+            // DBG("GAL\n");
             return decodeGalileo((uint8_t *)msg.dwrd, eph);
         case GnssID_Beidou:
-            return decodeBeidou((uint8_t*)msg.dwrd, eph);
+            // DBG("BEIDOU\n");
+            return decodeBeidou((uint8_t *)msg.dwrd, eph);
         }
     }
 }
 
-static unsigned int U4(const unsigned char *p)
+bool NavParser::decodeGPSSubframe1(const uint8_t *const buf, Ephemeris *eph)
 {
-    unsigned int u;
-    memcpy(&u, p, 4);
-    return u;
-}
+    // double tow = getBit<17>(buf, 24) * 6.0;
+    int week = getBit<10>(buf, 48);
+    eph->code_on_L2 = getBit<2>(buf, 58);
+    eph->ura = getBit<4>(buf, 60);
+    eph->health = getBit<6>(buf, 64);
+    uint8_t iodc0 = getBit<2>(buf, 70);
+    eph->L2_P_data_flag = getBit<1>(buf, 72);
+    int tgd = getBit<8, Signed>(buf, 160);
+    eph->iode = getBit<8>(buf, 168);
+    eph->tocs = getBit<16>(buf, 176) * 16.0;
+    eph->af2 = getBit<8, Signed>(buf, 192) * P2_55;
+    eph->af1 = getBit<16, Signed>(buf, 200) * P2_43;
+    eph->af0 = getBit<22, Signed>(buf, 216) * P2_31;
 
-extern void setbitu(unsigned char *buff, int pos, int len, unsigned int data)
-{
-    unsigned int mask = 1u << (len - 1);
-    int i;
-    if (len <= 0 || 32 < len)
-        return;
-    for (i = pos; i < pos + len; i++, mask >>= 1)
-    {
-        if (data & mask)
-            buff[i / 8] |= 1u << (7 - i % 8);
-        else
-            buff[i / 8] &= ~(1u << (7 - i % 8));
-    }
-}
-extern void setbits(unsigned char *buff, int pos, int len, int data)
-{
-    if (data < 0)
-        data |= 1 << (len - 1);
-    else
-        data &= ~(1 << (len - 1)); /* set sign bit */
-    setbitu(buff, pos, len, (unsigned int)data);
-}
+    eph->alert_flag = 0;  // TODO: populate
 
-extern unsigned int getbitu(const unsigned char *buff, int pos, int len)
-{
-    unsigned int bits = 0;
-    int i;
-    for (i = pos; i < pos + len; i++)
-        bits = (bits << 1) + ((buff[i / 8] >> (7 - i % 8)) & 1u);
-    return bits;
-}
-extern int getbits(const unsigned char *buff, int pos, int len)
-{
-    unsigned int bits = getbitu(buff, pos, len);
-    if (len <= 0 || 32 <= len || !(bits & (1u << (len - 1))))
-        return (int)bits;
-    return (int)(bits | (~0u << len)); /* extend sign */
-}
-
-static double getbitg(const unsigned char *buff, int pos, int len)
-{
-    double value = getbitu(buff, pos + 1, len - 1);
-    return getbitu(buff, pos, 1) ? -value : value;
-}
-
-bool NavParser::decodeGPSSubframe1(const uint8_t *const buff, Ephemeris *eph)
-{
-    double tow;
-    int i = 48, week, tgd;
-    tow = getbitu(buff, 24, 17) * 6.0;
-    week = getbitu(buff, i, 10);
-    i += 10;
-    eph->code_on_L2 = getbitu(buff, i, 2);
-    i += 2;
-    eph->ura = getbitu(buff, i, 4);
-    i += 4;
-    eph->health = getbitu(buff, i, 6);
-    i += 6;
-    uint8_t iodc0 = getbitu(buff, i, 2);
-    i += 2;
-    eph->L2_P_data_flag = getbitu(buff, i, 1);
-    i += 1 + 87;
-    tgd = getbits(buff, i, 8);
-    i += 8;
-    eph->iode = getbitu(buff, i, 8);
-    i += 8;
-    eph->tocs = getbitu(buff, i, 16) * 16.0;
-    i += 16;
-    eph->af2 = getbits(buff, i, 8) * P2_55;
-    i += 8;
-    eph->af1 = getbits(buff, i, 16) * P2_43;
-    i += 16;
-    eph->af0 = getbits(buff, i, 22) * P2_31;
-
-    eph->tgd[0] = tgd == -128 ? 0.0 : tgd * P2_31; /* ref [4] */
+    eph->tgd[0] = tgd == -128 ? 0.0 : tgd * P2_31;
+    eph->tgd[1] = eph->tgd[2] = eph->tgd[3] = 0;
     eph->iodc = (iodc0 << 8) + eph->iode;
     eph->week = week + UTCTime::GPS_WEEK_ROLLOVER;
 
@@ -152,28 +119,18 @@ bool NavParser::decodeGPSSubframe1(const uint8_t *const buff, Ephemeris *eph)
     return true;
 }
 
-bool NavParser::decodeGPSSubframe2(const unsigned char *buff, Ephemeris *eph)
+bool NavParser::decodeGPSSubframe2(const uint8_t *buf, Ephemeris *eph)
 {
-    int i = 48;
-    eph->iode = getbitu(buff, i, 8);
-    i += 8;
-    eph->crs = getbits(buff, i, 16) * P2_5;
-    i += 16;
-    eph->delta_n = getbits(buff, i, 16) * P2_43 * PI;
-    i += 16;
-    eph->m0 = getbits(buff, i, 32) * P2_31 * PI;
-    i += 32;
-    eph->cuc = getbits(buff, i, 16) * P2_29;
-    i += 16;
-    eph->ecc = getbitu(buff, i, 32) * P2_33;
-    i += 32;
-    eph->cus = getbits(buff, i, 16) * P2_29;
-    i += 16;
-    eph->sqrta = getbitu(buff, i, 32) * P2_19;
-    i += 32;
-    eph->toes = getbitu(buff, i, 16) * 16.0;
-    i += 16;
-    eph->fit_interval_flag = getbitu(buff, i, 1) ? 0.0 : 4.0; /* 0:4hr,1:>4hr */
+    eph->iode = getBit<8>(buf, 48);
+    eph->crs = getBit<16, Signed>(buf, 56) * P2_5;
+    eph->delta_n = getBit<16, Signed>(buf, 72) * P2_43 * PI;
+    eph->m0 = getBit<32, Signed>(buf, 88) * P2_31 * PI;
+    eph->cuc = getBit<16, Signed>(buf, 120) * P2_29;
+    eph->ecc = getBit<32>(buf, 136) * P2_33;
+    eph->cus = getBit<16, Signed>(buf, 168) * P2_29;
+    eph->sqrta = getBit<32>(buf, 184) * P2_19;
+    eph->toes = getBit<16>(buf, 216) * 16.0;
+    eph->fit_interval_flag = getBit<1>(buf, 232) ? 0.0 : 4.0; /* 0:4hr,1:>4hr */
 
     eph->iode2 = eph->iode;
     eph->got_subframe2 = true;
@@ -181,26 +138,17 @@ bool NavParser::decodeGPSSubframe2(const unsigned char *buff, Ephemeris *eph)
     return true;
 }
 
-bool NavParser::decodeGPSSubframe3(const unsigned char *buff, Ephemeris *eph)
+bool NavParser::decodeGPSSubframe3(const uint8_t *buf, Ephemeris *eph)
 {
-    int i = 48;
-    eph->cic = getbits(buff, i, 16) * P2_29;
-    i += 16;
-    eph->omega0 = getbits(buff, i, 32) * P2_31 * PI;
-    i += 32;
-    eph->cis = getbits(buff, i, 16) * P2_29;
-    i += 16;
-    eph->i0 = getbits(buff, i, 32) * P2_31 * PI;
-    i += 32;
-    eph->crc = getbits(buff, i, 16) * P2_5;
-    i += 16;
-    eph->w = getbits(buff, i, 32) * P2_31 * PI;
-    i += 32;
-    eph->omegadot = getbits(buff, i, 24) * P2_43 * PI;
-    i += 24;
-    eph->iode3 = getbitu(buff, i, 8);
-    i += 8;
-    eph->idot = getbits(buff, i, 14) * P2_43 * PI;
+    eph->cic = getBit<16, Signed>(buf, 48) * P2_29;
+    eph->omega0 = getBit<32, Signed>(buf, 64) * P2_31 * PI;
+    eph->cis = getBit<16, Signed>(buf, 96) * P2_29;
+    eph->i0 = getBit<32, Signed>(buf, 112) * P2_31 * PI;
+    eph->crc = getBit<16, Signed>(buf, 144) * P2_5;
+    eph->w = getBit<32, Signed>(buf, 160) * P2_31 * PI;
+    eph->omegadot = getBit<24, Signed>(buf, 192) * P2_43 * PI;
+    eph->iode3 = getBit<8>(buf, 216);
+    eph->idot = getBit<14, Signed>(buf, 224) * P2_43 * PI;
 
     eph->iode3 = eph->iode;
     eph->got_subframe3 = true;
@@ -210,24 +158,26 @@ bool NavParser::decodeGPSSubframe3(const unsigned char *buff, Ephemeris *eph)
 
 bool NavParser::decodeGPS(const uint8_t *buf, Ephemeris *eph)
 {
-    unsigned int words[10];
-    int i, id;
     const uint8_t *p = buf;
 
-    for (i = 0; i < 10; i++, p += 4)
-        words[i] = U4(p) >> 6; /* 24 bits without parity */
+    eph->gnssID = 0;
 
-    id = (words[1] >> 2) & 7;
+    uint8_t subfrm[30];
+    for (int i = 0; i < 10; i++)
+    {
+        // Strip parity
+        setBit<24>(subfrm, i * 24, *(reinterpret_cast<const uint32_t *>(p)) >> 6);
+        p += 4;
+    }
+
+    // int id = getBit<3>(subfrm, 43);
+    int id = (subfrm[5] >> 2) & 7;
+
     if (id < 1 || 5 < id)
     {
         return -1;
     }
 
-    uint8_t subfrm[30];
-    for (i = 0; i < 10; i++)
-    {
-        setbitu(subfrm, i * 24, 24, words[i]);
-    }
     switch (id)
     {
     case 1:
@@ -245,16 +195,17 @@ bool NavParser::decodeGPS(const uint8_t *buf, Ephemeris *eph)
 
     // Check that the iodes are the same across the subframes
     if (eph->got_subframe1 && eph->got_subframe2 && eph->got_subframe3 &&
-        eph->iode1 == eph->iode2 && eph->iode1 == eph->iode3 &&
-        eph->iode == (eph->iodc & 0xFF))
+        eph->iode1 == eph->iode2 && eph->iode1 == eph->iode3 && eph->iode == (eph->iodc & 0xFF))
     {
         // Set toe and toc
-        eph->toe = UTCTime::fromGPS(eph->week, eph->toes*1000);
-        eph->toc = UTCTime::fromGPS(eph->week, eph->tocs*1000);
+        eph->toe = UTCTime::fromGPS(eph->week, eph->toes * 1000);
+        eph->toc = UTCTime::fromGPS(eph->week, eph->tocs * 1000);
         GPS_time_ = eph->toe;
 
         for (auto &cb : eph_callbacks)
+        {
             cb(*eph);
+        }
 
         eph->got_subframe1 = false;
         eph->got_subframe2 = false;
@@ -264,247 +215,204 @@ bool NavParser::decodeGPS(const uint8_t *buf, Ephemeris *eph)
     return 0;
 }
 
-int test_glostr(const unsigned char *buff)
+int gloTest(const uint8_t *buf)
 {
-    static const unsigned char xor_8bit[256] = {/* xor of 8 bits */
-                                                0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
-                                                1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0,
-                                                1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0,
-                                                0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
-                                                1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0,
-                                                0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
-                                                0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
-                                                1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0};
-    static const unsigned char mask_hamming[][12] = {/* mask of hamming codes */
-                                                     {0x55, 0x55, 0x5A, 0xAA, 0xAA, 0xAA, 0xB5, 0x55, 0x6A, 0xD8, 0x08},
-                                                     {0x66, 0x66, 0x6C, 0xCC, 0xCC, 0xCC, 0xD9, 0x99, 0xB3, 0x68, 0x10},
-                                                     {0x87, 0x87, 0x8F, 0x0F, 0x0F, 0x0F, 0x1E, 0x1E, 0x3C, 0x70, 0x20},
-                                                     {0x07, 0xF8, 0x0F, 0xF0, 0x0F, 0xF0, 0x1F, 0xE0, 0x3F, 0x80, 0x40},
-                                                     {0xF8, 0x00, 0x0F, 0xFF, 0xF0, 0x00, 0x1F, 0xFF, 0xC0, 0x00, 0x80},
-                                                     {0x00, 0x00, 0x0F, 0xFF, 0xFF, 0xFF, 0xE0, 0x00, 0x00, 0x01, 0x00},
-                                                     {0xFF, 0xFF, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00},
-                                                     {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF8}};
-    unsigned char cs;
-    int i, j, n = 0;
+    static const uint8_t xor8[256] = {
+        // 8 bit xor (see ref)
+        0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1,
+        0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0,
+        0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0,
+        1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1,
+        0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0,
+        1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1,
+        1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0,
+        1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0,
+        0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0};
+    static const uint8_t hamming_mask[][12] = {
+        // Hamming Code Mask
+        {0x55, 0x55, 0x5A, 0xAA, 0xAA, 0xAA, 0xB5, 0x55, 0x6A, 0xD8, 0x08},
+        {0x66, 0x66, 0x6C, 0xCC, 0xCC, 0xCC, 0xD9, 0x99, 0xB3, 0x68, 0x10},
+        {0x87, 0x87, 0x8F, 0x0F, 0x0F, 0x0F, 0x1E, 0x1E, 0x3C, 0x70, 0x20},
+        {0x07, 0xF8, 0x0F, 0xF0, 0x0F, 0xF0, 0x1F, 0xE0, 0x3F, 0x80, 0x40},
+        {0xF8, 0x00, 0x0F, 0xFF, 0xF0, 0x00, 0x1F, 0xFF, 0xC0, 0x00, 0x80},
+        {0x00, 0x00, 0x0F, 0xFF, 0xFF, 0xFF, 0xE0, 0x00, 0x00, 0x01, 0x00},
+        {0xFF, 0xFF, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00},
+        {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF8}};
 
-    for (i = 0; i < 8; i++)
+    uint8_t crc;
+    int n = 0;
+    for (int i = 0; i < 8; ++i)
     {
-        for (j = 0, cs = 0; j < 11; j++)
+        crc = 0;
+        for (int j = 0; j < 11; ++j)
         {
-            cs ^= xor_8bit[buff[j] & mask_hamming[i][j]];
+            crc ^= xor8[buf[j] & hamming_mask[i][j]];
         }
-        if (cs)
-            n++;
+        if (crc)
+            ++n;
     }
-    return n == 0 || (n == 2 && cs);
+    return n == 0 || (n == 2 && crc);
 }
 
-bool NavParser::decodeGlonassString(const unsigned char *buff, GlonassEphemeris *geph)
+bool NavParser::decodeGlonassFrame1(const uint8_t *buf, GlonassEphemeris *geph)
 {
-    double tow, tod, tof, toe;
-    int P, P1, P2, P3, P4, tk_h, tk_m, tk_s, tb, ln, NT, slot, M, week;
-    int i = 1, frn1, frn2, frn3, frn4;
-
-    // trace(3, "decode_glostr:\n");
-
-    /* frame 1 */
-    frn1 = getbitu(buff, i, 4);
-    i += 4 + 2;
-    P1 = getbitu(buff, i, 2);
-    i += 2;
-    tk_h = getbitu(buff, i, 5);
-    i += 5;
-    tk_m = getbitu(buff, i, 6);
-    i += 6;
-    tk_s = getbitu(buff, i, 1) * 30;
-    i += 1;
-    geph->vel[0] = getbitg(buff, i, 24) * P2_20 * 1E3;
-    i += 24;
-    geph->acc[0] = getbitg(buff, i, 5) * P2_30 * 1E3;
-    i += 5;
-    geph->pos[0] = getbitg(buff, i, 27) * P2_11 * 1E3;
-    i += 27 + 4;
-
-    /* frame 2 */
-    frn2 = getbitu(buff, i, 4);
-    i += 4;
-    geph->svh = getbitu(buff, i, 3);
-    i += 3;
-    P2 = getbitu(buff, i, 1);
-    i += 1;
-    tb = getbitu(buff, i, 7);
-    geph->iode = tb;
-    i += 7 + 5;
-    geph->vel[1] = getbitg(buff, i, 24) * P2_20 * 1E3;
-    i += 24;
-    geph->acc[1] = getbitg(buff, i, 5) * P2_30 * 1E3;
-    i += 5;
-    geph->pos[1] = getbitg(buff, i, 27) * P2_11 * 1E3;
-    i += 27 + 4;
-
-    /* frame 3 */
-    frn3 = getbitu(buff, i, 4);
-    i += 4;
-    P3 = getbitu(buff, i, 1);
-    i += 1;
-    geph->gamn = getbitg(buff, i, 11) * P2_40;
-    i += 11 + 1;
-    P = getbitu(buff, i, 2);
-    i += 2;
-    ln = getbitu(buff, i, 1);
-    i += 1;
-    geph->vel[2] = getbitg(buff, i, 24) * P2_20 * 1E3;
-    i += 24;
-    geph->acc[2] = getbitg(buff, i, 5) * P2_30 * 1E3;
-    i += 5;
-    geph->pos[2] = getbitg(buff, i, 27) * P2_11 * 1E3;
-    i += 27 + 4;
-
-    /* frame 4 */
-    frn4 = getbitu(buff, i, 4);
-    i += 4;
-    geph->taun = getbitg(buff, i, 22) * P2_30;
-    i += 22;
-    geph->dtaun = getbitg(buff, i, 5) * P2_30;
-    i += 5;
-    geph->age = getbitu(buff, i, 5);
-    i += 5 + 14;
-    P4 = getbitu(buff, i, 1);
-    i += 1;
-    geph->sva = getbitu(buff, i, 4);
-    i += 4 + 3;
-    NT = getbitu(buff, i, 11);
-    i += 11;
-    slot = getbitu(buff, i, 5);
-    i += 5;
-    M = getbitu(buff, i, 2);
-
-    if (frn1 != 1 || frn2 != 2 || frn3 != 3 || frn4 != 4)
-    {
-        // trace(3, "decode_glostr error: frn=%d %d %d %d %d\n", frn1, frn2, frn3, frn4);
-        return false;
-    }
+    // int P1 = getBit<2>(buf, 7);
+    int tk_h = getBit<5>(buf, 9);
+    int tk_m = getBit<6>(buf, 14);
+    int tk_s = getBit<1>(buf, 20) * 30;
+    geph->vel[0] = getBitGlo<24>(buf, 21) * P2_20 * 1E3;
+    geph->acc[0] = getBitGlo<5>(buf, 45) * P2_30 * 1E3;
+    geph->pos[0] = getBitGlo<27>(buf, 50) * P2_11 * 1E3;
 
     // Convert Time into UTC, using the last GPS time stamp to figure
     // out what day it is.
-    int frame_tod_ms = (tk_h * 3600 + tk_m * 60 + tk_s)*1000;
+    int frame_tod_ms = (tk_h * 3600 + tk_m * 60 + tk_s) * 1000;
     int dbg = frame_tod_ms / UTCTime::SEC_IN_DAY;
     geph->tof = UTCTime::fromGlonassTimeOfDay(GPS_time_, frame_tod_ms);
+    geph->got_frame1 = true;
+}
+
+bool NavParser::decodeGlonassFrame2(const uint8_t *buf, GlonassEphemeris *geph)
+{
+    geph->svh = getBit<3>(buf, 5);
+    // int P2 = getBit<1>(buf, 8);
+    int tb = getBit<7>(buf, 9);
+    geph->iode = tb;
+    geph->vel[1] = getBitGlo<24>(buf, 21) * P2_20 * 1E3;
+    geph->acc[1] = getBitGlo<5>(buf, 45) * P2_30 * 1E3;
+    geph->pos[1] = getBitGlo<27>(buf, 50) * P2_11 * 1E3;
+
+    // Convert Time into UTC, using the last GPS time stamp to figure
+    // out what day it is.
     uint64_t eph_tod_ms = (tb * 60 * 15) * 1000;
     geph->toe = UTCTime::fromGlonassTimeOfDay(GPS_time_, eph_tod_ms);
+    geph->got_frame2 = true;
+}
 
-    // Initialize prev_gal_...
-//    if (prev_gal_tof == UTCTime{0, 0})
-//        prev_gal_tof = geph->tof;
-//    if (prev_gal_toe == UTCTime{0, 0})
-//        prev_gal_toe = geph->toe;
+bool NavParser::decodeGlonassFrame3(const uint8_t *buf, GlonassEphemeris *geph)
+{
+    // int P3 = getBit<1>(buf, 5);
+    geph->gamn = getBitGlo<11>(buf, 6) * P2_40;
+    // int P = getBit<2>(buf, 18);
+    // int ln = getBit<1>(buf, 20);
+    geph->vel[2] = getBitGlo<24>(buf, 21) * P2_20 * 1E3;
+    geph->acc[2] = getBitGlo<5>(buf, 45) * P2_30 * 1E3;
+    geph->pos[2] = getBitGlo<27>(buf, 50) * P2_11 * 1E3;
+    geph->got_frame3 = true;
+}
+bool NavParser::decodeGlonassFrame4(const uint8_t *buf, GlonassEphemeris *geph)
+{
+    geph->taun = getBitGlo<22>(buf, 5) * P2_30;
+    geph->dtaun = getBitGlo<5>(buf, 27) * P2_30;
+    geph->age = getBit<5>(buf, 32);
+    // int P4 = getBit<1>(buf, 51);
+    geph->sva = getBit<4>(buf, 52);
+    // int NT = getBit<11>(buf, 59);
+    // int slot = getBit<5>(buf, 70);
+    // int M = getBit<2>(buf, 75);
+    geph->got_frame4 = true;
+}
+
+bool NavParser::decodeGlonassString(const uint8_t *buf, GlonassEphemeris *geph)
+{
+    int frame_num = getBit<4>(buf, 1);
+
+    // We only care about strings [1-4]
+    if (frame_num < 1 || 4 < frame_num)
+    {
+        return false;
+    }
+
+    switch (frame_num)
+    {
+    case 1:
+        DBG("GLO Sat %d, frm %d", geph->sat, frame_num);
+        decodeGlonassFrame1(buf, geph);
+        break;
+    case 2:
+        DBG("GLO Sat %d, frm %d", geph->sat, frame_num);
+        decodeGlonassFrame2(buf, geph);
+        break;
+    case 3:
+        DBG("GLO Sat %d, frm %d", geph->sat, frame_num);
+        decodeGlonassFrame3(buf, geph);
+        break;
+    case 4:
+        DBG("GLO Sat %d, frm %d", geph->sat, frame_num);
+        decodeGlonassFrame4(buf, geph);
+        break;
+    }
+
+    // Only spit out ephemeris if we got the fourth frame.  This keeps us from spamming too much
+    if (!geph->got_frame1 || !geph->got_frame2 || !geph->got_frame3 || !geph->got_frame4 ||
+        frame_num != 4)
+    {
+        return false;
+    }
 
     // Handle The day wrap, because we are comparing GPS with Gal
     // to get the beginning of the day, we might have the wrong
     // day.  This assumes that we get at least two GLONASS ephemeris
     // message per day, which is probably okay
-    if ((GPS_time_ - geph->toe).toSec() > UTCTime::SEC_IN_DAY/2)
+    if ((GPS_time_ - geph->toe).toSec() > UTCTime::SEC_IN_DAY / 2)
         geph->toe += (int)(UTCTime::SEC_IN_DAY);
-    else if ((GPS_time_ - geph->toe).toSec() < -(UTCTime::SEC_IN_DAY/2))
+    else if ((GPS_time_ - geph->toe).toSec() < -(UTCTime::SEC_IN_DAY / 2))
         geph->toe -= (int)(UTCTime::SEC_IN_DAY);
 
-    if ((GPS_time_ - geph->tof).toSec() > UTCTime::SEC_IN_DAY/2)
+    if ((GPS_time_ - geph->tof).toSec() > UTCTime::SEC_IN_DAY / 2)
         geph->tof += (int)(UTCTime::SEC_IN_DAY);
-    else if ((GPS_time_ - geph->tof).toSec() < - (UTCTime::SEC_IN_DAY/2))
+    else if ((GPS_time_ - geph->tof).toSec() < -(UTCTime::SEC_IN_DAY / 2))
         geph->tof -= (int)(UTCTime::SEC_IN_DAY);
 
-//    prev_gal_tof = geph->tof;
-//    prev_gal_toe = geph->toe;
     return true;
 }
 
-#include <fstream>
-
-
 bool NavParser::decodeGlonass(const ublox::RXM_SFRBX_t &msg, GlonassEphemeris &geph)
 {
-    if (msg.svId == 4)
-    {
-        static std::ofstream file("geph.txt");
-
-        const uint32_t* p = (const uint32_t*)&msg;
-        file << "{";
-        for (int i = 0; i < 1+msg.numWords; i++)
-        {
-            file << "0x" << std::hex << *p << ", ";
-            p++;
-        }
-        file << "},\n";
-        file.flush();
-        int debug = 1;
-    }
-    int i, j, k, m, prn;
-    unsigned char *p = (uint8_t*)msg.dwrd, *fid;
-    unsigned char buff[64];
+    const uint8_t *p = reinterpret_cast<const uint8_t *>(msg.dwrd);
+    uint8_t buf[64];
 
     if (msg.svId == 255)
-        return false; // svId==255 means UBLOX doesn't know who this data came from
+        return false;  // svId==255 means UBLOX doesn't know who this data came from
     if (GPS_time_ == UTCTime{0, 0})
-        return false; // We use the GPS week count to calculate the GLONASS time
+        return false;  // We use the GPS week count to calculate the GLONASS time
 
-    prn = msg.svId;
+    int prn = msg.svId;
     int sat = msg.svId;
-    // satsys(sat, &prn);
 
-    int m1 = getbitu(p, 25, 4);
-
-    // if (raw->len < 24 + off)
-    // {
-    //     trace(2, "ubx rawsfrbx gnav length error: len=%d\n", raw->len);
-    //     return -1;
-    // }
-    for (i = k = 0; i < 4; i++, p += 4)
-        for (j = 0; j < 4; j++)
+    int i = 0;
+    for (int k = 0; i < 4; ++i)
+    {
+        for (int j = 0; j < 4; ++j)
         {
-            buff[k++] = p[3 - j];
+            buf[k++] = p[3 - j];  // Switch order of bytes
         }
-    /* test hamming of glonass string */
-    if (!test_glostr(buff))
+        p += 4;
+    }
+
+    // Check the Hamming Code
+    if (!gloTest(buf))
     {
-        // trace(2, "ubx rawsfrbx glo string hamming error: sat=%2d\n", sat);
         return -1;
     }
-    m = getbitu(buff, 1, 4);
-    if (m < 1 || 15 < m)
-    {
-        // trace(2, "ubx rawsfrbx glo string no error: sat=%2d\n", sat);
-        return -1;
-    }
-    /* flush frame buffer if frame-id changed */
-    fid = subfrm_[sat - 1] + 150;
-    if (fid[0] != buff[12] || fid[1] != buff[13])
-    {
-        for (i = 0; i < 4; i++)
-            memset(subfrm_[sat - 1] + i * 10, 0, 10);
-        memcpy(fid, buff + 12, 2); /* save frame-id */
-    }
-    memcpy(subfrm_[sat - 1] + (m - 1) * 10, buff, 10);
 
-    if (m != 4)
+    // reset the geph parser if the time mark (MB) has changed
+    int time_mark = (uint16_t)(buf[12] << 8) | buf[13];
+    if (time_mark != geph.time_mark)
+    {
+        geph.got_frame1 = geph.got_frame2 = geph.got_frame3 = geph.got_frame4 = false;
+    }
+    geph.time_mark = time_mark;
+
+    if (!decodeGlonassString(buf, &geph))
         return 0;
 
-    // /* decode glonass ephemeris strings */
-    // geph.tof = raw->time;
-    if (!decodeGlonassString(subfrm_[sat - 1], &geph))
-        return 0;
     geph.frq = msg.freqId - 7;
     geph.sat = msg.svId;
     geph.gnssID = msg.gnssId;
 
-    // if (!strstr(raw->opt, "-EPHALL"))
-    // {
-    //     if (geph.iode == raw->nav.geph[prn - 1].iode)
-    //         return 0; /* unchanged */
-    // }
-    // raw->nav.geph[prn - 1] = geph;
-    // raw->ephsat = sat;
-    for (auto& cb : geph_callbacks)
-        cb(geph);
+    // Call the callbacks
+    for (auto &cb : geph_callbacks) cb(geph);
 
     return true;
 }

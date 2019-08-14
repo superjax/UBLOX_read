@@ -1,25 +1,44 @@
-#include <chrono>
-#include <stdio.h>
+/* Copyright (c) 2019 James Jackson, Matt Rydalch
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-#include "async_comm/udp.h"
+#include <stdio.h>
+#include <cassert>
+#include <chrono>
+#include <cstring>
+#include <sstream>
 
 #include "UBLOX/parsers/ubx.h"
 
 using namespace std::chrono;
 using namespace std;
 
-#define DEG2RAD (3.14159 / 180.0)
-#ifndef NDEBUG
-#define DBG(...) fprintf(stderr, __VA_ARGS__)
-#else
+//#ifndef NDEBUG
+// #define DBG(...) fprintf(stderr, __VA_ARGS__)
+//#else
 #define DBG(...)
-#endif
+//#endif
 
 namespace ublox
 {
-
-UBX::UBX(async_comm::Serial& ser) :
-    serial_(ser)
+UBX::UBX(SerialInterface &ser) : ser_(ser)
 {
     buffer_head_ = 0;
     parse_state_ = START;
@@ -30,14 +49,7 @@ UBX::UBX(async_comm::Serial& ser) :
     ck_b_ = 0;
     prev_byte_ = 0;
     start_message_ = false;
-    new_data_ = false;
     end_message_ = false;
-}
-
-void UBX::registerCallback(uint8_t cls, uint8_t type,
-                std::function<void(uint8_t, uint8_t, const UBX_message_t&)> cb)
-{
-    callbacks.push_back({cls, type, cb});
 }
 
 bool UBX::parsing_message()
@@ -45,64 +57,180 @@ bool UBX::parsing_message()
     return (start_message_ == true && end_message_ == false);
 }
 
-bool UBX::new_data()
-{
-    bool tmp = new_data_;
-    new_data_ = false;
-    return tmp;
-}
-
 size_t UBX::num_messages_received()
 {
     return num_messages_received_;
 }
 
-bool UBX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& message, uint16_t len)
+bool UBX::get_version()
+{
+    using namespace std::chrono;
+
+    got_ver_ = false;
+    send_message(CLASS_MON, MON_VER, out_message_, 0);
+
+    auto start = high_resolution_clock::now();
+    int dt_ms = 0;
+    while (!got_ver_ && dt_ms < TIMEOUT_MS)
+    {
+        dt_ms = duration_cast<milliseconds>(high_resolution_clock::now() - start).count();
+    }
+
+    if (got_ver_)
+    {
+        DBG("Got version\n");
+        return true;
+    }
+    else
+    {
+        DBG("Did not get version\n");
+        return false;
+    }
+}
+
+bool UBX::wait_for_response()
+{
+    using namespace std::chrono;
+    got_ack_ = got_nack_ = false;
+    auto start = high_resolution_clock::now();
+    int dt_ms = 0;
+    while (!got_ack_ && !got_nack_ && dt_ms < TIMEOUT_MS)
+    {
+        dt_ms = duration_cast<milliseconds>(high_resolution_clock::now() - start).count();
+    }
+    if (got_ack_)
+    {
+        DBG("Got Response\n");
+        return true;
+    }
+    else if (got_nack_ || dt_ms >= TIMEOUT_MS)
+    {
+        DBG("No Response\n");
+        return false;
+    }
+    return false;
+}
+
+bool UBX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t &message, uint16_t len)
 {
     // First, calculate the checksum
     uint8_t ck_a, ck_b;
     calculate_checksum(msg_class, msg_id, len, message, ck_a, ck_b);
 
     // Send message
-    serial_.send_byte(START_BYTE_1);
-    serial_.send_byte(START_BYTE_2);
-    serial_.send_byte(msg_class);
-    serial_.send_byte(msg_id);
-    serial_.send_byte(len & 0xFF);
-    serial_.send_byte((len >> 8) & 0xFF);
-    serial_.send_bytes(message.buffer, len);
-    serial_.send_byte(ck_a);
-    serial_.send_byte(ck_b);
+    write(START_BYTE_1);
+    write(START_BYTE_2);
+    write(msg_class);
+    write(msg_id);
+    write(len & 0xFF);
+    write((len >> 8) & 0xFF);
+    write(message.buffer, len);
+    write(ck_a);
+    write(ck_b);
     return true;
+}
+
+void UBX::start_survey_in()
+{
+    out_message_.CFG_TMODE3.flags = CFG_TMODE3_t::SURVEY_IN;
+    out_message_.CFG_TMODE3.svinMinDur = 60;   // Wait at least 1 minute
+    out_message_.CFG_TMODE3.svinAccLimit = 3;  // At least within 3 centimeters
+    send_message(CLASS_CFG, CFG_TMODE3, out_message_, sizeof(CFG_TMODE3_t));
+}
+
+void UBX::disable_nmea()
+{
+    DBG("Disabling NMEA messages ");
+    if (major_version_ <= 23)
+    {
+        DBG("with old protocol\n");
+        using CF = CFG_PRT_t;
+        memset(&out_message_, 0, sizeof(CF));
+        out_message_.CFG_PRT.portID = CF::PORT_USB | CF::PORT_UART1;
+        out_message_.CFG_PRT.baudrate = 921600;
+        out_message_.CFG_PRT.outProtoMask = CF::OUT_UBX | CF::OUT_RTCM3;
+        out_message_.CFG_PRT.inProtoMask = CF::OUT_UBX | CF::OUT_RTCM3;
+        out_message_.CFG_PRT.flags = CF::CHARLEN_8BIT | CF::PARITY_NONE | CF::STOP_BITS_1;
+        send_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CF));
+    }
+    else
+    {
+        DBG("with new protocol\n");
+        using CV = CFG_VALSET_t;
+        configure(CV::VERSION_0, CV::RAM, 0, CV::USB_INPROT_NMEA, 1);
+        configure(CV::VERSION_0, CV::RAM, 0, CV::USB_OUTPROT_NMEA, 1);
+    }
 }
 
 void UBX::set_dynamic_mode()
 {
-    memset(&out_message_, 0, sizeof(CFG_NAV5_t));
-    out_message_.CFG_NAV5.mask = CFG_NAV5_t::MASK_DYN;
-    out_message_.CFG_NAV5.dynModel = CFG_NAV5_t::DYNMODE_AIRBORNE_4G;
-    DBG("Setting dynamic mode\n");
-    send_message(CLASS_CFG, CFG_NAV5, out_message_, sizeof(CFG_NAV5_t));
+    DBG("Setting dynamic mode ");
+    if (major_version_ <= 23)
+    {
+        DBG("with old protocol\n");
+        memset(&out_message_, 0, sizeof(CFG_NAV5_t));
+        out_message_.CFG_NAV5.mask = CFG_NAV5_t::MASK_DYN;
+        out_message_.CFG_NAV5.dynModel = CFG_NAV5_t::DYNMODE_AIRBORNE_4G;
+        send_message(CLASS_CFG, CFG_NAV5, out_message_, sizeof(CFG_NAV5_t));
+    }
+    else
+    {
+        DBG("with new protocol\n");
+        using CV = CFG_VALSET_t;
+        configure(CV::VERSION_0, CV::RAM, CV::DYNMODE_AIRBORNE_1G, CV::DYNMODEL, 1);
+    }
 }
 
 void UBX::set_nav_rate(uint8_t period_ms)
 {
-    memset(&out_message_, 0, sizeof(CFG_RATE_t));
-    out_message_.CFG_RATE.measRate = period_ms;
-    out_message_.CFG_RATE.navRate = 1;
-    out_message_.CFG_RATE.timeRef = CFG_RATE_t::TIME_REF_GPS;
     DBG("Setting nav rate to %d\n", period_ms);
-    send_message(CLASS_CFG, CFG_RATE, out_message_, sizeof(CFG_RATE_t));
+    if (major_version_ <= 23)
+    {
+        DBG("Using old protocol\n");
+        memset(&out_message_, 0, sizeof(CFG_RATE_t));
+        out_message_.CFG_RATE.measRate = period_ms;
+        out_message_.CFG_RATE.navRate = 1;
+        out_message_.CFG_RATE.timeRef = CFG_RATE_t::TIME_REF_UTC;
+        send_message(CLASS_CFG, CFG_RATE, out_message_, sizeof(CFG_RATE_t));
+    }
+    else
+    {
+        DBG("Using new protocol\n");
+        using CV = CFG_VALSET_t;
+        configure(CV::VERSION_0, CV::RAM, period_ms, CV::RATE_MEAS, 1);
+        configure(CV::VERSION_0, CV::RAM, 1, CV::RATE_NAV, 1);
+        configure(CV::VERSION_0, CV::RAM, CV::TIME_REF_UTC, CV::RATE_TIMEREF, 1);
+    }
 }
+// void UBX::set_nav_rate(uint8_t period_ms) {
+
+//   DBG("Setting nav rate to %d\n", period_ms);
+
+//   configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, period_ms,
+//             CFG_VALSET_t::RATE_MEAS, byte);
+//   configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1,
+//             CFG_VALSET_t::RATE_NAV, byte);
+//   configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM,
+//             CFG_VALSET_t::TIME_REF_UTC, CFG_VALSET_t::RATE_TIMEREF, byte);
+// }
 
 void UBX::enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate)
 {
+    DBG("Requesting %x:%x message with period=%d ", msg_cls, msg_id, rate);
+    // if (major_version_ <= 23)
+    DBG("Using old protocol\n");
     memset(&out_message_, 0, sizeof(CFG_MSG_t));
     out_message_.CFG_MSG.msgClass = msg_cls;
     out_message_.CFG_MSG.msgID = msg_id;
     out_message_.CFG_MSG.rate = rate;
-    DBG("Requesting %x:%x message with period=%d\n", msg_cls, msg_id, rate);
     send_message(CLASS_CFG, CFG_MSG, out_message_, sizeof(CFG_MSG_t));
+    // }
+    // else
+    // {
+    //     DBG("Using new protocol\n");
+    //     using CV = CFG_VALSET_t;
+    //     configure(CV::VERSION_0, CV::RAM, 1, CV::MSGOUT_PVT, 1);
+    // }
 }
 
 bool UBX::read_cb(uint8_t byte)
@@ -134,18 +262,17 @@ bool UBX::read_cb(uint8_t byte)
     case GOT_MSG_ID:
         length_ = byte;
         parse_state_ = GOT_LENGTH1;
-        //DBG("Started %x-%x\n", message_class_, message_type_);
         break;
     case GOT_LENGTH1:
-        length_ |= (uint16_t) byte << 8;
+        length_ |= (uint16_t)byte << 8;
         parse_state_ = GOT_LENGTH2;
         if (length_ > BUFFER_SIZE)
         {
+            DBG("Message 0x%x-0x%x is too long (%d > %ld)\n", message_class_, message_type_,
+                length_, BUFFER_SIZE);
             num_errors_++;
-            parse_state_ = START;
             prev_byte_ = byte;
-            end_message_ = false;
-            start_message_ = false;
+            restart();
             return false;
         }
         break;
@@ -154,7 +281,7 @@ bool UBX::read_cb(uint8_t byte)
         {
             // push the byte onto the data buffer
             in_message_.buffer[buffer_head_] = byte;
-            if (buffer_head_ == length_-1)
+            if (buffer_head_ == length_ - 1)
             {
                 parse_state_ = GOT_PAYLOAD;
             }
@@ -185,9 +312,7 @@ bool UBX::read_cb(uint8_t byte)
             parse_state_ = START;
             end_message_ = true;
             start_message_ = false;
-            new_data_ = true;
             prev_byte_ = byte;
-            //printf("UBX length: %d \n", length_);
             return true;
         }
         else
@@ -204,6 +329,13 @@ bool UBX::read_cb(uint8_t byte)
     return false;
 }
 
+void UBX::restart()
+{
+    parse_state_ = START;
+    end_message_ = false;
+    start_message_ = false;
+}
+
 bool UBX::decode_message()
 {
     // First, check the checksum
@@ -211,10 +343,13 @@ bool UBX::decode_message()
     calculate_checksum(message_class_, message_type_, length_, in_message_, ck_a, ck_b);
     if (ck_a != ck_a_ || ck_b != ck_b_)
         return false;
-
+    uint8_t version;  // 0 poll request, 1 poll (receiver to return config data key
+                      // and value pairs)
+    uint8_t layer;
+    uint8_t reserved1[2];
+    uint32_t cfgDataKey;
+    uint64_t cfgData;
     num_messages_received_++;
-//    DBG("recieved message %d: ", num_messages_received_);
-//    DBG("of type 0x%2x:0x%2x\n", message_class_, message_type_);
 
     // Parse the payload
     switch (message_class_)
@@ -236,67 +371,101 @@ bool UBX::decode_message()
             break;
         }
         break;
-      // case CLASS_RXM:
-      //   DBG("RXM_");
-      //   switch(message_type_)
-      //   {
-      //   case RXM_RAWX:
-      //       DBG("RAWX\n");
-      //       break;
-      //   case RXM_SFRBX:
-      //       DBG("SFRBX\n");
-      //       break;
-      //   }
-//    case CLASS_NAV:
-//        DBG("NAV_");
-//        switch (message_type_)
-//        {
-//        case NAV_PVT:
-//            DBG("PVT \n");
-//            break;
-//        case NAV_RELPOSNED:
-//            DBG("RELPOSNED \n");
-//            break;
-//        default:
-//            DBG("%d \n", message_type_);
-//            break;
-//        }
-   case CLASS_CFG: //only needed for getting data
-       DBG("CFG_");
-       switch (message_type_)
-       {
-       case CFG_VALGET:
-       {
-           DBG("VALGET = ");
-           int value = in_message_.CFG_VALGET.cfgData;
-           DBG("%d \n", value);
-           break;
-       }
-       default:
-           DBG("unknown: %x\n", message_type_);
-           break;
-       }
+    case CLASS_MON:
+        DBG("MON_");
+        switch (message_type_)
+        {
+        case MON_VER:
+            DBG("VER\n");
+            version_cb();
+            break;
+        case MON_COMMS:
+
+            DBG("COMMS\n");
+            break;
+        case MON_TXBUF:
+
+            DBG("TXMON_TXBUF\n");
+            break;
+        }
+        break;
+    case CLASS_RXM:
+        DBG("RXM_");
+        switch (message_type_)
+        {
+        case RXM_RAWX:
+            DBG("RAWX\n");
+            break;
+        case RXM_SFRBX:
+            DBG("SFRBX\n");
+            break;
+        }
+        break;
+    case CLASS_NAV:
+        DBG("NAV_");
+        switch (message_type_)
+        {
+        case NAV_PVT:
+            DBG("PVT \n");
+            break;
+        case NAV_RELPOSNED:
+            DBG("RELPOSNED \n");
+            break;
+        case NAV_POSECEF:
+            DBG("POSECEF\n");
+            break;
+        case NAV_VELECEF:
+            DBG("VELECEF\n");
+            break;
+        default:
+            DBG(" unknown (%d) \n", message_type_);
+        }
+        break;
+    case CLASS_CFG:  // only needed for getting data
+        DBG("CFG_");
+        switch (message_type_)
+        {
+        case CFG_VALGET:
+        {
+            DBG("VALGET = ");
+            int value = in_message_.CFG_VALGET.cfgData;
+            DBG("%d \n", value);
+            break;
+        }
+        default:
+            DBG("unknown: %x\n", message_type_);
+        }
+        break;
 
     default:
+        //        DBG("Unknown (%d-%d)\n", message_class_, message_type_);
         break;
     }
 
     // call callbacks
-    for (auto& cb : callbacks)
+    for (auto &l : listeners_)
     {
-        if (message_class_ == cb.cls && message_type_ == cb.type)
-            cb.cb(message_class_, message_type_, in_message_);
+        if (l->subscribed(message_class_, message_type_))
+            l->got_ubx(message_class_, message_type_, in_message_);
     }
 
-    new_data_ = true;
     return true;
 }
 
+void UBX::registerListener(UBXListener *l)
+{
+    listeners_.push_back(l);
+}
 
-void UBX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const uint16_t len, const UBX_message_t payload, uint8_t& ck_a, uint8_t& ck_b) const
+void UBX::calculate_checksum(const uint8_t msg_cls,
+                             const uint8_t msg_id,
+                             const uint16_t len,
+                             const UBX_message_t payload,
+                             uint8_t &ck_a,
+                             uint8_t &ck_b) const
 {
     if (msg_cls == 5)
-        volatile int debug =1;
+        volatile int debug = 1;
     ck_a = ck_b = 0;
 
     // Add in class
@@ -314,158 +483,122 @@ void UBX::calculate_checksum(const uint8_t msg_cls, const uint8_t msg_id, const 
     ck_b += ck_a;
 
     // Payload
-    for (int i = 0; i < len; i ++)
+    for (int i = 0; i < len; i++)
     {
         ck_a += payload.buffer[i];
         ck_b += ck_a;
     }
 }
 
-void UBX::turnOnRTCM()
+void UBX::configure(uint8_t version,
+                    uint8_t layer,
+                    uint64_t cfgData,
+                    uint32_t cfgDataKey,
+                    uint8_t size)
 {
-    memset(&out_message_, 0, CFG_VALSET_t::LEN_BYTE);
-    out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
-    out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData.bytes[0] = CFG_VALSET_t::DYNMODE_AIRBORNE_1G;
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_DYNMODEL;
+    memset(&out_message_, 0, sizeof(CFG_VALSET_t));
+    out_message_.CFG_VALSET.version = version;
+    out_message_.CFG_VALSET.layer = layer;
+    if (size == 1)
+    {
+        out_message_.CFG_VALSET.cfgData.bytes[0] = cfgData;
+    }
+    if (size == 2)
+    {
+        out_message_.CFG_VALSET.cfgData.word = cfgData;
+    }
+    out_message_.CFG_VALSET.cfgDataKey = cfgDataKey;
     send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-
-    bool poll = true;
-    if(poll == true)
-        poll_value();
 }
 
-void UBX::config_rover()
+void UBX::get_configuration(uint8_t version, uint8_t layer, uint32_t cfgDataKey)
 {
-    memset(&out_message_, 0, CFG_VALSET_t::LEN_BYTE);
-    out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
-    out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData.bytes[0] = 1;
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_MSGOUT_RELPOSNED;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-
+    memset(&out_message_, 0, sizeof(CFG_VALGET_t));
+    out_message_.CFG_VALGET.version = version;
+    out_message_.CFG_VALGET.layer = layer;
+    out_message_.CFG_VALGET.cfgDataKey = cfgDataKey;
+    send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
 }
 
-void UBX::config_base()
+void UBX::write(const uint8_t byte)
 {
-    bool mobile = true;
-    if(mobile == true)
-        config_base_mobile();
-    else
-        config_base_stationary();
-
+    ser_.write(&byte, 1);
 }
-
-void UBX::config_base_stationary()
+void UBX::write(const uint8_t *byte, const size_t size)
 {
-
-    memset(&out_message_, 0, CFG_VALSET_t::LEN_BYTE);
-    out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
-    out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData.bytes[0] = 1;
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1005USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1074USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1084USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1094USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1124USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1230USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::TMODE_MODE;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::VALSET_MSGOUT_SVIN;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    memset(&out_message_, 0, CFG_VALSET_t::LEN_4BYTE);
-    out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
-    out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData.word = 500000; //mm
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::TMODE_SVIN_ACC_LIMIT;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgData.word = 120;
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::TMODE_SVIN_MIN_DUR;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    ser_.write(byte, size);
 }
 
-void UBX::config_base_mobile()
+void UBX::version_cb()
 {
+    int protocol_version;
+    std::string module_type;
+    int firmware_version;
+    for (int i = 0; i < 20; ++i)
+    {
+        if (strncmp(in_message_.MON_VER.extension[i], "PROTVER=", 8) == 0)
+        {
+            extract_version_string(in_message_.MON_VER.extension[i]);
+        }
+        if (strncmp(in_message_.MON_VER.extension[i], "MOD=", 4) == 0)
+        {
+            extract_module_name(in_message_.MON_VER.extension[i]);
+        }
+    }
 
-
-    memset(&out_message_, 0, CFG_VALSET_t::LEN_BYTE);
-    out_message_.CFG_VALSET.version = CFG_VALSET_t::VALSET_0;
-    out_message_.CFG_VALSET.layer = CFG_VALSET_t::VALSET_RAM;
-    out_message_.CFG_VALSET.cfgData.bytes[0] = 1;
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_0USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_4072_1USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1077USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1087USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1097USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1127USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
-    out_message_.CFG_VALSET.cfgDataKey = CFG_VALSET_t::RTCM_1230USB;
-    send_message(CLASS_CFG, CFG_VALSET, out_message_, sizeof(CFG_VALSET_t));
+    printf("Connected:\n");
+    printf("Module: %s\n", module_name_);
+    printf("Protocol Version: %d.%d\n\n", major_version_, minor_version_);
+    got_ver_ = true;
 }
 
-void UBX::poll_value()
+void UBX::extract_version_string(const char *str)
 {
-       in_message_.CFG_VALGET.cfgData = 0; //clear value
-       memset(&out_message_, 0, sizeof(CFG_VALGET_t));
-       out_message_.CFG_VALGET.version = CFG_VALGET_t::VALGET_REQUEST;
-       out_message_.CFG_VALGET.layer = CFG_VALGET_t::VALGET_RAM;
-       out_message_.CFG_VALGET.cfgDataKey = CFG_VALGET_t::RXM_SFRBX;
-       send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
-}
+    // Get major version
+    char tmp[5];
+    const char *s = str + 8;
+    for (int j = 0; j < 5; j++)
+    {
+        if (*s == '.')
+        {
+            tmp[j] = 0;
+            ++s;
+            break;
+        }
+        tmp[j] = *s;
+        ++s;
+    }
+    major_version_ = atoi(tmp);
+
+    // Get minor version
+    memset(tmp, 0, sizeof(tmp));
+    for (int j = 0; j < 5; j++)
+    {
+        if (*s == 0)
+        {
+            tmp[j] = 0;
+            break;
+        }
+        tmp[j] = *s;
+        ++s;
+    }
+    minor_version_ = atoi(tmp);
 }
 
-//void UBX::set_baudrate(const uint32_t baudrate)
-//{
-//  DBG("Setting baudrate to %d\n", baudrate);
-//  // Now that we have the right baudrate, let's configure the thing
-//  memset(&out_message_, 0, sizeof(CFG_PRT_t));
-//  out_message_.CFG_PRT.portID = CFG_PRT_t::PORT_USB;
-//  out_message_.CFG_PRT.baudrate = baudrate;
-//  out_message_.CFG_PRT.inProtoMask = CFG_PRT_t::IN_UBX | CFG_PRT_t::IN_NMEA | CFG_PRT_t::IN_RTCM | CFG_PRT_t::IN_RTCM3;
-//  out_message_.CFG_PRT.outProtoMask = CFG_PRT_t::OUT_UBX | CFG_PRT_t::OUT_NMEA | CFG_PRT_t::OUT_RTCM3;
-//  out_message_.CFG_PRT.mode = CFG_PRT_t::CHARLEN_8BIT | CFG_PRT_t::PARITY_NONE | CFG_PRT_t::STOP_BITS_1;
-//  out_message_.CFG_PRT.flags = 0;
-//  send_message(CLASS_CFG, CFG_PRT, out_message_, sizeof(CFG_PRT_t));
-//  usleep(10000);
-//  serial_.set_baud_rate(baudrate);
-//  current_baudrate_ = baudrate;
-//}
+void UBX::extract_module_name(const char *str)
+{
+    const char *s = str + 4;
+    for (int i = 0; i < sizeof(module_name_); i++)
+    {
+        if (*s == 0)
+        {
+            module_name_[i] = 0;
+            break;
+        }
 
-//bool UBX::detect_baudrate()
-//{
-//  serial_.init();
-//  current_baudrate_ = 0;
-//  for (int i = 0; i < sizeof(baudrates)/sizeof(uint32_t); i++)
-//  {
-//    DBG("Trying %d baudrate\n", baudrates[i]);
-//    serial_.set_baud_rate(baudrates[i]);
-//    milliseconds timeout_ms(1000);
-//    milliseconds start = duration_cast<milliseconds>(system_clock::now().time_since_epoch()); //millis();
-//    milliseconds now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()); //millis();
-//    while (now < start + timeout_ms)
-//    {
-//      now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()); //millis();
-//      if (got_message_)
-//      {
-//        DBG("Found UBX at %d baud\n", baudrates[i]);
-//        current_baudrate_ = baudrates[i];
-//        break;
-//      }
-//    }
-//    if (current_baudrate_ != 0)
-//      break;
-//  }
-//  return got_message_;
-//}
+        module_name_[i] = *s;
+        ++s;
+    }
+}
+
+}  // namespace ublox

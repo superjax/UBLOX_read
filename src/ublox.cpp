@@ -1,138 +1,124 @@
+/* Copyright (c) 2019 James Jackson, Matt Rydalch
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "UBLOX/ublox.h"
 #define DBG(...) fprintf(stderr, __VA_ARGS__)
 
 namespace ublox
 {
+constexpr int UBLOX::MAX_NUM_TRIES;
 
-UBLOX::UBLOX(const std::string& port) :
-    serial_(port, 115200),
-    ubx_(serial_)
+UBLOX::UBLOX(SerialInterface &ser) : ser_(ser), ubx_(ser)
 {
+    ser_.add_listener(this);
+    ubx_.registerListener(&nav_);
+
     type_ = NONE;
 
-    auto cb = [this](const uint8_t* buffer, size_t size)
+    //  We have to make sure we get the version before we do anything else
+    int num_tries = 0;
+    while (++num_tries < MAX_NUM_TRIES && !ubx_.get_version())
     {
-        this->serial_read_cb(buffer, size);
-    };
-    serial_.register_receive_callback(cb);
-    serial_.init();
+        printf("Unable to query version.  Trying again (%d out of %d)\n", num_tries + 1,
+               MAX_NUM_TRIES);
+    }
 
-    // configure the parsers
-    ubx_.set_nav_rate(100);
+    if (num_tries == MAX_NUM_TRIES)
+    {
+        throw std::runtime_error("Unable to connect.  Please check your serial port configuration");
+    }
+
+    // configure the parsers/Enable Messages
+    ubx_.disable_nmea();
+    ubx_.set_nav_rate(200);
+
     ubx_.enable_message(CLASS_NAV, NAV_PVT, 1);
-    ubx_.enable_message(CLASS_NAV, NAV_POSECEF, 1);
+    ubx_.enable_message(CLASS_NAV, NAV_RELPOSNED, 1);
     ubx_.enable_message(CLASS_NAV, NAV_VELECEF, 1);
-    ubx_.enable_message(CLASS_CFG, CFG_VALGET, 1);
     ubx_.enable_message(CLASS_RXM, RXM_RAWX, 1);
     ubx_.enable_message(CLASS_RXM, RXM_SFRBX, 1);
-
-    auto eph_cb = [this](uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
-    {
-      this->nav_.convertUBX(in_msg.RXM_SFRBX);
-    };
-    ubx_.registerCallback(ublox::CLASS_RXM, ublox::RXM_SFRBX, eph_cb);
 }
 
-void UBLOX::readFile(const std::string& filename)
+void UBLOX::config_base(SerialInterface *interface, const int type)
 {
-    std::ifstream file(filename,  std::ifstream::binary);
-    file.seekg(0, file.end);
-    uint32_t len = file.tellg();
-    file.seekg (0, file.beg);
-    char* buffer = new char [len];
-    file.read(buffer, len);
-    int idx = 0;
-    while(idx < len)
+    assert(type == MOVING || type == STATIONARY);
+
+    type_ = BASE;
+    rtk_interface_ = interface;
+
+    rtcm_.registerListener(this);
+
+    // Request RTCM messages
+    using CV = CFG_VALSET_t;
+    ubx_.configure(CV::VERSION_0, CV::RAM, 1, CV::RTCM_4072_0USB, 1);
+    ubx_.configure(CV::VERSION_0, CV::RAM, 1, CV::RTCM_4072_1USB, 1);
+    ubx_.configure(CV::VERSION_0, CV::RAM, 1, CV::RTCM_1077USB, 1);
+    ubx_.configure(CV::VERSION_0, CV::RAM, 1, CV::RTCM_1087USB, 1);
+    ubx_.configure(CV::VERSION_0, CV::RAM, 1, CV::RTCM_1097USB, 1);
+    ubx_.configure(CV::VERSION_0, CV::RAM, 1, CV::RTCM_1127USB, 1);
+    ubx_.configure(CV::VERSION_0, CV::RAM, 1, CV::RTCM_1230USB, 1);
+
+    if (type == STATIONARY)
     {
-        int chunk_size = ((len - idx) >= 14)?14:len-idx;
-        serial_read_cb(((const uint8_t*)buffer)+idx, chunk_size);
-        idx = idx+chunk_size;
-        usleep(1000);
+        ubx_.configure(CV::VERSION_0, CV::RAM, 1, CV::MSGOUT_SVIN, 1);
+        ubx_.configure(CV::VERSION_0, CV::RAM, 1, CV::TMODE_MODE, 1);
+        ubx_.configure(CV::VERSION_0, CV::RAM, 500000, CV::TMODE_SVIN_ACC_LIMIT, 2);
+        ubx_.configure(CV::VERSION_0, CV::RAM, 119, CV::TMODE_SVIN_MIN_DUR, 2);
+        ubx_.start_survey_in();
     }
-    // serial_read_cb((const uint8_t*)buffer, len);
 }
 
-void UBLOX::initLogFile(const std::string& filename)
-{
-    if (log_file_.is_open())
-        log_file_.close();
-
-    log_file_.open(filename);
-}
-
-void UBLOX::initRover(std::string local_host, uint16_t local_port,
-                      std::string remote_host, uint16_t remote_port)
+void UBLOX::config_rover(SerialInterface *interface)
 {
     type_ = ROVER;
 
-    assert(udp_ == nullptr);
-    // Connect the rtcm_cb callback to forward data to the UBX serial port
-    rtcm_.registerBufferCallback([this](uint8_t* buf, size_t size)
-    {
-        this->rtcm_complete_cb(buf, size);
+    // Disable the output of extra RTCM messages
+    using CV = CFG_VALSET_t;
+    ubx_.configure(CV::VERSION_0, CV::RAM, 0, CV::RTCM_4072_0USB, 1);
+    ubx_.configure(CV::VERSION_0, CV::RAM, 0, CV::RTCM_4072_1USB, 1);
+    ubx_.configure(CV::VERSION_0, CV::RAM, 0, CV::RTCM_1077USB, 1);
+    ubx_.configure(CV::VERSION_0, CV::RAM, 0, CV::RTCM_1087USB, 1);
+    ubx_.configure(CV::VERSION_0, CV::RAM, 0, CV::RTCM_1097USB, 1);
+    ubx_.configure(CV::VERSION_0, CV::RAM, 0, CV::RTCM_1127USB, 1);
+    ubx_.configure(CV::VERSION_0, CV::RAM, 0, CV::RTCM_1230USB, 1);
+
+    static RTCM debug;
+
+    // forward any information over the port
+    rtk_interface_ = interface;
+    interface->add_callback([this](const uint8_t *buf, size_t size) {
+        this->ser_.write(buf, size);
+
+        debug.read_cb(buf, size);
     });
-
-    // hook up UDP to listen
-    /// TODO: configure ports and IP from cli
-    udp_ = new async_comm::UDP(local_host, local_port, remote_host, remote_port);
-    udp_->register_receive_callback([this](const uint8_t* buf, size_t size)
-    {
-        this->udp_read_cb(buf, size);
-    });
-
-    if (!udp_->init())
-        throw std::runtime_error("Failed to initialize Rover receive UDP");
-
-    ubx_.turnOnRTCM();
-    ubx_.config_rover();
-}
-
-void UBLOX::initBase(std::string local_host, uint16_t local_port,
-                       std::string remote_host, uint16_t remote_port)
-{
-    type_ = BASE;
-
-    if (udp_)
-        throw std::runtime_error("Unable to create two UDP connections");
-
-    // hook up UDP to send
-    udp_ = new async_comm::UDP(local_host, local_port, remote_host, remote_port);
-
-    if (!udp_->init())
-    {
-        throw std::runtime_error("Failed to initialize Rover receive UDP");
-    }
-
-    rtcm_.registerBufferCallback([this](uint8_t* buf, size_t size)
-    {
-        this->udp_->send_bytes(buf, size);
-    });
-    ubx_.turnOnRTCM();
-    ubx_.config_base();
 }
 
 UBLOX::~UBLOX()
 {
-    if (udp_)
-        delete udp_;
-
     if (log_file_.is_open())
         log_file_.close();
 }
 
-void UBLOX::udp_read_cb(const uint8_t* buf, size_t size)
+void UBLOX::read_cb(const uint8_t *buf, size_t size)
 {
-
-    assert(type_ == ROVER);
-    for (int i = 0; i < size; i++)
-    {
-        rtcm_.read_cb(buf[i]);
-    }
-}
-
-void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
-{
-
     for (int i = 0; i < size; i++)
     {
         /// TODO: don't give parsers data they don't need
@@ -140,34 +126,25 @@ void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
         {
             ubx_.read_cb(buf[i]);
         }
-        else if (rtcm_.parsing_message() && type_ != NONE)
+        else if (rtcm_.parsing_message() && type_ == BASE)
         {
-            rtcm_.read_cb(buf[i]);
-        }
-        else if (nmea_.parsing_message())
-        {
-            nmea_.read_cb(buf[i]);
+            rtcm_.read_cb(buf + i, 1);
         }
         else
         {
             ubx_.read_cb(buf[i]);
-            rtcm_.read_cb(buf[i]);
-            nmea_.read_cb(buf[i]);
+            rtcm_.read_cb(buf + i, 1);
         }
     }
+}
 
-    if (log_file_.is_open())
+void UBLOX::got_rtcm(const uint8_t *buf, const size_t size)
+{
+    // If we are a base, forward this RTCM message out over our interface
+    if (type_ == BASE)
     {
-        log_file_.write((const char*)buf, size);
+        rtk_interface_->write(buf, size);
     }
 }
 
-void UBLOX::rtcm_complete_cb(const uint8_t *buf, size_t size)
-{
-    assert (type_ == ROVER || type_ == BASE);
-    if (type_ == ROVER)
-        serial_.send_bytes(buf, size);
-    else if (type_ == BASE)
-        udp_->send_bytes(buf, size);
-}
-}
+}  // namespace ublox

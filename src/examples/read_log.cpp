@@ -20,12 +20,13 @@
  */
 
 #include <signal.h>
+#include <fstream>
+#include <string>
 
-#include <UBLOX/ublox.h>
+#include "UBLOX/ublox.h"
 
 #include "UBLOX/async_comm_adapter.h"
-
-int i = 1;
+#include "logger.h"
 
 bool stop = false;
 void inthand(int signum)
@@ -38,14 +39,15 @@ struct UBX_Callback_Handler : public ublox::UBXListener
     UBX_Callback_Handler()
     {
         subscribe(ublox::CLASS_NAV, ublox::NAV_PVT);
-        subscribe(ublox::CLASS_NAV, ublox::NAV_SVIN);
+        subscribe(ublox::CLASS_RXM, ublox::RXM_RAWX);
     }
     void got_ubx(const uint8_t cls, const uint8_t id, const ublox::UBX_message_t& msg)
     {
-        // if (cls == ublox::CLASS_NAV && id == ublox::NAV_PVT)
-        // pvt_callback(msg.NAV_PVT);
-        if (cls == ublox::CLASS_NAV && id == ublox::NAV_SVIN)
-            svin_callback(msg.NAV_SVIN);
+        std::cout << "GOT UBX MESSAGE" << std::endl;
+        if (cls == ublox::CLASS_NAV && id == ublox::NAV_PVT)
+            pvt_callback(msg.NAV_PVT);
+        else if (cls == ublox::CLASS_RXM && id == ublox::RXM_RAWX)
+            rawx_callback(msg.RXM_RAWX);
     }
 
     void pvt_callback(const ublox::NAV_PVT_t& msg)
@@ -58,49 +60,67 @@ struct UBX_Callback_Handler : public ublox::UBXListener
         fflush(stdout);  // Will now print everything in the stdout buffer
     }
 
-    void svin_callback(const ublox::NAV_SVIN_t& msg)
+    void rawx_callback(const ublox::RXM_RAWX_t& msg)
     {
-        // clang-format off
-        printf("t: %d, %s, dur: %d, pos: [%f, %f, %f], acc: %f\n", 
-            msg.iTow,
-            msg.active ? ("ACTIVE") : ("INACTIVE"), 
-            msg.dur,
-            msg.meanX * 0.01 + msg.meanXHP * 0.0001,
-            msg.meanY * 0.01 + msg.meanYHP * 0.0001,
-            msg.meanZ * 0.01 + msg.meanZHP * 0.0001,
-            msg.meanAcc * 0.0001);
-        // clang-format on
+        for (int i = 0; i < msg.numMeas; ++i)
+        {
+            printf("week: %d, tow: %.3f gnss_id: %d, sat_id: %d, P %.3f, L %.3f, D %.3f\n",
+                   msg.week, msg.rcvTow, msg.meas[i].gnssId, msg.meas[i].svId, msg.meas[i].prMeas,
+                   msg.meas[i].cpMeas, msg.meas[i].doMeas);
+            fflush(stdout);
+        }
     }
 };
 
+void eph_callback(const Ephemeris& eph)
+{
+    std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+    std::cout << "GPS sat: " << (int)eph.sat;
+    std::cout << ", now = " << UTCTime::now();
+    std::cout << ", toe = " << eph.toe;
+    std::cout << ", tof = " << eph.toe << std::endl;
+    std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+}
+
+void geph_callback(const GlonassEphemeris& geph)
+{
+    std::cout << "*************************************************************\n";
+    std::cout << "Glonass sat:" << (int)geph.sat;
+    std::cout << ", now = " << UTCTime::now();
+    std::cout << ", toe = " << geph.toe;
+    std::cout << ", tof = " << geph.tof << std::endl;
+    std::cout << "*************************************************************\n";
+}
+
 int main(int argc, char** argv)
 {
-    std::string port = "/dev/ttyACM0";
+    // Create a UBLOX instance
+
+    std::string log_file = "";
     if (argc > 1)
-        port = argv[1];
-    ac_adapter::Serial ser(port, 921600);
-    ser.init();
-    ublox::UBLOX ublox(ser);
+    {
+        log_file = argv[1];
+    }
+    else
+    {
+        std::cerr << "Must supply a log file to read" << std::endl;
+        return 1;
+    }
+
+    Logger log(log_file, Logger::Type::READ);
+    ublox::UBLOX ublox(log);
 
     UBX_Callback_Handler ubx_handler;
     ublox.registerUBXListener(&ubx_handler);
 
-    // hook up UDP to send
-    ac_adapter::UDP udp("localhost", 16140, "localhost", 16145);
-    if (!udp.init())
-    {
-        throw std::runtime_error("Failed to initialize Rover receive UDP");
-    }
-    ublox.config_base(&udp, ublox::UBLOX::STATIONARY);
-
-    // look for Ctrl+C and quit
+    // look for Ctrl+c and quit
     signal(SIGINT, inthand);
 
-    while (!stop)
-    {
-        sleep(1);
-    }
+    // Connect Callbacks to Satellite Ephemeris Reception
+    ublox.registerEphCallback(eph_callback);
+    ublox.registerGephCallback(geph_callback);
 
-    std::cout << "\nquitting" << std::endl;
+    log.play();
+
     return 0;
 }

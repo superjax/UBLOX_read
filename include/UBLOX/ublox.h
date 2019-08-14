@@ -1,25 +1,44 @@
+/* Copyright (c) 2019 James Jackson, Matt Rydalch
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef UBLOX_H
 #define UBLOX_H
 
 #include <stdint.h>
-#include <iostream>
 #include <fstream>
+#include <functional>
+#include <iostream>
 
-#include "async_comm/serial.h"
-#include "async_comm/udp.h"
-
-#include "UBLOX/parsers/ubx.h"
-#include "UBLOX/parsers/rtcm.h"
-#include "UBLOX/parsers/nmea.h"
 #include "UBLOX/parsers/nav.h"
+#include "UBLOX/parsers/rtcm.h"
+#include "UBLOX/parsers/ubx.h"
+#include "UBLOX/serial_interface.h"
 
 namespace ublox
 {
-
-class UBLOX
+class UBLOX : public SerialListener, public RTCMListener
 {
-public:
+    static constexpr int MAX_NUM_TRIES = 3;
 
+public:
     typedef enum
     {
         NONE = 0,
@@ -28,48 +47,39 @@ public:
         RTK = 0b10,
     } rtk_type_t;
 
-    UBLOX(const std::string& port);
+    enum
+    {
+        MOVING,
+        STATIONARY
+    };
+
+    UBLOX(SerialInterface& ser);
     ~UBLOX();
 
-    void initBase(std::string local_host, uint16_t local_port,
-                  std::string remote_host, uint16_t remote_port);
+    void config_rover(SerialInterface* interface);
+    void config_base(SerialInterface* interface, const int type = STATIONARY);
 
-    void initRover(std::string local_host, uint16_t local_port,
-                   std::string remote_host, uint16_t remote_port);
+    // UBLOX receiver read/write
+    void read_cb(const uint8_t* buf, const size_t size) override;
 
-    void initLogFile(const std::string& filename);
-    void readFile(const std::string& filename);
+    inline void registerUBXListener(UBXListener* l) { ubx_.registerListener(l); }
+    inline void registerEphCallback(const NavParser::eph_cb& cb) { nav_.registerCallback(cb); }
+    inline void registerGephCallback(const NavParser::geph_cb& cb) { nav_.registerCallback(cb); }
 
-    async_comm::UDP* udp_ = nullptr;
-    async_comm::Serial serial_;
+    void got_rtcm(const uint8_t* buf, const size_t size) override;
+
+private:
+    void poll_value();
+
+    SerialInterface& ser_;
+    SerialInterface* rtk_interface_ = nullptr;
 
     UBX ubx_;
-    rtcm::RTCM rtcm_;
-    NMEA nmea_;
+    RTCM rtcm_;
     NavParser nav_;
-
-    std::ofstream log_file_;
-
-    inline void registerUBXCallback(uint8_t cls, uint8_t type, UBX::ubx_cb cb)
-    {
-        ubx_.registerCallback(cls, type, cb);
-    }
-    inline void registerEphCallback(const NavParser::eph_cb& cb)
-    {
-        nav_.registerCallback(cb);
-    }
-    inline void registerGephCallback(const NavParser::geph_cb& cb)
-    {
-        nav_.registerCallback(cb);
-    }
-
-
     rtk_type_t type_;
-
-    void serial_read_cb(const uint8_t* buf, size_t size);
-    void udp_read_cb(const uint8_t *buf, size_t size);
-    void rtcm_complete_cb(const uint8_t* buf, size_t size);
+    std::ofstream log_file_;
 };
-}
+}  // namespace ublox
 
 #endif
