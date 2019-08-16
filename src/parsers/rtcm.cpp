@@ -198,11 +198,6 @@ void RTCM::decode()
     }
 }
 
-//void RTCM::registerCallback(uint16_t msg_id, rtcm_cb cb)
-//{
-//    callbacks_.push_back({msg_id, cb});
-//}
-
 void RTCM::registerBufferCallback(buffer_cb cb)
 {
     buffer_callbacks_.push_back(cb);

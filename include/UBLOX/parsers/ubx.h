@@ -16,12 +16,8 @@ public:
 
     UBX(async_comm::Serial& ser);
 
-    void turnOnRTCM();
-    void config_rover();
-    void config_base();
-    void config_base_stationary();
-    void config_base_mobile();
-    void poll_value();
+    void configure(uint8_t version, uint8_t layer, uint64_t cfgData, uint32_t cfgDataKey, uint8_t size);
+    void get_configuration(uint8_t version, uint8_t layer, uint32_t cfgDataKey);
 
     // This function returns true when a new message has been parsed
     bool read_cb(uint8_t byte);
@@ -46,12 +42,6 @@ public:
 
     size_t num_messages_received();
 
-    // Turns on a message of supplied type and at supplied
-    // rate (x of NAV rate)
-    void enable_message(uint8_t msg_cls, uint8_t msg_id, uint8_t rate);
-
-    // Set the dyn_mode of the receiver to airbourne 4G
-    void set_dynamic_mode();
     void set_nav_rate(uint8_t period_ms);
 
     // Send the supplied message
@@ -83,19 +73,19 @@ public:
     uint8_t ck_b_;
     uint32_t num_errors_ = 0;
     uint32_t num_messages_received_ = 0;
-
+    uint8_t version;  //0 poll request, 1 poll (receiver to return config data key and value pairs)
+    uint8_t layer;
+    uint32_t cfgDataKey;
+    uint64_t cfgData;
+    uint8_t size;
+    uint8_t byte = 1;
+    uint8_t word = 2;
     // local storage
     volatile bool new_data_;
 
     // Serial Port
     async_comm::Serial& serial_;
 };
-
-
-//  bool detect_baudrate();
-    //  void set_baudrate(const uint32_t baudrate);
-//  uint32_t current_baudrate_ = 115200;
-//  const uint32_t baudrates[5] = {115200, 19200, 57600, 9600, 38400};
 
 }
 #endif // UBX_H
