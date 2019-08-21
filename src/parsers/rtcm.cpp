@@ -185,12 +185,12 @@ void RTCM::decode()
         for (auto& cb : buffer_callbacks_)
             cb(in_buffer_.buf, message_len_);
 
-//        // Call the message-specific callbacks
-//        for (auto& cb : callbacks_)
-//        {
-//            if (cb.rtcm_msg == type || cb.rtcm_msg == ID_ALL)
-//                cb.cb(type, in_buffer_);
-//        }
+       // Call the message-specific callbacks
+       for (auto& cb : callbacks_)
+       {
+           if (cb.rtcm_msg == type || cb.rtcm_msg == ID_ALL)
+               cb.cb(type, in_buffer_);
+       }
     }
     else
     {

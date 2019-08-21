@@ -40,7 +40,6 @@ if (${BUILD_TESTS})
     target_link_libraries(ublox_test gtest gtest_main pthread UBLOX)
 endif()
 
-
 option(BUILD_EXAMPLES "Build Examples" ON)
 if (${BUILD_EXAMPLES})
 	add_executable(base src/examples/base.cpp)
