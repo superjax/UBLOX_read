@@ -135,7 +135,7 @@ void UBLOX::initRover(std::string local_host, uint16_t local_port,
 
     assert(udp_ == nullptr);
     // Connect the rtcm_cb callback to forward data to the UBX serial port
-    rtcm_.registerBufferCallback([this](uint8_t* buf, size_t size)
+    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
     {
         this->rtcm_complete_cb(buf, size);
     });
@@ -171,7 +171,7 @@ void UBLOX::initBase(std::string local_host, uint16_t local_port,
         throw std::runtime_error("Failed to initialize Rover receive UDP");
     }
 
-    rtcm_.registerBufferCallback([this](uint8_t* buf, size_t size)
+    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
     {
         this->udp_->send_bytes(buf, size);
     });

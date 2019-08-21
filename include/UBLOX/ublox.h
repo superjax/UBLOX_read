@@ -43,7 +43,7 @@ public:
     async_comm::Serial serial_;
 
     UBX ubx_;
-    rtcm::RTCM rtcm_;
+    RTCM rtcm_;
     NavParser nav_;
 
     std::ofstream log_file_;
