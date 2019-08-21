@@ -191,7 +191,6 @@ UBLOX::~UBLOX()
 void UBLOX::udp_read_cb(const uint8_t* buf, size_t size)
 {
 
-    std::cerr << "rtcm received here \n";
     assert(type_ == ROVER);
     for (int i = 0; i < size; i++)
     {
