@@ -5,4 +5,4 @@ build*
 *.txt
 *.m
 *.vscode
-launch
+launch*
