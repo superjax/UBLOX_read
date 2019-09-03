@@ -11,13 +11,6 @@ if (NOT ${async_comm_FOUND})
 	set(async_comm_INCLUDE_DIRS lib/async_comm/include)
 endif()
 
-find_package(gnss_utils)
-if (NOT ${gnss_utils_FOUND})
-    add_subdirectory(lib/gnss_utils)
-    set(gnss_utils_LIBRARIES gnss_utils)
-    set(gnss_utils_INCLUDE_DIRS lib/gnss_utils/include)
-endif()
-
 add_library(UBLOX
     src/ublox.cpp
     src/parsers/ubx.cpp
