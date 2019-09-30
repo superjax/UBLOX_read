@@ -6,7 +6,7 @@
 namespace ublox
 {
 
-static constexpr size_t BUFFER_SIZE = 256;
+static constexpr size_t BUFFER_SIZE = 1024;
 
 enum {
     FIX_TYPE_NO_FIX = 0x00,
