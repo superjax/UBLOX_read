@@ -1,0 +1,11 @@
+<launch>
+
+	<group ns="base">
+		<node name="f9p" pkg="ublox" type="ublox_ros">
+			<param name="serial_port" value="/dev/ttyACM0"/>
+			<param name="rtk_type" value="3"/>
+			<param name="log_filename" value="../data/rod/redo_rod/one/base_binary"/>
+		</node> 
+		<node pkg="rosbag" type="record" name="record" output="screen" args="-O ../data/08_22_walk/rover3.bag --all"/>
+	</group>
+</launch>
