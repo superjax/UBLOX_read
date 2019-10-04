@@ -5,7 +5,8 @@ namespace ublox
 {
 
 UBLOX::UBLOX(const std::string& port) :
-    serial_(port, 115200),
+    serial_(port, 921600),
+    //115200
     ubx_(serial_)
 {
     type_ = NONE;
@@ -49,7 +50,7 @@ void UBLOX::config_f9p()
 void UBLOX::config_base()
 {
     //Choose to configure as moving/mobile base or stationary
-    bool mobile = true;
+    bool mobile = false;
     if(mobile == true)
     {   
         config_base_moving(1);

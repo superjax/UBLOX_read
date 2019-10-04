@@ -66,8 +66,8 @@ UBLOX_ROS::UBLOX_ROS() :
 
     if (!log_filename.empty())
     {
-        //ublox_->initLogFile(log_filename);
-        ublox_->readFile(log_filename);
+        ublox_->initLogFile(log_filename);
+        //ublox_->readFile(log_filename);
 
     }
 }
