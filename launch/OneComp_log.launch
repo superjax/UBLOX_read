@@ -8,12 +8,8 @@
 			<param name="local_port" value="16140"/>
 			<param name="remote_host" value="localhost"/>
 			<param name="remote_port" value="16145"/>
-<!--  			<param name="local_host" value="192.168.0.111"/>
-			<param name="local_port" value="16140"/>
-			<param name="remote_host" value="192.168.0.8"/>
-			<param name="remote_port" value="12345"/> -->
-<!-- 			<param name="log_filename" value="../data/redo_rod/one/base_binary"/>
- -->		</node> 
+			<param name="log_filename" value="../data/rod/redo_rod/one/base_binary"/>
+		</node> 
 	</group>
 
 	<group ns="rover">
@@ -24,9 +20,7 @@
 			<param name="local_port" value="16145"/>
 			<param name="remote_host" value="localhost"/>
 			<param name="remote_port" value="16140"/>
-<!-- 			<param name="log_filename" value="../data/redo_rod/one/rover_binary"/>
- -->		</node>
-		<node pkg="rosbag" type="record" name="record" output="screen" args="-O ../data/ecef_test/data.bag --all"/>
+			<param name="log_filename" value="../data/rod/redo_rod/one/rover_binary"/>
+		</node> 
 	</group>
-
 </launch>

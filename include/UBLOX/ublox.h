@@ -10,7 +10,6 @@
 
 #include "UBLOX/parsers/ubx.h"
 #include "UBLOX/parsers/rtcm.h"
-#include "UBLOX/parsers/nmea.h"
 #include "UBLOX/parsers/nav.h"
 
 namespace ublox
@@ -44,8 +43,7 @@ public:
     async_comm::Serial serial_;
 
     UBX ubx_;
-    rtcm::RTCM rtcm_;
-    NMEA nmea_;
+    RTCM rtcm_;
     NavParser nav_;
 
     std::ofstream log_file_;
@@ -69,6 +67,17 @@ public:
     void serial_read_cb(const uint8_t* buf, size_t size);
     void udp_read_cb(const uint8_t *buf, size_t size);
     void rtcm_complete_cb(const uint8_t* buf, size_t size);
+
+    void config_f9p();
+    void config_rover();
+    void config_base();
+    void config_base_stationary(int on_off);
+    void config_base_moving(int on_off);
+    void poll_value();
+
+    uint8_t byte = 1;
+    uint8_t word = 2;
+    int on_off;
 };
 }
 

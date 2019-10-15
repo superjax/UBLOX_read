@@ -5,7 +5,8 @@ namespace ublox
 {
 
 UBLOX::UBLOX(const std::string& port) :
-    serial_(port, 115200),
+    serial_(port, 921600),
+    //115200
     ubx_(serial_)
 {
     type_ = NONE;
@@ -17,20 +18,88 @@ UBLOX::UBLOX(const std::string& port) :
     serial_.register_receive_callback(cb);
     serial_.init();
 
-    // configure the parsers
+    // configure the parsers/Enable Messages
     ubx_.set_nav_rate(100);
-    ubx_.enable_message(CLASS_NAV, NAV_PVT, 1);
-    ubx_.enable_message(CLASS_NAV, NAV_POSECEF, 1);
-    ubx_.enable_message(CLASS_NAV, NAV_VELECEF, 1);
-    ubx_.enable_message(CLASS_CFG, CFG_VALGET, 1);
-    ubx_.enable_message(CLASS_RXM, RXM_RAWX, 1);
-    ubx_.enable_message(CLASS_RXM, RXM_SFRBX, 1);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1, CFG_VALSET_t::MSGOUT_PVT, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1, CFG_VALSET_t::MSGOUT_RELPOSNED, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1, CFG_VALSET_t::MSGOUT_POSECEF, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1, CFG_VALSET_t::MSGOUT_VELECEF, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 0, CFG_VALSET_t::MSGOUT_RAWX, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 0, CFG_VALSET_t::MSGOUT_SFRBX, byte);
+    //configuring SVIN messages is done in config_base_stationary()
+
 
     auto eph_cb = [this](uint8_t cls, uint8_t type, const ublox::UBX_message_t& in_msg)
     {
       this->nav_.convertUBX(in_msg.RXM_SFRBX);
     };
     ubx_.registerCallback(ublox::CLASS_RXM, ublox::RXM_SFRBX, eph_cb);
+}
+
+void UBLOX::config_f9p()
+{
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, CFG_VALSET_t::DYNMODE_AIRBORNE_1G, CFG_VALSET_t::DYNMODEL, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 0, CFG_VALSET_t::USB_INPROT_NMEA, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 0, CFG_VALSET_t::USB_OUTPROT_NMEA, byte);
+
+    bool poll = true;
+    if(poll == true)
+        poll_value();
+}
+
+void UBLOX::config_base()
+{
+    //Choose to configure as moving/mobile base or stationary
+    bool mobile = false;
+    if(mobile == true)
+    {   
+        config_base_moving(1);
+        config_base_stationary(0);
+    }
+    else
+    { 
+        config_base_moving(0);
+        config_base_stationary(1);
+    }
+}
+
+void UBLOX::config_base_stationary(int on_off)
+{
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_1005USB, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_1074USB, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_1084USB, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_1094USB, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_1124USB, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1, CFG_VALSET_t::RTCM_1230USB, byte);
+
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::MSGOUT_SVIN, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::TMODE_MODE, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 500000*on_off, CFG_VALSET_t::TMODE_SVIN_ACC_LIMIT, word);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 119*on_off, CFG_VALSET_t::TMODE_SVIN_MIN_DUR, word);
+
+}
+
+void UBLOX::config_base_moving(int on_off)
+{
+
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_4072_0USB, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_4072_1USB, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_1077USB, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_1087USB, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_1097USB, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_1127USB, byte);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1, CFG_VALSET_t::RTCM_1230USB, byte);
+}
+
+void UBLOX::config_rover()
+{
+}
+
+void UBLOX::poll_value()
+{
+    ubx_.get_configuration(CFG_VALGET_t::REQUEST, CFG_VALGET_t::RAM, CFG_VALGET_t::RTCM_1005USB);
+    ubx_.get_configuration(CFG_VALGET_t::REQUEST, CFG_VALGET_t::RAM, CFG_VALGET_t::RTCM_1230USB);
+    ubx_.get_configuration(CFG_VALGET_t::REQUEST, CFG_VALGET_t::RAM, CFG_VALGET_t::RTCM_1097USB);
 }
 
 void UBLOX::readFile(const std::string& filename)
@@ -67,7 +136,7 @@ void UBLOX::initRover(std::string local_host, uint16_t local_port,
 
     assert(udp_ == nullptr);
     // Connect the rtcm_cb callback to forward data to the UBX serial port
-    rtcm_.registerBufferCallback([this](uint8_t* buf, size_t size)
+    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
     {
         this->rtcm_complete_cb(buf, size);
     });
@@ -83,8 +152,8 @@ void UBLOX::initRover(std::string local_host, uint16_t local_port,
     if (!udp_->init())
         throw std::runtime_error("Failed to initialize Rover receive UDP");
 
-    ubx_.turnOnRTCM();
-    ubx_.config_rover();
+    config_rover();
+    config_f9p();
 }
 
 void UBLOX::initBase(std::string local_host, uint16_t local_port,
@@ -103,12 +172,12 @@ void UBLOX::initBase(std::string local_host, uint16_t local_port,
         throw std::runtime_error("Failed to initialize Rover receive UDP");
     }
 
-    rtcm_.registerBufferCallback([this](uint8_t* buf, size_t size)
+    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
     {
         this->udp_->send_bytes(buf, size);
     });
-    ubx_.turnOnRTCM();
-    ubx_.config_base();
+    config_base();
+    config_f9p();
 }
 
 UBLOX::~UBLOX()
@@ -144,15 +213,10 @@ void UBLOX::serial_read_cb(const uint8_t *buf, size_t size)
         {
             rtcm_.read_cb(buf[i]);
         }
-        else if (nmea_.parsing_message())
-        {
-            nmea_.read_cb(buf[i]);
-        }
         else
         {
             ubx_.read_cb(buf[i]);
             rtcm_.read_cb(buf[i]);
-            nmea_.read_cb(buf[i]);
         }
     }
 

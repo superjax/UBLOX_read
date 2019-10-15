@@ -1,0 +1,36 @@
+<launch>
+
+	<group ns="base">
+		<node name="f9p" pkg="ublox" type="ublox_ros">
+			<param name="serial_port" value="/dev/ttyACM0"/>
+			<param name="rtk_type" value="3"/>
+<!-- 			<param name="local_host" value="localhost"/>
+			<param name="local_port" value="16140"/>
+			<param name="remote_host" value="localhost"/>
+			<param name="remote_port" value="16146"/>
+ -->
+ 			<param name="local_host" value="192.168.0.111"/>
+			<param name="local_port" value="16140"/>
+			<param name="remote_host" value="192.168.0.143"/>
+			<param name="remote_port" value="12345"/>
+		</node>
+	</group>
+
+	<group ns="rover">
+		<node name="f9p" pkg="ublox" type="ublox_ros">
+			<param name="serial_port" value="/dev/ttyACM0"/>
+			<param name="rtk_type" value="2"/>
+<!-- 			<param name="local_host" value="localhost"/>
+			<param name="local_port" value="16146"/>
+			<param name="remote_host" value="localhost"/>
+			<param name="remote_port" value="16140"/> -->
+			<param name="local_host" value="192.168.0.143"/>
+			<param name="local_port" value="12345"/>
+			<param name="remote_host" value="localhost"/>
+			<param name="remote_port" value="192.168.0.111"/>
+
+		</node>
+		<node pkg="rosbag" type="record" name="record" output="screen" args="-O ../data/stationary.bag --all"/>
+	</group>
+
+</launch>

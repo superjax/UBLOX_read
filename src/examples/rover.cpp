@@ -43,12 +43,12 @@ void relposned_callback(uint8_t cls, uint8_t type, const ublox::UBX_message_t& i
                i,
                msg.iTow/1000,
                msg.relPosN, msg.relPosE, msg.relPosD, msg.relPosLength);
-        ofstream myfile;
-        myfile.open ("../textfiles/9test_3ft_little_move/data.txt", ios::app);
-        myfile <<  msg.iTow
-               << " " << msg.relPosN << " " << msg.relPosE << " " << msg.relPosD
-               << " " << msg.relPosLength << " \n";
-        myfile.close();
+        // ofstream myfile;
+        // myfile.open ("../textfiles/9test_3ft_little_move/data.txt", ios::app);
+        // myfile <<  msg.iTow
+        //        << " " << msg.relPosN << " " << msg.relPosE << " " << msg.relPosD
+        //        << " " << msg.relPosLength << " \n";
+        // myfile.close();
         i++;
     }
     fflush(stdout); // Will now print everything in the stdout buffer
@@ -58,11 +58,11 @@ int main(int argc, char** argv)
 {
     // Create a UBLOX instance
 
-    std::string port = "/dev/ttyACM0";
+    std::string port = "/dev/ttyACM1";
     if(argc > 1)
         port = argv[1];
     ublox::UBLOX ublox(port);
-    ublox.initRover("localhost", 16140, "localhost", 16145);
+    ublox.initRover("localhost", 16145, "localhost", 16140);
 
     // look for Ctrl+C and quit
     signal(SIGINT, inthand);

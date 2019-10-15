@@ -6,7 +6,7 @@
 namespace ublox
 {
 
-static constexpr size_t BUFFER_SIZE = 256;
+static constexpr size_t BUFFER_SIZE = 1024;
 
 enum {
     FIX_TYPE_NO_FIX = 0x00,
@@ -256,93 +256,28 @@ typedef struct {
 
 typedef struct {
     enum {
-        VALGET_RAM = 0,
-        VALGET_BBR = 1,
-        VALGET_FLASH = 2,
-        VALGET_DEFAULT = 7,
+        RAM = 0,
+        BBR = 1,
+        FLASH = 2,
+        DEFAULT = 7,
     };
     enum {
-        VALGET_REQUEST = 0,
-        VALGET_POLL  = 1,
-    };
-
-    enum { //outgoing message rates for RTCM 3x on usb type U1
-        //suggested messages for stationary base pg 12 actual integration manual
-        RTCM_1005USB = 0x209102c0, //CFG-MSGOUT-RTCM_3X_TYPE1005_USB
-        RTCM_1074USB = 0x20910361, //CFG-MSGOUT-RTCM_3X_TYPE1074_USB
-        RTCM_1084USB = 0x20910366, //CFG-MSGOUT-RTCM_3X_TYPE1084_USB
-        RTCM_1094USB = 0x2091036b, //CFG-MSGOUT-RTCM_3X_TYPE1094_USB
-        RTCM_1124USB = 0x20910370, //CFG-MSGOUT-RTCM_3X_TYPE1124_USB
-        RTCM_1230USB = 0x20910306, //CFG-MSGOUT-RTCM_3X_TYPE1230_USB
-        //suggested messages for mobile base
-        RTCM_4072_0USB = 0x20910301, //CFG-MSGOUT-RTCM_3X_TYPE4072_0_USB
-        RTCM_4072_1USB = 0x20910384, //CFG-MSGOUT-RTCM_3X_TYPE4072_1_USB
-        RTCM_1077USB = 0x209102cf, //CFG-MSGOUT-RTCM_3X_TYPE1077_USB
-        RTCM_1087USB = 0x209102d4, //CFG-MSGOUT-RTCM_3X_TYPE1087_USB
-        RTCM_1097USB = 0x2091031b, //CFG-MSGOUT-RTCM_3X_TYPE1097_USB
-        RTCM_1127USB = 0x209102d9, //CFG-MSGOUT-RTCM_3X_TYPE1127_USB
-        //!!!!also use RTCM_1230USB above!!!///
-    };
-
-    enum {
-        VALGET_DGNSSMODE = 0x20140011,
-        VALGET_MSGOUT_RELPOSNED = 0x20910090,
-        VALGET_MSGOUT_SVIN = 0x2091008b,
-        TMODE_MODE = 0x20030001,
-        TMODE_SVIN_MIN_DUR = 0x40030010, //survey in minimum duration s
-        TMODE_SVIN_ACC_LIMIT = 0x40030011,
-    };
-
-    enum {
-        VALGET_DYNMODEL = 0x20110021, //Dynamic platform model
-    };
-
-    //enum not finished, but not needed.  The rest is not needed.
-    enum {
-        SIGNAL_GPS = 0x1031001f, //GPS enable
-        SIGNAL_GPS_L1 = 0x10310001, //GPS L1C/A
-        SIGNAL_GPS_L2 = 0x10310003, //GPS L2C (only on u-blox F9 platform products)
-        SIGNAL_GAL = 0x10310021, //Galileo enable
-        SIGNAL_GAL_E1 = 0x10310007, //Galileo E1
-        SIGNAL_GAL_E5B = 0x1031000a, //Galileo E5b (only on u-blox F9 platform products)
-        SIGNAL_BDS = 0x10310022, //BeiDou Enable
-        SIGNAL_BDS_B1 = 0x1031000d, //BeiDou B1I
-        SIGNAL_BDS_B2 = 0x1031000e, //BeiDou B2I
-
-    };
-
-    enum {
-        NAV_PVT = 0x20910009, //Output rate of the UBX-NAV-PVT message on port USB
-        RXM_RAWX = 0x209102a7, //Output rate of the UBX-RXM-RAWX message on port USB
-        NAV_POSECEF = 0x20910027, //Output rate of the UBX-NAV POSECEF message on port USB
-        NAV_VELECEF = 0x20910040, //Output rate of the UBX-NAV-VELECEF message on port USB
-        RXM_SFRBX = 0x20910234, //Output rate of the UBX-RXM- SFRBX message on port USB
-    };
-
-    uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
-    uint8_t layer;
-    uint8_t reserved1[2];
-    uint32_t cfgDataKey;
-    uint64_t cfgData;
-}__attribute__((packed)) CFG_VALGET_t;
-
-typedef struct {
-    enum {
-        VALSET_RAM = 0b00000001,
-        VALSET_BBR = 0b00000010,
-        VALSET_FLASH = 0b00000100,
-        VALSET_DEFAULT = 0b01000000,
-    };
-
-    enum {
-        VALSET_0 = 0b00000000,
-        VALSET_1  = 0b00000001,
+        REQUEST = 0,
+        POLL  = 1,
     };
 
     enum {
         VALSET_float = 2,
         VALSET_fixed  = 3,
-        VALSET_MSGOUT_RELPOSNED = 0x20910090,
+    };
+     
+    enum { 
+        MSGOUT_RELPOSNED = 0x20910090, //Output rate of the UBX-NAV-RELPOSNED message on port USB
+        MSGOUT_PVT = 0x20910009, //Output rate of the UBX-NAV-PVT message on port USB
+        MSGOUT_POSECEF = 0x20910027, //Output rate of the UBX-NAV-POSECEF message on port USB
+        MSGOUT_VELECEF = 0x20910040, //Output rate of the UBX-NAV-VELECEF message on port USB
+        MSGOUT_RAWX = 0x209102a7, //Output rate of the UBX-RXM-RAWX message on port USB
+        MSGOUT_SFRBX = 0x20910234, //Output rate of the UBX-RXM-SFRBX message on port USB
     };
 
     enum { //outgoing message rates for RTCM 3x on usb type U1
@@ -361,13 +296,20 @@ typedef struct {
         RTCM_1097USB   = 0x2091031b, //CFG-MSGOUT-RTCM_3X_TYPE1097_USB __ Galileo MSM 7 (high precision)
         RTCM_1127USB   = 0x209102d9, //CFG-MSGOUT-RTCM_3X_TYPE1127_USB __ Beidou MSM 7 (high precision)
         //!!!!also use RTCM_1230USB above!!!///
+    };
 
-        UBX_RAWX_USB   = 0x209102a7,
+    enum {
+        USB_INPROT_UBX = 0x10770001, //Flag to indicate if UBX should be an input protocol on USB
+        USB_INPROT_NMEA = 0x10770002, //Flag to indicate if NMEA should be an input protocol on USB
+        USB_INPROT_RTCM3X = 0x10770004, //Flag to indicate if RTCM3X should be an input protocol on USB
+        USB_OUTPROT_UBX = 0x10780001, //Flag to indicate if UBX should bean output protocol on USB
+        USB_OUTPROT_NMEA = 0x10780002, //Flag to indicate if NMEA should bean output protocol on USB
+        USB_OUTPROT_RTCM3X = 0x10780004, //Flag to indicate if RTCM3X should bean output protocol on USB
     };
 
     enum {
 
-        VALSET_DYNMODEL = 0x20110021, //Dynamic platform model
+        DYNMODEL = 0x20110021, //Dynamic platform model
         DYNMODE_PORTABLE = 0,
         DYNMODE_STATIONARY = 2,
         DYNMODE_PEDESTRIAN = 3,
@@ -381,7 +323,7 @@ typedef struct {
     };
 
     enum {
-        VALSET_MSGOUT_SVIN = 0x2091008b,
+        MSGOUT_SVIN = 0x2091008b,
         TMODE_MODE = 0x20030001,
         TMODE_SVIN_MIN_DUR = 0x40030010, //survey in minimum duration s
         TMODE_SVIN_ACC_LIMIT = 0x40030011, //Survey-in position accuracy limit mm
@@ -401,16 +343,137 @@ typedef struct {
 
     };
 
+    enum {
+        //used for nav rate messages
+        RATE_MEAS = 0x30210001, //Nominal time between GNSS measurements (e.g. 100ms results in 10Hz measurement rate, 1000ms = 1Hz measurement rate)
+        RATE_NAV = 0x30210002, //Ratio of number of measurements to number of navigation solutions
+        RATE_TIMEREF = 0x20210003, //Time system to which measurements are aligned
+    };
+
+    enum {                      // Constants for cfg-rate-timeref/ RATE_TIMEREF
+        TIME_REF_UTC = 0,
+        TIME_REF_GPS = 1,
+        TIME_REF_GLONASS = 2,
+        TIME_REF_BUIDOU = 3,
+        TIME_REF_GALILEO = 4
+    };
+
     uint8_t version; //0 poll request, 1 poll (receiver to return config data key and value pairs)
     uint8_t layer;
     uint8_t reserved1[2];
     uint32_t cfgDataKey;
+    uint64_t cfgData;
+}__attribute__((packed)) CFG_VALGET_t;
+
+typedef struct {
+    enum {
+        RAM = 0b00000001,
+        BBR = 0b00000010,
+        FLASH = 0b00000100,
+        DEFAULT = 0b01000000,
+    };
 
     enum {
-        LEN_BYTE = 8,
-        LEN_2BYTE = 9,
-        LEN_4BYTE = 11,
+        VERSION_0 = 0,
+        VERSION_1 = 1,
     };
+
+    enum {
+        VALSET_float = 2,
+        VALSET_fixed  = 3,
+    };
+     
+    enum { 
+        MSGOUT_RELPOSNED = 0x20910090, //Output rate of the UBX-NAV-RELPOSNED message on port USB
+        MSGOUT_PVT = 0x20910009, //Output rate of the UBX-NAV-PVT message on port USB
+        MSGOUT_POSECEF = 0x20910027, //Output rate of the UBX-NAV-POSECEF message on port USB
+        MSGOUT_VELECEF = 0x20910040, //Output rate of the UBX-NAV-VELECEF message on port USB
+        MSGOUT_RAWX = 0x209102a7, //Output rate of the UBX-RXM-RAWX message on port USB
+        MSGOUT_SFRBX = 0x20910234, //Output rate of the UBX-RXM-SFRBX message on port USB
+    };
+
+    enum { //outgoing message rates for RTCM 3x on usb type U1
+        //suggested messages for stationary base
+        RTCM_1005USB = 0x209102c0, //CFG-MSGOUT-RTCM_3X_TYPE1005_USB -- Stationary RTK Reference Station ARP
+        RTCM_1074USB = 0x20910361, //CFG-MSGOUT-RTCM_3X_TYPE1074_USB -- GPS MSM 4
+        RTCM_1084USB = 0x20910366, //CFG-MSGOUT-RTCM_3X_TYPE1084_USB -- GLONASS MSM 4
+        RTCM_1094USB = 0x2091036b, //CFG-MSGOUT-RTCM_3X_TYPE1094_USB -- Galileo MSM 4
+        RTCM_1124USB = 0x20910370, //CFG-MSGOUT-RTCM_3X_TYPE1124_USB -- Beidou MSM 4
+        RTCM_1230USB = 0x20910306, //CFG-MSGOUT-RTCM_3X_TYPE1230_USB -- Glonass L1 and L2 Code-Phase Biases
+        //suggested messages for mobile base
+        RTCM_4072_0USB = 0x20910301, //CFG-MSGOUT-RTCM_3X_TYPE4072_0_USB -- UBLOX Proprietary RTCM message
+        RTCM_4072_1USB = 0x20910384, //CFG-MSGOUT-RTCM_3X_TYPE4072_1_USB --
+        RTCM_1077USB   = 0x209102cf, //CFG-MSGOUT-RTCM_3X_TYPE1077_USB __ GPS MSM 7 (high precision)
+        RTCM_1087USB   = 0x209102d4, //CFG-MSGOUT-RTCM_3X_TYPE1087_USB __ GLONASS MSM 7 (high precision)
+        RTCM_1097USB   = 0x2091031b, //CFG-MSGOUT-RTCM_3X_TYPE1097_USB __ Galileo MSM 7 (high precision)
+        RTCM_1127USB   = 0x209102d9, //CFG-MSGOUT-RTCM_3X_TYPE1127_USB __ Beidou MSM 7 (high precision)
+        //!!!!also use RTCM_1230USB above!!!///
+    };
+
+    enum {
+        USB_INPROT_UBX = 0x10770001, //Flag to indicate if UBX should be an input protocol on USB
+        USB_INPROT_NMEA = 0x10770002, //Flag to indicate if NMEA should be an input protocol on USB
+        USB_INPROT_RTCM3X = 0x10770004, //Flag to indicate if RTCM3X should be an input protocol on USB
+        USB_OUTPROT_UBX = 0x10780001, //Flag to indicate if UBX should bean output protocol on USB
+        USB_OUTPROT_NMEA = 0x10780002, //Flag to indicate if NMEA should bean output protocol on USB
+        USB_OUTPROT_RTCM3X = 0x10780004, //Flag to indicate if RTCM3X should bean output protocol on USB
+    };
+
+    enum {
+
+        DYNMODEL = 0x20110021, //Dynamic platform model
+        DYNMODE_PORTABLE = 0,
+        DYNMODE_STATIONARY = 2,
+        DYNMODE_PEDESTRIAN = 3,
+        DYNMODE_AUTOMOTIVE = 4,
+        DYNMODE_SEA = 5,
+        DYNMODE_AIRBORNE_1G = 6,
+        DYNMODE_AIRBORNE_2G = 7,
+        DYNMODE_AIRBORNE_4G = 8,
+        DYNMODE_WRIST_WORN = 9,
+        DYNMODE_BIKE =10,
+    };
+
+    enum {
+        MSGOUT_SVIN = 0x2091008b,
+        TMODE_MODE = 0x20030001,
+        TMODE_SVIN_MIN_DUR = 0x40030010, //survey in minimum duration s
+        TMODE_SVIN_ACC_LIMIT = 0x40030011, //Survey-in position accuracy limit mm
+    };
+
+        //enum not finished, but not needed.  The rest is not needed.
+    enum {
+        SIGNAL_GPS = 0x1031001f, //GPS enable
+        SIGNAL_GPS_L1 = 0x10310001, //GPS L1C/A
+        SIGNAL_GPS_L2 = 0x10310003, //GPS L2C (only on u-blox F9 platform products)
+        SIGNAL_GAL = 0x10310021, //Galileo enable
+        SIGNAL_GAL_E1 = 0x10310007, //Galileo E1
+        SIGNAL_GAL_E5B = 0x1031000a, //Galileo E5b (only on u-blox F9 platform products)
+        SIGNAL_BDS = 0x10310022, //BeiDou Enable
+        SIGNAL_BDS_B1 = 0x1031000d, //BeiDou B1I
+        SIGNAL_BDS_B2 = 0x1031000e, //BeiDou B2I
+
+    };
+
+    enum {
+        //used for nav rate messages
+        RATE_MEAS = 0x30210001, //Nominal time between GNSS measurements (e.g. 100ms results in 10Hz measurement rate, 1000ms = 1Hz measurement rate)
+        RATE_NAV = 0x30210002, //Ratio of number of measurements to number of navigation solutions
+        RATE_TIMEREF = 0x20210003, //Time system to which measurements are aligned
+    };
+
+    enum {                      // Constants for cfg-rate-timeref/ RATE_TIMEREF
+        TIME_REF_UTC = 0,
+        TIME_REF_GPS = 1,
+        TIME_REF_GLONASS = 2,
+        TIME_REF_BUIDOU = 3,
+        TIME_REF_GALILEO = 4
+    };
+
+    uint8_t version;
+    uint8_t layer;
+    uint8_t reserved1[2];
+    uint32_t cfgDataKey;
 
     union 
     {

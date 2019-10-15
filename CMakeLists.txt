@@ -11,18 +11,10 @@ if (NOT ${async_comm_FOUND})
 	set(async_comm_INCLUDE_DIRS lib/async_comm/include)
 endif()
 
-find_package(gnss_utils)
-if (NOT ${gnss_utils_FOUND})
-    add_subdirectory(lib/gnss_utils)
-    set(gnss_utils_LIBRARIES gnss_utils)
-    set(gnss_utils_INCLUDE_DIRS lib/gnss_utils/include)
-endif()
-
 add_library(UBLOX
     src/ublox.cpp
     src/parsers/ubx.cpp
     src/parsers/rtcm.cpp
-    src/parsers/nmea.cpp
     src/parsers/nav.cpp
     src/utctime.cpp
 )
@@ -31,16 +23,15 @@ target_include_directories(UBLOX PUBLIC include ${async_comm_INCLUDE_DIRS} ${EIG
 
 option(BUILD_TESTS "Build Tests" ON)
 if (${BUILD_TESTS})
-    message(STATUS "Building UBLOX parser Tests")
-    find_package(GTest REQUIRED)
-    find_package(Threads REQUIRED)
-    add_executable(ublox_test
-        src/test/test_rtcm.cpp
-        src/test/test_time.cpp
-        src/test/test_eph.cpp)
-    target_link_libraries(ublox_test gtest gtest_main pthread UBLOX)
+   message(STATUS "Building UBLOX parser Tests")
+   find_package(GTest REQUIRED)
+   find_package(Threads REQUIRED)
+   add_executable(ublox_test
+       src/test/test_rtcm.cpp
+       src/test/test_time.cpp
+       src/test/test_eph.cpp)
+   target_link_libraries(ublox_test gtest gtest_main pthread UBLOX)
 endif()
-
 
 option(BUILD_EXAMPLES "Build Examples" ON)
 if (${BUILD_EXAMPLES})
@@ -85,7 +76,7 @@ if (${BUILD_ROS})
 
 	add_executable(ublox_ros src/ros/ublox_ros.cpp)
 	target_link_libraries(ublox_ros UBLOX ${catkin_LIBRARIES})
-    target_include_directories(ublox_ros PUBLIC ${catkin_INCLUDE_DIRS})
+    target_include_directories(ublox_ros PUBLIC ~/ws_rtkflight/devel/include ${catkin_INCLUDE_DIRS})
     add_dependencies(ublox_ros ${catkin_EXPORTED_TARGETS})
 
 endif()

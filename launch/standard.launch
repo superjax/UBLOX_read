@@ -1,0 +1,9 @@
+<launch>
+
+	<group ns="base">
+		<node name="f9p" pkg="ublox" type="ublox_ros">
+			<param name="serial_port" value="/dev/ttyACM0"/>
+			<param name="rtk_type" value="3"/>
+		</node> 
+	</group>
+</launch>
