@@ -130,8 +130,7 @@ void UBLOX::initLogFile(const std::string& filename)
 }
 
 void UBLOX::initRover(std::string local_host, uint16_t local_port,
-                      std::string remote_host, uint16_t remote_port
-                      std::string remote_host2, uint16_t remote_port2)
+                      std::string remote_host, uint16_t remote_port)
 {
     type_ = ROVER;
 
@@ -153,21 +152,14 @@ void UBLOX::initRover(std::string local_host, uint16_t local_port,
     if (!udp_->init())
         throw std::runtime_error("Failed to initialize Rover receive UDP");
 
-    udp2_ = new async_comm::UDP(local_host, local_port, remote_host2, remote_port2);
-    udp2_->register_receive_callback([this](const uint8_t* buf, size_t size)
-    {
-        this->udp_read_cb(buf, size);
-    });
-
-    if (!udp2_->init())
-        throw std::runtime_error("Failed to initialize Rover2 receive UDP");
-
     config_rover();
     config_f9p();
 }
 
 void UBLOX::initBase(std::string local_host, uint16_t local_port,
-                       std::string remote_host, uint16_t remote_port)
+                       std::string remote_host, uint16_t remote_port,
+                       std::string local_host2, uint16_t local_port2,
+                       std::string remote_host2, uint16_t remote_port2)
 {
     type_ = BASE;
 
@@ -179,13 +171,27 @@ void UBLOX::initBase(std::string local_host, uint16_t local_port,
 
     if (!udp_->init())
     {
-        throw std::runtime_error("Failed to initialize Rover receive UDP");
+        throw std::runtime_error("Failed to initialize Base to Rover 1 receive UDP");
     }
 
     rtcm_.registerCallback([this](uint8_t* buf, size_t size)
     {
         this->udp_->send_bytes(buf, size);
     });
+
+//////////////////////////////////////////////////////////
+    udp2_ = new async_comm::UDP(local_host2, local_port2, remote_host2, remote_port2);
+
+    if (!udp2_->init())
+    {
+        throw std::runtime_error("Failed to initialize Base to Rover 2 receive UDP");
+    }
+
+    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
+    {
+        this->udp2_->send_bytes(buf, size);
+    });
+//////////////////////////////////////
     config_base();
     config_f9p();
 }

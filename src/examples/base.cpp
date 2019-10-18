@@ -30,7 +30,7 @@ int main(int argc, char** argv)
     if(argc > 1)
         port = argv[1];
     ublox::UBLOX ublox(port);
-    ublox.initBase("localhost", 16140, "localhost", 16145);
+    // ublox.initBase("localhost", 16140, "localhost", 16145);
 
     // look for Ctrl+C and quit
     signal(SIGINT, inthand);

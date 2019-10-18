@@ -35,8 +35,11 @@ UBLOX_ROS::UBLOX_ROS() :
     std::string remote_host = nh_private_.param<std::string>("remote_host", "localhost");
     int remote_port = nh_private_.param<int>("remote_port", 16145);
     std::string log_filename = nh_private_.param<std::string>("log_filename", "");
-    int remote_port2 = nh_private_.param<int>("remote_port2", "");
-    std::string log_filename = nh_private_.param<std::string>("log_filename2", "");
+    std::string local_host2 = nh_private_.param<std::string>("local_host2", "localhost2");
+    int local_port2 = nh_private_.param<int>("local_port2", 16155);
+    std::string remote_host2 = nh_private_.param<std::string>("remote_host2", "localhost2");
+    int remote_port2 = nh_private_.param<int>("remote_port2", 16150);
+    std::string log_filename2 = nh_private_.param<std::string>("log_filename2", "");
 
     // Connect ROS topics
     pvt_pub_ = nh_.advertise<ublox::PositionVelocityTime>("PosVelTime", 10);
@@ -56,7 +59,7 @@ UBLOX_ROS::UBLOX_ROS() :
     if (rtk_type == ublox::UBLOX::ROVER)
         ublox_->initRover(local_host, local_port, remote_host, remote_port);
     else if (rtk_type == ublox::UBLOX::BASE)
-        ublox_->initBase(local_host, local_port, remote_host, remote_port);
+        ublox_->initBase(local_host, local_port, remote_host, remote_port, local_host2, local_port2, remote_host2, remote_port2);
 
     // connect callbacks
     createCallback(ublox::CLASS_NAV, ublox::NAV_PVT, pvtCB, NAV_PVT);
