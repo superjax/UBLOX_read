@@ -1,0 +1,15 @@
+<launch>
+
+	<group ns="base">
+		<node name="f9p" pkg="ublox" type="ublox_ros">
+			<param name="serial_port" value="/dev/ttyACM0"/>
+			<param name="rtk_type" value="3"/>
+ 			<param name="local_host" value="192.168.0.111"/>
+			<param name="local_port" value="16140"/>
+			<param name="remote_host" value="192.168.0.143"/>
+			<param name="remote_port" value="16145"/>
+			<param name="remote_host2" value="192.168.0.143"/>
+			<param name="remote_port2" value="16150"/>
+		</node> 
+	</group>
+</launch>

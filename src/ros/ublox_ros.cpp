@@ -35,6 +35,8 @@ UBLOX_ROS::UBLOX_ROS() :
     std::string remote_host = nh_private_.param<std::string>("remote_host", "localhost");
     int remote_port = nh_private_.param<int>("remote_port", 16145);
     std::string log_filename = nh_private_.param<std::string>("log_filename", "");
+    int remote_port2 = nh_private_.param<int>("remote_port2", "");
+    std::string log_filename = nh_private_.param<std::string>("log_filename2", "");
 
     // Connect ROS topics
     pvt_pub_ = nh_.advertise<ublox::PositionVelocityTime>("PosVelTime", 10);
