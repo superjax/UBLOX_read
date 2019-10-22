@@ -76,7 +76,7 @@ if (${BUILD_ROS})
 
 	add_executable(ublox_ros src/ros/ublox_ros.cpp)
 	target_link_libraries(ublox_ros UBLOX ${catkin_LIBRARIES})
-    target_include_directories(ublox_ros PUBLIC ~/ws_rtkflight/devel/include ${catkin_INCLUDE_DIRS})
+    target_include_directories(ublox_ros PUBLIC ../../devel/include ${catkin_INCLUDE_DIRS})
     add_dependencies(ublox_ros ${catkin_EXPORTED_TARGETS})
 
 endif()
