@@ -8,10 +8,11 @@
 			<param name="local_port" value="16140"/>
 			<param name="remote_host" value="localhost"/>
 			<param name="remote_port" value="16145"/>
-			<param name="log_filename" value="../data/rod/redo_rod/one/base_binary"/>
+			<param name="log_filename" value="../data/stationary-base-rover/base_binary"/>
 		</node> 
 	</group>
 
+<!--	Commented out so that we give the base time to survey 			in. See OneComp_logRecordRover.launch to actually 				launch the rover
 	<group ns="rover">
 		<node name="f9p" pkg="ublox" type="ublox_ros">
 			<param name="serial_port" value="/dev/ttyACM1"/>
@@ -20,8 +21,10 @@
 			<param name="local_port" value="16145"/>
 			<param name="remote_host" value="localhost"/>
 			<param name="remote_port" value="16140"/>
-			<param name="log_filename" value="../data/rod/redo_rod/one/rover_binary"/>
+			<param name="log_filename" value="../data/stationary-base-rover/rover_binary"/>
 		</node> 
-		<node pkg="rosbag" type="record" name="record" output="screen" args="-O ../data/08_22_walk/rover3.bag (dash dash!!!!!!!!!!!!!!)all"/>
+		<node pkg="rosbag" type="record" name="record" output="screen" args="-O ../data/stationary-base-rover/rover.bag (Dash Dash !!!!!!!!!!!!!)all"/>
 	</group>
+
+-->
 </launch>
