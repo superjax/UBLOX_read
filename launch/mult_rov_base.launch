@@ -1,0 +1,19 @@
+<launch>
+
+	<group ns="base">
+		<node name="f9p" pkg="ublox" type="ublox_ros">
+			<param name="serial_port" value="/dev/ttyACM0"/>
+			<param name="rtk_type" value="3"/>
+			<param name="local_host" value="192.168.0.18"/>
+			<param name="local_port" value="16140"/>
+			<param name="remote_host" value="192.168.0.202"/>
+			<param name="remote_port" value="16145"/>
+			<param name="local_host2" value="192.168.0.18"/>
+			<param name="local_port2" value="16155"/>
+			<param name="remote_host2" value="192.168.0.211"/>
+			<param name="remote_port2" value="16150"/>
+			<param name="log_filename" value="../data/multi-rover/base_binary"/>
+		</node> 
+		<node pkg="rosbag" type="record" name="record" output="screen" args="-O ../data/multi-rover/base.bag --all"/>
+	</group>
+</launch>
