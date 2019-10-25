@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<launch>
+
+	<group ns="base">
+		<node name="f9p" pkg="ublox" type="ublox_ros">
+			<param name="serial_port" value="/dev/ttyACM0"/>
+			<param name="rtk_type" value="3"/>
+			<param name="local_host" value="localhost"/>
+			<param name="local_port" value="16140"/>
+			<param name="remote_host" value="localhost"/>
+			<param name="remote_port" value="16145"/>
+			<param name="local_host" value="localhost"/>
+			<param name="local_port" value="16150"/>
+			<param name="remote_host" value="localhost"/>
+			<param name="remote_port" value="16155"/>
+			<param name="log_filename" value="../data/multi-rover/base_binary_10-25-19"/>
+		</node> 
+		<node pkg="rosbag" type="record" name="record" output="screen" args="-O ../data/multi-rover/base_10-25-19.bag --all"/>
+	</group>
+
+	<group ns="rover">
+		<node name="f9p" pkg="ublox" type="ublox_ros">
+			<param name="serial_port" value="/dev/ttyACM1"/>
+			<param name="rtk_type" value="2"/>
+			<param name="local_host" value="localhost"/>
+			<param name="local_port" value="16145"/>
+			<param name="remote_host" value="localhost"/>
+			<param name="remote_port" value="16140"/>
+			<param name="log_filename" value="../data/multi-rover/rover1_binary_10-25-19"/>
+		</node> 
+		<node pkg="rosbag" type="record" name="record" output="screen" args="-O ../data/multi-rover/rover1_10-25-19.bag --all"/>	</group>
+
+	<group ns="rover2">
+		<node name="f9p" pkg="ublox" type="ublox_ros">
+			<param name="serial_port" value="/dev/ttyACM2"/>
+			<param name="rtk_type" value="2"/>
+			<param name="local_host" value="localhost"/>
+			<param name="local_port" value="16155"/>
+			<param name="remote_host" value="localhost"/>
+			<param name="remote_port" value="16150"/>
+			<param name="log_filename" value="../data/multi-rover/rover2_binary_10-25-19"/>
+		</node> 
+		<node pkg="rosbag" type="record" name="record" output="screen" args="-O ../data/multi-rover/rover2_10-25-19.bag --all"/>
+	</group>
+
+</launch>
