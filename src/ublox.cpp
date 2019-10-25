@@ -54,11 +54,11 @@ void UBLOX::config_base()
     if(mobile == true)
     {   
         config_base_moving(1);
-        config_base_stationary(0);
+        // config_base_stationary(0);
     }
     else
     { 
-        config_base_moving(0);
+        // config_base_moving(0);
         config_base_stationary(1);
     }
 }
@@ -176,6 +176,8 @@ void UBLOX::initBase(std::string local_host, uint16_t local_port,
 
     rtcm_.registerCallback([this](uint8_t* buf, size_t size)
     {
+        std::cerr << "buf1 = " << buf << "\n";
+        std::cerr << "size1 = " << size << "\n";
         this->udp_->send_bytes(buf, size);
     });
 
@@ -189,6 +191,9 @@ void UBLOX::initBase(std::string local_host, uint16_t local_port,
 
     rtcm_.registerCallback([this](uint8_t* buf, size_t size)
     {
+        std::cerr << "buf2 = " << buf << "\n";
+        std::cerr << "size2 = " << size << "\n";
+        // this->udp_->send_bytes(buf, size);
         this->udp2_->send_bytes(buf, size);
     });
 //////////////////////////////////////
