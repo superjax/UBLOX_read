@@ -42,7 +42,7 @@ public:
 
     size_t num_messages_received();
 
-    void set_nav_rate(uint8_t period_ms);
+    void set_nav_rate(uint16_t period_ms);
 
     // Send the supplied message
     bool send_message(uint8_t msg_class, uint8_t msg_id,

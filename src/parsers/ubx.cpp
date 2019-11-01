@@ -261,7 +261,7 @@ bool UBX::send_message(uint8_t msg_class, uint8_t msg_id, UBX_message_t& message
     return true;
 }
 
-void UBX::set_nav_rate(uint8_t period_ms)
+void UBX::set_nav_rate(uint16_t period_ms)
 {
 
     DBG("Setting nav rate to %d\n", period_ms);

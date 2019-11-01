@@ -19,7 +19,7 @@ UBLOX::UBLOX(const std::string& port) :
     serial_.init();
 
     // configure the parsers/Enable Messages
-    ubx_.set_nav_rate(100);
+    ubx_.set_nav_rate(1000);
     ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1, CFG_VALSET_t::MSGOUT_PVT, byte);
     ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1, CFG_VALSET_t::MSGOUT_RELPOSNED, byte);
     ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1, CFG_VALSET_t::MSGOUT_POSECEF, byte);
