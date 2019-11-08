@@ -35,6 +35,12 @@ public:
                   std::string local_host2, uint16_t local_port2,
                   std::string remote_host2, uint16_t remote_port2);
 
+    void initBase(std::string local_host, uint16_t local_port,
+                  std::string remote_host, uint16_t remote_port,
+                  std::string local_host2, uint16_t local_port2,
+                  std::string remote_host2, uint16_t remote_port2,
+                  std::string base_type);
+
     void initRover(std::string local_host, uint16_t local_port,
                    std::string remote_host, uint16_t remote_port);
 
@@ -73,7 +79,7 @@ public:
 
     void config_f9p();
     void config_rover();
-    void config_base();
+    void config_base(std::string base_type);
     void config_base_stationary(int on_off);
     void config_base_moving(int on_off);
     void poll_value();

@@ -47,19 +47,25 @@ void UBLOX::config_f9p()
         poll_value();
 }
 
-void UBLOX::config_base()
+void UBLOX::config_base(std::string base_type)
 {
     //Choose to configure as moving/mobile base or stationary
-    bool mobile = false;
-    if(mobile == true)
+    //bool mobile = false;
+    if(base_type == "moving")
     {   
         config_base_moving(1);
-        // config_base_stationary(0);
+        config_base_stationary(0);
+        std::cerr<<"Moving Base\n";
+    }
+    else if(base_type == "stationary")
+    { 
+        config_base_moving(0);
+        config_base_stationary(1);
+        std::cerr<<"Stationary Base\n";
     }
     else
-    { 
-        // config_base_moving(0);
-        config_base_stationary(1);
+    {
+        throw std::runtime_error("Failed to initialize base as moving or stationary");
     }
 }
 
@@ -75,7 +81,7 @@ void UBLOX::config_base_stationary(int on_off)
     ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::MSGOUT_SVIN, byte);
     ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::TMODE_MODE, byte);
     ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 500000*on_off, CFG_VALSET_t::TMODE_SVIN_ACC_LIMIT, word);
-    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 119*on_off, CFG_VALSET_t::TMODE_SVIN_MIN_DUR, word);
+    ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 120*on_off, CFG_VALSET_t::TMODE_SVIN_MIN_DUR, word);
 
 }
 
@@ -159,7 +165,8 @@ void UBLOX::initRover(std::string local_host, uint16_t local_port,
 void UBLOX::initBase(std::string local_host, uint16_t local_port,
                        std::string remote_host, uint16_t remote_port,
                        std::string local_host2, uint16_t local_port2,
-                       std::string remote_host2, uint16_t remote_port2)
+                       std::string remote_host2, uint16_t remote_port2,
+                       std::string base_type)
 {
     type_ = BASE;
 
@@ -176,8 +183,8 @@ void UBLOX::initBase(std::string local_host, uint16_t local_port,
 
     rtcm_.registerCallback([this](uint8_t* buf, size_t size)
     {
-        std::cerr << "buf1 = " << buf << "\n";
-        std::cerr << "size1 = " << size << "\n";
+        //std::cerr << "buf1 = " << buf << "\n";
+        //std::cerr << "size1 = " << size << "\n";
         this->udp_->send_bytes(buf, size);
     });
 
@@ -191,13 +198,13 @@ void UBLOX::initBase(std::string local_host, uint16_t local_port,
 
     rtcm_.registerCallback([this](uint8_t* buf, size_t size)
     {
-        std::cerr << "buf2 = " << buf << "\n";
-        std::cerr << "size2 = " << size << "\n";
+        //std::cerr << "buf2 = " << buf << "\n";
+        //std::cerr << "size2 = " << size << "\n";
         // this->udp_->send_bytes(buf, size);
         this->udp2_->send_bytes(buf, size);
     });
 //////////////////////////////////////
-    config_base();
+    config_base(base_type);
     config_f9p();
 }
 

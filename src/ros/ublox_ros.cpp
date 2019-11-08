@@ -41,6 +41,9 @@ UBLOX_ROS::UBLOX_ROS() :
     int remote_port2 = nh_private_.param<int>("remote_port2", 16150);
     std::string log_filename2 = nh_private_.param<std::string>("log_filename2", "");
 
+    //Determine whether the base is moving or stationary
+    std::string base_type = nh_private_.param<std::string>("base_type", "stationary");
+
     // Connect ROS topics
     pvt_pub_ = nh_.advertise<ublox::PositionVelocityTime>("PosVelTime", 10);
     relpos_pub_ = nh_.advertise<ublox::RelPos>("RelPos", 10);
@@ -59,7 +62,7 @@ UBLOX_ROS::UBLOX_ROS() :
     if (rtk_type == ublox::UBLOX::ROVER)
         ublox_->initRover(local_host, local_port, remote_host, remote_port);
     else if (rtk_type == ublox::UBLOX::BASE)
-        ublox_->initBase(local_host, local_port, remote_host, remote_port, local_host2, local_port2, remote_host2, remote_port2);
+        ublox_->initBase(local_host, local_port, remote_host, remote_port, local_host2, local_port2, remote_host2, remote_port2, base_type);
 
     // connect callbacks
     createCallback(ublox::CLASS_NAV, ublox::NAV_PVT, pvtCB, NAV_PVT);
