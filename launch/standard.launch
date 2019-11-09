@@ -1,9 +1,31 @@
+<?xml version="1.0"?>
 <launch>
 
 	<group ns="base">
 		<node name="f9p" pkg="ublox" type="ublox_ros">
 			<param name="serial_port" value="/dev/ttyACM0"/>
 			<param name="rtk_type" value="3"/>
+			<param name="base_type" value = "stationary"/>  <!--moving or stationary-->
+			<param name="rover_quantity" value = "1"/>     <!--number of rovers-->
+			<param name="serial_port" value="/dev/ttyACM0"/>
+			<param name="local_host1" value="localhost"/>
+			<param name="local_port1" value="16140"/>
+			<param name="remote_host1" value="localhost"/>
+			<param name="remote_port1" value="16145"/>
+			<param name="stringnames" value="localhost, localhost"/>
+			<param name="local_host2" value="testing"/>
 		</node> 
+	</group>
+
+	<group ns = "rover">
+		<node name="f9p" pkg="ublox" type="ublox_ros">
+			<param name="serial_port" value="/dev/ttyACM1"/>
+			<param name="rtk_type" value="2"/>
+			<param name="local_host1" value="localhost"/>
+			<param name="local_port1" value="16145"/>
+			<param name="remote_host1" value="localhost"/>
+			<param name="remote_port1" value="16140"/>
+		</node>
+		<!--node pkg="rosbag" type="record" name="record" output="screen" args="-O /home/matt/data/devel/test.bag -a"/-->
 	</group>
 </launch>

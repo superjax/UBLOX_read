@@ -32,6 +32,14 @@ public:
 
     void initBase(std::string local_host, uint16_t local_port,
                   std::string remote_host, uint16_t remote_port,
+                  std::string base_type);
+
+    void initBase(std::string local_host, uint16_t local_port,
+                  std::string remote_host, uint16_t remote_port,
+                  std::string base_type, int rover_quantity);
+
+    void initBase(std::string local_host, uint16_t local_port,
+                  std::string remote_host, uint16_t remote_port,
                   std::string local_host2, uint16_t local_port2,
                   std::string remote_host2, uint16_t remote_port2);
 
@@ -41,6 +49,10 @@ public:
                   std::string remote_host2, uint16_t remote_port2,
                   std::string base_type);
 
+    void initBase(std::string local_host[], int local_port[],
+                    std::string remote_host[], int remote_port[],
+                    std::string base_type, int rover_quantity);
+
     void initRover(std::string local_host, uint16_t local_port,
                    std::string remote_host, uint16_t remote_port);
 
@@ -48,7 +60,6 @@ public:
     void readFile(const std::string& filename);
 
     async_comm::UDP* udp_ = nullptr;
-    async_comm::UDP* udp2_ = nullptr;
     async_comm::Serial serial_;
 
     UBX ubx_;
