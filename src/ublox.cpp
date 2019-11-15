@@ -1,4 +1,5 @@
 #include "UBLOX/ublox.h"
+#include <typeinfo>
 #define DBG(...) fprintf(stderr, __VA_ARGS__)
 
 namespace ublox
@@ -182,26 +183,34 @@ void UBLOX::initBase(std::string local_host[], uint16_t local_port[],
     type_ = BASE;
 
     //Create an array of UDP objects
-    async_comm::UDP* udparray_ = new async_comm::UDP[rover_quantity];
+    async_comm::UDP **udparray_ = new async_comm::UDP*[rover_quantity];
 
     //Fill udp objects into the array.
     for(int i = 0; i < rover_quantity; i++) {
-        std::cerr<<"Initializing "<<i<<" UDP";
-        udparray_[i] = new async_comm::UDP(local_host[i], local_port[i], remote_host[i], remote_port[i]);
+        std::cerr<<"Initializing "<<i<<" UDP\n";
+
+        udp_ = new async_comm::UDP(local_host[i], local_port[i], remote_host[i], remote_port[i]);
+
+        udparray_[i] = udp_;
+        //std::cerr<<std::type_info(udparray_[i]) << "\n";
+        //std::cerr<<std::type_info(new async_comm::UDP(local_host[i], local_port[i], remote_host[i], remote_port[i])) << "\n";
+
+        //udp_ = udparray_[i];
         if (!udparray_[i]->init())
         {
-            throw std::runtime_error("Failed to initialize Base to Rover "+ std::to_string(i) +" receive UDP");
+            throw std::runtime_error("Failed to initialize Base to Rover "+ std::to_string(i) +" receive UDP\n");
         }
 
         //udp_ = udparray_[i];
 
-        rtcm_.registerCallback([this](uint8_t* buf, size_t size)
+        rtcm_.registerCallback([udparray_, i](uint8_t* buf, size_t size)
         {
+        //std::cerr<<i<<"\n";
         //std::cerr << "buf1 = " << buf << "\n";
         //std::cerr << "size1 = " << size << "\n";
-            this->udparray_[i]->send_bytes(buf, size);
+            udparray_[i]->send_bytes(buf, size);
         });
-        std::cerr<<"Initialized "+ std::to_string(i) +" UDP";
+        std::cerr<<"Initialized "+ std::to_string(i) +" UDP\n";
     }
 
     
