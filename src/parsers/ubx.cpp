@@ -297,4 +297,14 @@ void UBX::get_configuration(uint8_t version, uint8_t layer, uint32_t cfgDataKey)
        out_message_.CFG_VALGET.cfgDataKey = cfgDataKey;
        send_message(CLASS_CFG, CFG_VALGET, out_message_, sizeof(CFG_VALGET_t));
 }
+
+//Deletes configuration values specified by the key
+void UBX::del_configuration(uint8_t version, uint8_t layer, uint32_t cfgDataKey)
+{
+    memset(&out_message_, 0, sizeof(CFG_VALDEL_t));
+    out_message_.CFG_VALDEL.version = version;
+    out_message_.CFG_VALDEL.layer = layer;
+    out_message_.CFG_VALDEL.cfgDataKey = cfgDataKey;
+    send_message(CLASS_CFG, CFG_VALDEL, out_message_, sizeof(CFG_VALDEL_t));
+}
 }

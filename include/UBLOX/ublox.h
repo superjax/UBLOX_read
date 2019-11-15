@@ -49,8 +49,8 @@ public:
                   std::string remote_host2, uint16_t remote_port2,
                   std::string base_type);
 
-    void initBase(std::string local_host[], int local_port[],
-                    std::string remote_host[], int remote_port[],
+    void initBase(std::string local_host[], uint16_t local_port[],
+                    std::string remote_host[], uint16_t remote_port[],
                     std::string base_type, int rover_quantity);
 
     void initRover(std::string local_host, uint16_t local_port,
@@ -59,6 +59,8 @@ public:
     void initLogFile(const std::string& filename);
     void readFile(const std::string& filename);
 
+
+    async_comm::UDP* udparray_ = nullptr;
     async_comm::UDP* udp_ = nullptr;
     async_comm::Serial serial_;
 

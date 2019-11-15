@@ -55,6 +55,7 @@ Outputs: calls the correct base configuration function and outputs to the comman
 */
 void UBLOX::config_base(const std::string base_type="stationary")
 {
+    std::cerr<<"Configuring Base\n";
     //Choose to configure as moving/mobile base or stationary
     //bool mobile = false;
     if(base_type == "moving")   //Moving base
@@ -77,6 +78,8 @@ void UBLOX::config_base(const std::string base_type="stationary")
 
 void UBLOX::config_base_stationary(int on_off)
 {
+    //ubx_.del_configuration(CFG_VALDEL_t::VERSION_0, CFG_VALDEL_t::RAM, CFG_VALDEL_t::TMODE_SVIN_MIN_DUR);
+
     ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_1005USB, byte);
     ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_1074USB, byte);
     ubx_.configure(CFG_VALSET_t::VERSION_0, CFG_VALSET_t::RAM, 1*on_off, CFG_VALSET_t::RTCM_1084USB, byte);
@@ -170,8 +173,8 @@ void UBLOX::initRover(std::string local_host, uint16_t local_port,
     config_f9p();
 }
 
-void UBLOX::initBase(std::string local_host, uint16_t local_port,
-                       std::string remote_host, uint16_t remote_port,
+void UBLOX::initBase(std::string local_host[], uint16_t local_port[],
+                       std::string remote_host[], uint16_t remote_port[],
                        //std::string local_host2, uint16_t local_port2,
                        //std::string remote_host2, uint16_t remote_port2,
                        std::string base_type, int rover_quantity)
@@ -179,38 +182,43 @@ void UBLOX::initBase(std::string local_host, uint16_t local_port,
     type_ = BASE;
 
     //Create an array of UDP objects
-    async_comm::UDP* udparray_[rover_quantity];
+    async_comm::UDP* udparray_ = new async_comm::UDP[rover_quantity];
 
     //Fill udp objects into the array.
     for(int i = 0; i < rover_quantity; i++) {
-        udparray_[i] = new async_comm::UDP(local_host, local_port, remote_host, remote_port);
+        std::cerr<<"Initializing "<<i<<" UDP";
+        udparray_[i] = new async_comm::UDP(local_host[i], local_port[i], remote_host[i], remote_port[i]);
+        if (!udparray_[i]->init())
+        {
+            throw std::runtime_error("Failed to initialize Base to Rover "+ std::to_string(i) +" receive UDP");
+        }
+
+        //udp_ = udparray_[i];
+
+        rtcm_.registerCallback([this](uint8_t* buf, size_t size)
+        {
+        //std::cerr << "buf1 = " << buf << "\n";
+        //std::cerr << "size1 = " << size << "\n";
+            this->udparray_[i]->send_bytes(buf, size);
+        });
+        std::cerr<<"Initialized "+ std::to_string(i) +" UDP";
     }
 
     
 
-    if (udp_)
-        throw std::runtime_error("Unable to create two UDP connections");
+    //if (udp_)
+    //    throw std::runtime_error("Unable to create two UDP connections");
 
     //Make udp_ point to each object in the array in a for loop and initialize the connections
-    udp_ = udparray_[0];
+    //udp_ = udparray_[0];
 
     // hook up UDP to send
     //udp_ is a pointer
-    udp_ = new async_comm::UDP(local_host, local_port, remote_host, remote_port);
+    //udp_ = new async_comm::UDP(local_host, local_port, remote_host, remote_port);
 
     //if udp_ does not point to an object that has an init() method, throw an error.
     //Otherwise initialize udp
-    if (!udp_->init())
-    {
-        throw std::runtime_error("Failed to initialize Base to Rover 1 receive UDP");
-    }
-
-    rtcm_.registerCallback([this](uint8_t* buf, size_t size)
-    {
-        //std::cerr << "buf1 = " << buf << "\n";
-        //std::cerr << "size1 = " << size << "\n";
-        this->udp_->send_bytes(buf, size);
-    });
+    
 
 /*/////////////////////////////////////////////////////////
     udp2_ = new async_comm::UDP(local_host2, local_port2, remote_host2, remote_port2);
@@ -232,7 +240,7 @@ void UBLOX::initBase(std::string local_host, uint16_t local_port,
     config_f9p();
 }
 
-void UBLOX::initBase(std::string local_host[], int local_port[],
+/*void UBLOX::initBase(std::string local_host[], int local_port[],
                     std::string remote_host[], int remote_port[],
                     std::string base_type, int rover_quantity)
 {
@@ -262,7 +270,7 @@ void UBLOX::initBase(std::string local_host[], int local_port[],
         });
     }
 
-}
+}*/
 
 UBLOX::~UBLOX()
 {

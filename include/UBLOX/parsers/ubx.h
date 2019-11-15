@@ -18,6 +18,7 @@ public:
 
     void configure(uint8_t version, uint8_t layer, uint64_t cfgData, uint32_t cfgDataKey, uint8_t size);
     void get_configuration(uint8_t version, uint8_t layer, uint32_t cfgDataKey);
+    void del_configuration(uint8_t version, uint8_t layer, uint32_t cfgDataKey);
 
     // This function returns true when a new message has been parsed
     bool read_cb(uint8_t byte);
