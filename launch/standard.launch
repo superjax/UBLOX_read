@@ -26,6 +26,6 @@
 			<param name="remote_host1" value="localhost"/>
 			<param name="remote_port1" value="16140"/>
 		</node>
-		<node pkg="rosbag" type="record" name="record" output="screen" args="-O /home/matt/data/devel/onerover/rover.bag -a"/>
+		<!--node pkg="rosbag" type="record" name="record" output="screen" args="-O /home/matt/data/devel/onerover/rover.bag -a"/-->
 	</group>
 </launch>

@@ -30,25 +30,12 @@ public:
     UBLOX(const std::string& port);
     ~UBLOX();
 
+    // legacy initBase function
     void initBase(std::string local_host, uint16_t local_port,
                   std::string remote_host, uint16_t remote_port,
                   std::string base_type);
 
-    void initBase(std::string local_host, uint16_t local_port,
-                  std::string remote_host, uint16_t remote_port,
-                  std::string base_type, int rover_quantity);
-
-    void initBase(std::string local_host, uint16_t local_port,
-                  std::string remote_host, uint16_t remote_port,
-                  std::string local_host2, uint16_t local_port2,
-                  std::string remote_host2, uint16_t remote_port2);
-
-    void initBase(std::string local_host, uint16_t local_port,
-                  std::string remote_host, uint16_t remote_port,
-                  std::string local_host2, uint16_t local_port2,
-                  std::string remote_host2, uint16_t remote_port2,
-                  std::string base_type);
-
+    // Current initBase function supports multiple rovers
     void initBase(std::string local_host[], uint16_t local_port[],
                     std::string remote_host[], uint16_t remote_port[],
                     std::string base_type, int rover_quantity);
@@ -59,8 +46,10 @@ public:
     void initLogFile(const std::string& filename);
     void readFile(const std::string& filename);
 
+    // Array of pointers to UDP objects.
+    async_comm::UDP** udparray_ = nullptr;
 
-    async_comm::UDP* udparray_ = nullptr;
+    //Legacy UDP object replace by udparray_
     async_comm::UDP* udp_ = nullptr;
     async_comm::Serial serial_;
 
