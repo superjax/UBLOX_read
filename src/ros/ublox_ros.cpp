@@ -28,7 +28,7 @@ namespace ublox_ros
 UBLOX_ROS::UBLOX_ROS() :
     nh_(), nh_private_("~")
 {
-    
+
     //Get the number of rovers
     int rover_quantity = nh_private_.param<int>("rover_quantity", 1);
 
@@ -41,12 +41,11 @@ UBLOX_ROS::UBLOX_ROS() :
     //Initialize arrays to contain parameters from xml file
     std::string* local_host = new std::string[rover_quantity];
     std::string* remote_host = new std::string[rover_quantity];
-    uint16_t* local_port = new uint16_t[rover_quantity]; 
+    uint16_t* local_port = new uint16_t[rover_quantity];
     uint16_t* remote_port = new uint16_t[rover_quantity];
 
-    int j = 0;
-
     //Account for the case when no numbers are used for the first rover.
+    int j = 0;
     if(nh_private_.hasParam("local_host")) {
 
         local_host[0] = nh_private_.param<std::string>("local_host", "localhost");
@@ -64,18 +63,8 @@ UBLOX_ROS::UBLOX_ROS() :
         remote_port[i-1] = nh_private_.param<int>("remote_port"+std::to_string(i), 16145);
     }
 
-    //std::cerr<<"Local Host"<<local_host[0]<<local_host[1];
-
-    /*std::string local_host = nh_private_.param<std::string>("local_host", "localhost");
-    int local_port = nh_private_.param<int>("local_port", 16140);
-    std::string remote_host = nh_private_.param<std::string>("remote_host", "localhost");
-    int remote_port = nh_private_.param<int>("remote_port", 16145);*/
     std::string log_filename = nh_private_.param<std::string>("log_filename", "");
-    /*std::string local_host2 = nh_private_.param<std::string>("local_host2", "localhost2");
-    int local_port2 = nh_private_.param<int>("local_port2", 16155);
-    std::string remote_host2 = nh_private_.param<std::string>("remote_host2", "localhost2");
-    int remote_port2 = nh_private_.param<int>("remote_port2", 16150);
-    std::string log_filename2 = nh_private_.param<std::string>("log_filename2", "");*/
+
 
     //Determine whether the base is moving or stationary
     std::string base_type = nh_private_.param<std::string>("base_type", "stationary");
@@ -91,7 +80,7 @@ UBLOX_ROS::UBLOX_ROS() :
 //    nav_sat_fix_pub_ = nh_.advertise<sensor_msgs::NavSatFix>("NavSatFix");
 //    nav_sat_status_pub_ = nh_.advertise<sensor_msgs::NavSatStatus>("NavSatStatus");
 
-    
+
     std::cerr<<"rtk_type: " << rtk_type << "\n";
     for(int i = 0; i < rover_quantity; i++) {
         std::cerr<<"local_host " + std::to_string(i+1) + ": " << local_host[i] << "\n";
@@ -113,7 +102,6 @@ UBLOX_ROS::UBLOX_ROS() :
     else if (rtk_type == ublox::UBLOX::BASE){
         std::cerr<<"Initializing Base\n";
         ublox_->initBase(local_host, local_port, remote_host, remote_port, base_type, rover_quantity);
-        //ublox_->initBase(/*local_host, local_port, remote_host, remote_port,*/ local_host2, local_port2, remote_host2, remote_port2, base_type);
     }
     // connect callbacks
     createCallback(ublox::CLASS_NAV, ublox::NAV_PVT, pvtCB, NAV_PVT);
