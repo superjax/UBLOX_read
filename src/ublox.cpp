@@ -133,6 +133,7 @@ void UBLOX::initLogFile(const std::string& filename)
 void UBLOX::initRover(std::string local_host, uint16_t local_port,
                       std::string remote_host, uint16_t remote_port)
 {
+    std::cerr << "initRover \n";
     type_ = ROVER;
 
     assert(udp_ == nullptr);
@@ -160,6 +161,7 @@ void UBLOX::initRover(std::string local_host, uint16_t local_port,
 void UBLOX::initBase(std::string local_host, uint16_t local_port,
                        std::string remote_host, uint16_t remote_port)
 {
+    std::cerr << "initBase \n";
     type_ = BASE;
 
     if (udp_)
