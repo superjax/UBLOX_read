@@ -25,6 +25,7 @@ project(ublox)
 set(CMAKE_CXX_FLAGS "-std=c++17")
 
 find_package(Eigen3 REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system)
 find_package(async_comm REQUIRED)
 if (NOT ${async_comm_FOUND})
 	add_subdirectory(lib/async_comm)
@@ -110,6 +111,8 @@ if (${BUILD_ROS})
 	add_executable(ublox_ros src/ros/ublox_ros.cpp)
 	target_link_libraries(ublox_ros UBLOX ${catkin_LIBRARIES} ${async_comm_LIBRARIES})
     target_include_directories(ublox_ros PUBLIC ${catkin_INCLUDE_DIRS} PRIVATE ${async_comm_INCLUDE_DIRS})
-    add_dependencies(ublox_ros ${catkin_EXPORTED_TARGETS})
+    add_dependencies(ublox_ros ${catkin_EXPORTED_TARGETS} )
+    add_dependencies(ublox_ros ublox_generate_messages_cpp)
+
 
 endif()
